@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 
 #include "ut-bytes.h"
@@ -47,6 +48,7 @@ UtObject *ut_bytes_new(const uint8_t *data, size_t length) {
 }
 
 const uint8_t *ut_bytes_get_data(UtObject *object) {
+  assert(ut_object_is_type(object, &object_functions));
   UtBytes *self = ut_object_get_data(object);
   return self->data;
 }

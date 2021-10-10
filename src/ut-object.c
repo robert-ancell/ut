@@ -15,6 +15,10 @@ UtObject *ut_object_new(size_t data_size, UtObjectFunctions *functions) {
   return object;
 }
 
+bool ut_object_is_type(UtObject *object, UtObjectFunctions *functions) {
+  return object->functions == functions;
+}
+
 void *ut_object_get_data(UtObject *object) { return object + sizeof(UtObject); }
 
 UtObject *ut_object_ref(UtObject *object) {
