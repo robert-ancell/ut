@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 
 #include "ut-object.h"
@@ -15,12 +16,15 @@ UtObject *ut_object_new(UtObjectFunctions *functions) {
 }
 
 UtObject *ut_object_ref(UtObject *object) {
+  assert(object->ref_count > 0);
+
   object->ref_count++;
   return object;
 }
 
 void ut_object_unref(UtObject *object) {
-  // FIXME: assert ref_count > 0
+  assert(object->ref_count > 0);
+
   object->ref_count--;
   if (object->ref_count == 0) {
     object->functions->cleanup(object);
