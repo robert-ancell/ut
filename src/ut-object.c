@@ -8,12 +8,14 @@ struct _UtObject {
   int ref_count;
 };
 
-UtObject *ut_object_new(UtObjectFunctions *functions) {
-  UtObject *object = malloc(sizeof(UtObject));
+UtObject *ut_object_new(size_t data_size, UtObjectFunctions *functions) {
+  UtObject *object = malloc(sizeof(UtObject) + data_size);
   object->functions = functions;
-  object->ref_count = 0;
+  object->ref_count = 1;
   return object;
 }
+
+void *ut_object_get_data(UtObject *object) { return object + sizeof(UtObject); }
 
 UtObject *ut_object_ref(UtObject *object) {
   assert(object->ref_count > 0);
@@ -33,5 +35,5 @@ void ut_object_unref(UtObject *object) {
 }
 
 void *ut_object_get_interface(UtObject *object, void *interface_id) {
-  return NULL;
+  return object->functions->get_interface(object, interface_id);
 }

@@ -1,2 +1,2 @@
 executable('ut-test',
-           'main.c', 'ut-object.c')
+           'main.c', 'ut-bytes.c', 'ut-list.c', 'ut-object.c')
