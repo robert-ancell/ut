@@ -4,6 +4,10 @@
 
 #pragma once
 
-UtObject *ut_bytes_new(const uint8_t *data, size_t length);
+typedef struct {
+  const uint8_t *(*get_data)(UtObject *object);
+} UtBytesFunctions;
+
+extern int ut_bytes_id;
 
 const uint8_t *ut_bytes_get_data(UtObject *object);
