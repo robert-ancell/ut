@@ -6,7 +6,7 @@
 #include "ut-object-list.h"
 
 typedef struct {
-  UtObject** data;
+  UtObject **data;
   size_t data_length;
 } UtMutableObjectList;
 
@@ -34,9 +34,9 @@ static void ut_mutable_object_list_init(UtObject *object) {
 
 static void ut_mutable_object_list_cleanup(UtObject *object) {
   UtMutableObjectList *self = ut_object_get_data(object);
-   for (int i = 0; i < self->data_length; i++)  {
-      ut_object_unref(self->data[i]);
-   }
+  for (int i = 0; i < self->data_length; i++) {
+    ut_object_unref(self->data[i]);
+  }
   free(self->data);
 }
 
@@ -55,7 +55,7 @@ void ut_mutable_object_list_append(UtObject *object, UtObject *element) {
   UtMutableObjectList *self = ut_object_get_data(object);
 
   self->data_length++;
-  self->data = realloc(self->data, sizeof(UtObject*) * self->data_length);
+  self->data = realloc(self->data, sizeof(UtObject *) * self->data_length);
   self->data[self->data_length - 1] = ut_object_ref(element);
 }
 

@@ -26,7 +26,11 @@ size_t ut_mutable_uint8_list_get_length(UtObject *object) {
 static UtListFunctions list_functions = {.get_length =
                                              ut_mutable_uint8_list_get_length};
 
-static void ut_mutable_uint8_list_init(UtObject *object) {}
+static void ut_mutable_uint8_list_init(UtObject *object) {
+  UtMutableUint8List *self = ut_object_get_data(object);
+  self->data = NULL;
+  self->data_length = 0;
+}
 
 static void ut_mutable_uint8_list_cleanup(UtObject *object) {
   UtMutableUint8List *self = ut_object_get_data(object);
@@ -40,12 +44,7 @@ static UtObjectFunctions object_functions = {
                    {&ut_list_id, &list_functions}}};
 
 UtObject *ut_mutable_uint8_list_new() {
-  UtObject *object =
-      ut_object_new(sizeof(UtMutableUint8List), &object_functions);
-  UtMutableUint8List *self = ut_object_get_data(object);
-  self->data = NULL;
-  self->data_length = 0;
-  return object;
+  return ut_object_new(sizeof(UtMutableUint8List), &object_functions);
 }
 
 void ut_mutable_uint8_list_append(UtObject *object, uint8_t data) {

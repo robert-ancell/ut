@@ -26,7 +26,11 @@ size_t ut_immutable_uint8_list_get_length(UtObject *object) {
 static UtListFunctions list_functions = {
     .get_length = ut_immutable_uint8_list_get_length};
 
-static void ut_immutable_uint8_list_init(UtObject *object) {}
+static void ut_immutable_uint8_list_init(UtObject *object) {
+  UtImmutableUint8List *self = ut_object_get_data(object);
+  self->data = NULL;
+  self->data_length = 0;
+}
 
 static void ut_immutable_uint8_list_cleanup(UtObject *object) {
   UtImmutableUint8List *self = ut_object_get_data(object);
