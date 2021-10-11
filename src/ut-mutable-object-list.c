@@ -26,6 +26,10 @@ size_t ut_mutable_object_list_get_length(UtObject *object) {
 static UtListFunctions list_functions = {.get_length =
                                              ut_mutable_object_list_get_length};
 
+static const char *ut_mutable_object_list_get_type_name() {
+  return "MmutableObjectList";
+}
+
 static void ut_mutable_object_list_init(UtObject *object) {
   UtMutableObjectList *self = ut_object_get_data(object);
   self->data = NULL;
@@ -41,6 +45,7 @@ static void ut_mutable_object_list_cleanup(UtObject *object) {
 }
 
 static UtObjectFunctions object_functions = {
+    .get_type_name = ut_mutable_object_list_get_type_name,
     .init = ut_mutable_object_list_init,
     .cleanup = ut_mutable_object_list_cleanup,
     .interfaces = {{&ut_object_list_id, &object_list_functions},

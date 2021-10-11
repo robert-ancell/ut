@@ -19,6 +19,10 @@ bool ut_object_is_type(UtObject *object, UtObjectFunctions *functions) {
   return object->functions == functions;
 }
 
+const char *ut_object_get_type_name(UtObject *object) {
+  return object->functions->get_type_name();
+}
+
 void *ut_object_get_data(UtObject *object) { return object + sizeof(UtObject); }
 
 UtObject *ut_object_ref(UtObject *object) {
