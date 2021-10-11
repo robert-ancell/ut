@@ -1,5 +1,6 @@
 executable('ut-test',
            'main.c',
+           'ut-event-loop.c',
            'ut-immutable-uint8-list.c',
            'ut-list.c',
            'ut-mutable-list.c',
