@@ -4,14 +4,17 @@
 #include <sys/select.h>
 #include <time.h>
 
+#include "ut-cancel.h"
 #include "ut-event-loop.h"
 #include "ut-object-private.h"
 
 typedef struct _Timeout Timeout;
 struct _Timeout {
   struct timespec when;
-  UtTimeoutCallback callback;
+  struct timespec frequency;
+  UtDelayCallback callback;
   void *user_data;
+  UtObject *cancel;
   Timeout *next;
 };
 
@@ -42,6 +45,47 @@ static void time_delta(struct timespec *a, struct timespec *b,
   }
 }
 
+static void free_timeout(Timeout *timeout) {
+  if (timeout->cancel != NULL) {
+    ut_object_unref(timeout->cancel);
+  }
+  free(timeout);
+}
+
+static void insert_timeout(UtEventLoop *self, Timeout *timeout) {
+  Timeout *prev_timeout = NULL;
+  for (Timeout *next_timeout = self->timeouts; next_timeout != NULL;
+       next_timeout = next_timeout->next) {
+    if (time_compare(&next_timeout->when, &timeout->when) > 0) {
+      break;
+    }
+    prev_timeout = next_timeout;
+  }
+  if (prev_timeout != NULL) {
+    timeout->next = prev_timeout->next;
+    prev_timeout->next = timeout;
+  } else {
+    timeout->next = self->timeouts;
+    self->timeouts = timeout;
+  }
+}
+
+static void add_timeout(UtEventLoop *self, time_t seconds, bool repeat,
+                        UtDelayCallback callback, void *user_data,
+                        UtObject *cancel) {
+  Timeout *t = malloc(sizeof(Timeout));
+  assert(clock_gettime(CLOCK_MONOTONIC, &t->when) == 0);
+  t->when.tv_sec += seconds;
+  t->frequency.tv_sec = repeat ? seconds : 0;
+  t->frequency.tv_nsec = 0;
+  t->callback = callback;
+  t->user_data = user_data;
+  t->cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
+  t->next = NULL;
+
+  insert_timeout(self, t);
+}
+
 static const char *ut_event_loop_get_type_name() { return "EventLoop"; }
 
 static void ut_event_loop_init(UtObject *object) {
@@ -55,7 +99,7 @@ static void ut_event_loop_cleanup(UtObject *object) {
   for (Timeout *timeout = self->timeouts; timeout != NULL;
        timeout = next_timeout) {
     next_timeout = timeout->next;
-    free(timeout);
+    free_timeout(timeout);
   }
   self->timeouts = NULL;
 }
@@ -69,32 +113,18 @@ UtObject *ut_event_loop_new() {
   return ut_object_new(sizeof(UtEventLoop), &object_functions);
 }
 
-void ut_event_loop_add_timeout(UtObject *object, time_t seconds,
-                               UtTimeoutCallback callback, void *user_data) {
+void ut_event_loop_add_delay(UtObject *object, time_t seconds,
+                             UtDelayCallback callback, void *user_data,
+                             UtObject *cancel) {
   UtEventLoop *self = ut_object_get_data(object);
+  add_timeout(self, seconds, false, callback, user_data, cancel);
+}
 
-  Timeout *t = malloc(sizeof(Timeout));
-  assert(clock_gettime(CLOCK_MONOTONIC, &t->when) == 0);
-  t->when.tv_sec += seconds;
-  t->callback = callback;
-  t->user_data = user_data;
-  t->next = NULL;
-
-  Timeout *prev_timeout = NULL;
-  for (Timeout *next_timeout = self->timeouts; next_timeout != NULL;
-       next_timeout = next_timeout->next) {
-    if (time_compare(&next_timeout->when, &t->when) > 0) {
-      break;
-    }
-    prev_timeout = next_timeout;
-  }
-  if (prev_timeout != NULL) {
-    t->next = prev_timeout->next;
-    prev_timeout->next = t;
-  } else {
-    t->next = self->timeouts;
-    self->timeouts = t;
-  }
+void ut_event_loop_add_timer(UtObject *object, time_t seconds,
+                             UtDelayCallback callback, void *user_data,
+                             UtObject *cancel) {
+  UtEventLoop *self = ut_object_get_data(object);
+  add_timeout(self, seconds, true, callback, user_data, cancel);
 }
 
 void ut_event_loop_run(UtObject *object) {
@@ -107,10 +137,27 @@ void ut_event_loop_run(UtObject *object) {
       struct timespec now;
       assert(clock_gettime(CLOCK_MONOTONIC, &now) == 0);
 
-      if (time_compare(&t->when, &now) <= 0) {
-        t->callback(t->user_data);
+      bool is_cancelled = t->cancel != NULL && ut_cancel_is_active(t->cancel);
+      if (is_cancelled || time_compare(&t->when, &now) <= 0) {
+        if (!is_cancelled) {
+          t->callback(t->user_data);
+        }
+
         self->timeouts = t->next;
-        free(t);
+        t->next = NULL;
+
+        bool repeats = t->frequency.tv_sec != 0 || t->frequency.tv_nsec != 0;
+        if (is_cancelled || !repeats) {
+          free_timeout(t);
+        } else {
+          t->when.tv_sec += t->frequency.tv_sec;
+          t->when.tv_nsec += t->frequency.tv_nsec;
+          if (t->when.tv_nsec > 1000000000) {
+            t->when.tv_sec++;
+            t->when.tv_nsec -= 1000000000;
+          }
+          insert_timeout(self, t);
+        }
       } else {
         time_delta(&now, &t->when, &first_timeout);
         timeout = &first_timeout;

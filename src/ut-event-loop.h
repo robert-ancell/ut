@@ -5,12 +5,17 @@
 
 #pragma once
 
-typedef void (*UtTimeoutCallback)(void *user_data);
+typedef void (*UtDelayCallback)(void *user_data);
 
 UtObject *ut_event_loop_new();
 
-void ut_event_loop_add_timeout(UtObject *object, time_t seconds,
-                               UtTimeoutCallback callback, void *user_data);
+void ut_event_loop_add_delay(UtObject *object, time_t seconds,
+                             UtDelayCallback callback, void *user_data,
+                             UtObject *cancel);
+
+void ut_event_loop_add_timer(UtObject *object, time_t seconds,
+                             UtDelayCallback callback, void *user_data,
+                             UtObject *cancel);
 
 void ut_event_loop_run(UtObject *object);
 
