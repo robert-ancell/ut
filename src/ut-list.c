@@ -1,6 +1,7 @@
 #include <assert.h>
 
 #include "ut-list.h"
+#include "ut-object-private.h"
 
 int ut_list_id = 0;
 

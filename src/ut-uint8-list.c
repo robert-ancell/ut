@@ -1,5 +1,6 @@
 #include <assert.h>
 
+#include "ut-object-private.h"
 #include "ut-uint8-list.h"
 
 int ut_uint8_list_id = 0;

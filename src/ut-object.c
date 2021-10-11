@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "ut-object-private.h"
 #include "ut-object.h"
 
 struct _UtObject {

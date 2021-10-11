@@ -4,6 +4,7 @@
 #include "ut-list.h"
 #include "ut-mutable-object-list.h"
 #include "ut-object-list.h"
+#include "ut-object-private.h"
 
 typedef struct {
   UtObject **data;

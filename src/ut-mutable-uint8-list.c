@@ -3,6 +3,7 @@
 
 #include "ut-list.h"
 #include "ut-mutable-uint8-list.h"
+#include "ut-object-private.h"
 #include "ut-uint8-list.h"
 
 typedef struct {
