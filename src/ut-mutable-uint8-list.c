@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "ut-list.h"
+#include "ut-mutable-list.h"
 #include "ut-mutable-uint8-list.h"
 #include "ut-object-private.h"
 #include "ut-uint8-list.h"
@@ -18,6 +19,15 @@ const uint8_t *ut_mutable_uint8_list_get_data(UtObject *object) {
 
 static UtUint8ListFunctions uint8_list_functions = {
     .get_data = ut_mutable_uint8_list_get_data};
+
+void ut_mutable_uint8_list_clear(UtObject *object) {
+  UtMutableUint8List *self = ut_object_get_data(object);
+  free(self->data);
+  self->data_length = 0;
+}
+
+static UtMutableListFunctions mutable_list_functions = {
+    .clear = ut_mutable_uint8_list_clear};
 
 size_t ut_mutable_uint8_list_get_length(UtObject *object) {
   UtMutableUint8List *self = ut_object_get_data(object);
@@ -47,6 +57,7 @@ static UtObjectFunctions object_functions = {
     .init = ut_mutable_uint8_list_init,
     .cleanup = ut_mutable_uint8_list_cleanup,
     .interfaces = {{&ut_uint8_list_id, &uint8_list_functions},
+                   {&ut_mutable_list_id, &mutable_list_functions},
                    {&ut_list_id, &list_functions}}};
 
 UtObject *ut_mutable_uint8_list_new() {

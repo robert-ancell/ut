@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "ut-list.h"
+#include "ut-mutable-list.h"
 #include "ut-mutable-object-list.h"
 #include "ut-object-list.h"
 #include "ut-object-private.h"
@@ -18,6 +19,18 @@ UtObject *ut_mutable_object_list_get_element(UtObject *object, size_t index) {
 
 static UtObjectListFunctions object_list_functions = {
     .get_element = ut_mutable_object_list_get_element};
+
+void ut_mutable_object_list_clear(UtObject *object) {
+  UtMutableObjectList *self = ut_object_get_data(object);
+  for (int i = 0; i < self->data_length; i++) {
+    ut_object_unref(self->data[i]);
+  }
+  free(self->data);
+  self->data_length = 0;
+}
+
+static UtMutableListFunctions mutable_list_functions = {
+    .clear = ut_mutable_object_list_clear};
 
 size_t ut_mutable_object_list_get_length(UtObject *object) {
   UtMutableObjectList *self = ut_object_get_data(object);
@@ -43,6 +56,7 @@ static void ut_mutable_object_list_cleanup(UtObject *object) {
     ut_object_unref(self->data[i]);
   }
   free(self->data);
+  self->data_length = 0;
 }
 
 static UtObjectFunctions object_functions = {
@@ -50,6 +64,7 @@ static UtObjectFunctions object_functions = {
     .init = ut_mutable_object_list_init,
     .cleanup = ut_mutable_object_list_cleanup,
     .interfaces = {{&ut_object_list_id, &object_list_functions},
+                   {&ut_mutable_list_id, &mutable_list_functions},
                    {&ut_list_id, &list_functions}}};
 
 UtObject *ut_mutable_object_list_new() {
