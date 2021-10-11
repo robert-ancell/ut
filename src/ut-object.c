@@ -15,6 +15,11 @@ UtObject *ut_object_new(size_t data_size, UtObjectFunctions *functions) {
   object->functions = functions;
   object->ref_count = 1;
   object->data = malloc(data_size);
+
+  if (functions->init != NULL) {
+    functions->init(object);
+  }
+
   return object;
 }
 
@@ -40,7 +45,9 @@ void ut_object_unref(UtObject *object) {
 
   object->ref_count--;
   if (object->ref_count == 0) {
-    object->functions->cleanup(object);
+    if (object->functions->cleanup != NULL) {
+      object->functions->cleanup(object);
+    }
     free(object);
   }
 }
