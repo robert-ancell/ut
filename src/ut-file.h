@@ -14,6 +14,14 @@ void ut_file_open_read(UtObject *object);
 void ut_file_read(UtObject *object, size_t count, UtFileReadCallback callback,
                   void *user_data, UtObject *cancel);
 
+void ut_file_read_stream(UtObject *object, size_t block_size,
+                         UtFileReadCallback callback, void *user_data,
+                         UtObject *cancel);
+
+void ut_file_read_all(UtObject *object, size_t block_size,
+                      UtFileReadCallback callback, void *user_data,
+                      UtObject *cancel);
+
 void ut_file_close(UtObject *object);
 
 bool ut_object_is_file(UtObject *object);

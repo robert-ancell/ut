@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
 
   UtObject *readme = ut_file_new("README.md");
   ut_file_open_read(readme);
-  ut_file_read(readme, 1024, read_cb, NULL, NULL);
+  ut_file_read_all(readme, 1, read_cb, NULL, NULL);
 
   UtObject *loop = ut_event_loop_get();
 
