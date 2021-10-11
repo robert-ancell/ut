@@ -7,7 +7,7 @@
 
 typedef void (*UtEventLoopCallback)(void *user_data);
 
-UtObject *ut_event_loop_new();
+UtObject *ut_event_loop_get();
 
 void ut_event_loop_add_delay(UtObject *object, time_t seconds,
                              UtEventLoopCallback callback, void *user_data,

@@ -12,22 +12,29 @@ typedef struct {
   size_t data_length;
 } UtMutableUint8List;
 
-const uint8_t *ut_mutable_uint8_list_get_data(UtObject *object) {
+static void resize_list(UtMutableUint8List *self, size_t length) {
+  self->data = realloc(self->data, sizeof(uint8_t) * length);
+  for (size_t i = self->data_length; i < length; i++) {
+    self->data[i] = 0;
+  }
+  self->data_length = length;
+}
+
+const uint8_t *ut_mutable_uint8_list_get_list_data(UtObject *object) {
   UtMutableUint8List *self = ut_object_get_data(object);
   return self->data;
 }
 
 static UtUint8ListFunctions uint8_list_functions = {
-    .get_data = ut_mutable_uint8_list_get_data};
+    .get_data = ut_mutable_uint8_list_get_list_data};
 
-void ut_mutable_uint8_list_clear(UtObject *object) {
+void ut_mutable_uint8_list_resize(UtObject *object, size_t length) {
   UtMutableUint8List *self = ut_object_get_data(object);
-  free(self->data);
-  self->data_length = 0;
+  resize_list(self, length);
 }
 
 static UtMutableListFunctions mutable_list_functions = {
-    .clear = ut_mutable_uint8_list_clear};
+    .resize = ut_mutable_uint8_list_resize};
 
 size_t ut_mutable_uint8_list_get_length(UtObject *object) {
   UtMutableUint8List *self = ut_object_get_data(object);
@@ -88,8 +95,7 @@ void ut_mutable_uint8_list_insert_block(UtObject *object, size_t index,
   UtMutableUint8List *self = ut_object_get_data(object);
 
   size_t orig_data_length = self->data_length;
-  self->data_length += data_length;
-  self->data = realloc(self->data, sizeof(uint8_t) * self->data_length);
+  resize_list(self, self->data_length + data_length);
 
   // Shift existing data up
   for (size_t i = index; i < orig_data_length; i++) {
@@ -102,6 +108,12 @@ void ut_mutable_uint8_list_insert_block(UtObject *object, size_t index,
   for (size_t i = 0; i < data_length; i++) {
     self->data[index + i] = data[i];
   }
+}
+
+uint8_t *ut_mutable_uint8_list_get_data(UtObject *object) {
+  assert(ut_object_is_type(object, &object_functions));
+  UtMutableUint8List *self = ut_object_get_data(object);
+  return self->data;
 }
 
 bool ut_object_is_mutable_uint8_list(UtObject *object) {

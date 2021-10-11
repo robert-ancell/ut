@@ -8,6 +8,8 @@
 #include "ut-event-loop.h"
 #include "ut-object-private.h"
 
+static UtObject *loop = NULL;
+
 typedef struct _Timeout Timeout;
 struct _Timeout {
   struct timespec when;
@@ -172,8 +174,12 @@ static UtObjectFunctions object_functions = {.get_type_name =
                                              .init = ut_event_loop_init,
                                              .cleanup = ut_event_loop_cleanup};
 
-UtObject *ut_event_loop_new() {
-  return ut_object_new(sizeof(UtEventLoop), &object_functions);
+UtObject *ut_event_loop_get() {
+  // FIXME: Check if this loop is for another thread, and make a new loop if so.
+  if (loop == NULL) {
+    loop = ut_object_new(sizeof(UtEventLoop), &object_functions);
+  }
+  return loop;
 }
 
 void ut_event_loop_add_delay(UtObject *object, time_t seconds,

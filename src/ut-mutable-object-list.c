@@ -20,17 +20,20 @@ UtObject *ut_mutable_object_list_get_element(UtObject *object, size_t index) {
 static UtObjectListFunctions object_list_functions = {
     .get_element = ut_mutable_object_list_get_element};
 
-void ut_mutable_object_list_clear(UtObject *object) {
+void ut_mutable_object_list_resize(UtObject *object, size_t length) {
   UtMutableObjectList *self = ut_object_get_data(object);
-  for (int i = 0; i < self->data_length; i++) {
+  for (size_t i = length; i < self->data_length; i++) {
     ut_object_unref(self->data[i]);
   }
-  free(self->data);
-  self->data_length = 0;
+  self->data = realloc(self->data, sizeof(UtObject *) * length);
+  for (size_t i = self->data_length; i < length; i++) {
+    self->data[i] = NULL;
+  }
+  self->data_length = length;
 }
 
 static UtMutableListFunctions mutable_list_functions = {
-    .clear = ut_mutable_object_list_clear};
+    .resize = ut_mutable_object_list_resize};
 
 size_t ut_mutable_object_list_get_length(UtObject *object) {
   UtMutableObjectList *self = ut_object_get_data(object);

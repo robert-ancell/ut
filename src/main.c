@@ -4,6 +4,7 @@
 
 #include "ut-cancel.h"
 #include "ut-event-loop.h"
+#include "ut-file.h"
 #include "ut-list.h"
 #include "ut-mutable-uint8-list.h"
 #include "ut-uint8-list.h"
@@ -26,6 +27,11 @@ static void stdin_cb(void *user_data) {
   printf("stdin - '%.*s'\n", (int)n_read, buffer);
 }
 
+static void read_cb(void *user_data, UtObject *data) {
+  printf("read - '%.*s'\n", (int)ut_list_get_length(data),
+         ut_uint8_list_get_data(data));
+}
+
 int main(int argc, char **argv) {
   UtObject *list = ut_mutable_uint8_list_new();
   ut_mutable_uint8_list_append(list, 0x01);
@@ -36,7 +42,11 @@ int main(int argc, char **argv) {
   printf("%s\n", ut_object_get_type_name(list));
   ut_object_unref(list);
 
-  UtObject *loop = ut_event_loop_new();
+  UtObject *readme = ut_file_new("README.md");
+  ut_file_open_read(readme);
+  ut_file_read(readme, 1024, read_cb, NULL, NULL);
+
+  UtObject *loop = ut_event_loop_get();
 
   UtObject *timer_cancel = ut_cancel_new();
   ut_event_loop_add_delay(loop, 2, delay2_cb, NULL, NULL);
@@ -48,8 +58,8 @@ int main(int argc, char **argv) {
 
   ut_event_loop_run(loop);
 
+  ut_object_unref(readme);
   ut_object_unref(timer_cancel);
-  ut_object_unref(loop);
 
   return 0;
 }

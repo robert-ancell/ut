@@ -18,6 +18,6 @@ void ut_mutable_uint8_list_insert_block(UtObject *object, size_t index,
                                         const uint8_t *data,
                                         size_t data_length);
 
-const uint8_t *ut_mutable_uint8_list_get_data(UtObject *object);
+uint8_t *ut_mutable_uint8_list_get_data(UtObject *object);
 
 bool ut_object_is_mutable_uint8_list(UtObject *object);
