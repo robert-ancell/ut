@@ -8,7 +8,11 @@ typedef struct _UtObject UtObject;
 typedef struct {
   void (*init)(UtObject *object);
   void (*cleanup)(UtObject *object);
-  void *(*get_interface)(UtObject *object, void *interface_id);
+
+  struct {
+    void *interface_id;
+    void *functions;
+  } interfaces[];
 } UtObjectFunctions;
 
 UtObject *ut_object_new(size_t data_size, UtObjectFunctions *functions);

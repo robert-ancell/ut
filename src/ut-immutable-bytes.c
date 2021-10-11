@@ -33,21 +33,10 @@ static void ut_immutable_bytes_cleanup(UtObject *object) {
   free(self->data);
 }
 
-static void *ut_immutable_bytes_get_interface(UtObject *object,
-                                              void *interface_id) {
-  if (interface_id == &ut_bytes_id) {
-    return &bytes_functions;
-  } else if (interface_id == &ut_list_id) {
-    return &list_functions;
-  }
-
-  return NULL;
-}
-
 static UtObjectFunctions object_functions = {
     .init = ut_immutable_bytes_init,
     .cleanup = ut_immutable_bytes_cleanup,
-    .get_interface = ut_immutable_bytes_get_interface};
+    {{&ut_bytes_id, &bytes_functions}, {&ut_list_id, &list_functions}}};
 
 UtObject *ut_immutable_bytes_new(const uint8_t *data, size_t data_length) {
   UtObject *object = ut_object_new(sizeof(UtImmutableBytes), &object_functions);

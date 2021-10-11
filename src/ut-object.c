@@ -39,5 +39,11 @@ void ut_object_unref(UtObject *object) {
 }
 
 void *ut_object_get_interface(UtObject *object, void *interface_id) {
-  return object->functions->get_interface(object, interface_id);
+  for (int i = 0; object->functions->interfaces[i].interface_id != NULL; i++) {
+    if (object->functions->interfaces[i].interface_id == interface_id) {
+      return object->functions->interfaces[i].functions;
+    }
+  }
+
+  return NULL;
 }
