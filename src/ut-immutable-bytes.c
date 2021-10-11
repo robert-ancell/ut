@@ -1,9 +1,9 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "ut-bytes.h"
 #include "ut-immutable-bytes.h"
 #include "ut-list.h"
+#include "ut-uint8-list.h"
 
 typedef struct {
   uint8_t *data;
@@ -15,8 +15,8 @@ const uint8_t *ut_immutable_bytes_get_data(UtObject *object) {
   return self->data;
 }
 
-static UtBytesFunctions bytes_functions = {.get_data =
-                                               ut_immutable_bytes_get_data};
+static UtUint8ListFunctions uint8_list_functions = {
+    .get_data = ut_immutable_bytes_get_data};
 
 size_t ut_immutable_bytes_get_length(UtObject *object) {
   UtImmutableBytes *self = ut_object_get_data(object);
@@ -36,7 +36,8 @@ static void ut_immutable_bytes_cleanup(UtObject *object) {
 static UtObjectFunctions object_functions = {
     .init = ut_immutable_bytes_init,
     .cleanup = ut_immutable_bytes_cleanup,
-    {{&ut_bytes_id, &bytes_functions}, {&ut_list_id, &list_functions}}};
+    {{&ut_uint8_list_id, &uint8_list_functions},
+     {&ut_list_id, &list_functions}}};
 
 UtObject *ut_immutable_bytes_new(const uint8_t *data, size_t data_length) {
   UtObject *object = ut_object_new(sizeof(UtImmutableBytes), &object_functions);
