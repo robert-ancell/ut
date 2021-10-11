@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "ut-cancel.h"
 #include "ut-event-loop.h"
@@ -19,6 +20,12 @@ static void delay5_cb(void *user_data) {
 
 static void timer_cb(void *user_data) { printf("timer\n"); }
 
+static void stdin_cb(void *user_data) {
+  char buffer[1024];
+  ssize_t n_read = read(0, buffer, 1024);
+  printf("stdin - '%.*s'\n", (int)n_read, buffer);
+}
+
 int main(int argc, char **argv) {
   UtObject *list = ut_mutable_uint8_list_new();
   ut_mutable_uint8_list_append(list, 0x01);
@@ -30,12 +37,19 @@ int main(int argc, char **argv) {
   ut_object_unref(list);
 
   UtObject *loop = ut_event_loop_new();
+
   UtObject *timer_cancel = ut_cancel_new();
   ut_event_loop_add_delay(loop, 2, delay2_cb, NULL, NULL);
   ut_event_loop_add_delay(loop, 5, delay5_cb, timer_cancel, NULL);
   ut_event_loop_add_delay(loop, 3, delay3_cb, NULL, NULL);
   ut_event_loop_add_timer(loop, 1, timer_cb, NULL, timer_cancel);
+
+  ut_event_loop_add_read_watch(loop, 0, stdin_cb, NULL, NULL);
+
   ut_event_loop_run(loop);
+
+  ut_object_unref(timer_cancel);
+  ut_object_unref(loop);
 
   return 0;
 }

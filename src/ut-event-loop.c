@@ -12,14 +12,25 @@ typedef struct _Timeout Timeout;
 struct _Timeout {
   struct timespec when;
   struct timespec frequency;
-  UtDelayCallback callback;
+  UtEventLoopCallback callback;
   void *user_data;
   UtObject *cancel;
   Timeout *next;
 };
 
+typedef struct _FdWatch FdWatch;
+struct _FdWatch {
+  int fd;
+  UtEventLoopCallback callback;
+  void *user_data;
+  UtObject *cancel;
+  FdWatch *next;
+};
+
 typedef struct {
   Timeout *timeouts;
+  FdWatch *read_watches;
+  FdWatch *write_watches;
 } UtEventLoop;
 
 static int time_compare(struct timespec *a, struct timespec *b) {
@@ -71,7 +82,7 @@ static void insert_timeout(UtEventLoop *self, Timeout *timeout) {
 }
 
 static void add_timeout(UtEventLoop *self, time_t seconds, bool repeat,
-                        UtDelayCallback callback, void *user_data,
+                        UtEventLoopCallback callback, void *user_data,
                         UtObject *cancel) {
   Timeout *t = malloc(sizeof(Timeout));
   assert(clock_gettime(CLOCK_MONOTONIC, &t->when) == 0);
@@ -86,11 +97,51 @@ static void add_timeout(UtEventLoop *self, time_t seconds, bool repeat,
   insert_timeout(self, t);
 }
 
+static FdWatch *fd_watch_new(int fd, UtEventLoopCallback callback,
+                             void *user_data, UtObject *cancel) {
+  FdWatch *watch = malloc(sizeof(FdWatch));
+  watch->fd = fd;
+  watch->callback = callback;
+  watch->user_data = user_data;
+  watch->cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
+  watch->next = NULL;
+  return watch;
+}
+
+static void free_fd_watch(FdWatch *watch) {
+  if (watch->cancel != NULL) {
+    ut_object_unref(watch->cancel);
+  }
+  free(watch);
+}
+
+static FdWatch *remove_cancelled_watches(FdWatch *watches) {
+  FdWatch *prev_watch = NULL, *next_watch;
+  for (FdWatch *watch = watches; watch != NULL; watch = next_watch) {
+    next_watch = watch->next;
+    if (watch->cancel != NULL && ut_cancel_is_active(watch->cancel)) {
+      if (prev_watch != NULL) {
+        prev_watch->next = watch->next;
+      } else {
+        watches->next = watch->next;
+      }
+      watch->next = NULL;
+      free_fd_watch(watch);
+    } else {
+      prev_watch = watch;
+    }
+  }
+
+  return watches;
+}
+
 static const char *ut_event_loop_get_type_name() { return "EventLoop"; }
 
 static void ut_event_loop_init(UtObject *object) {
   UtEventLoop *self = ut_object_get_data(object);
   self->timeouts = NULL;
+  self->read_watches = NULL;
+  self->write_watches = NULL;
 }
 
 static void ut_event_loop_cleanup(UtObject *object) {
@@ -102,6 +153,18 @@ static void ut_event_loop_cleanup(UtObject *object) {
     free_timeout(timeout);
   }
   self->timeouts = NULL;
+  FdWatch *next_watch;
+  for (FdWatch *watch = self->read_watches; watch != NULL; watch = next_watch) {
+    next_watch = watch->next;
+    free_fd_watch(watch);
+  }
+  self->read_watches = NULL;
+  for (FdWatch *watch = self->write_watches; watch != NULL;
+       watch = next_watch) {
+    next_watch = watch->next;
+    free_fd_watch(watch);
+  }
+  self->write_watches = NULL;
 }
 
 static UtObjectFunctions object_functions = {.get_type_name =
@@ -114,22 +177,42 @@ UtObject *ut_event_loop_new() {
 }
 
 void ut_event_loop_add_delay(UtObject *object, time_t seconds,
-                             UtDelayCallback callback, void *user_data,
+                             UtEventLoopCallback callback, void *user_data,
                              UtObject *cancel) {
   UtEventLoop *self = ut_object_get_data(object);
   add_timeout(self, seconds, false, callback, user_data, cancel);
 }
 
 void ut_event_loop_add_timer(UtObject *object, time_t seconds,
-                             UtDelayCallback callback, void *user_data,
+                             UtEventLoopCallback callback, void *user_data,
                              UtObject *cancel) {
   UtEventLoop *self = ut_object_get_data(object);
   add_timeout(self, seconds, true, callback, user_data, cancel);
 }
 
+void ut_event_loop_add_read_watch(UtObject *object, int fd,
+                                  UtEventLoopCallback callback, void *user_data,
+                                  UtObject *cancel) {
+  UtEventLoop *self = ut_object_get_data(object);
+  FdWatch *watch = fd_watch_new(fd, callback, user_data, cancel);
+  watch->next = self->read_watches;
+  self->read_watches = watch;
+}
+
+void ut_event_loop_add_write_watch(UtObject *object, int fd,
+                                   UtEventLoopCallback callback,
+                                   void *user_data, UtObject *cancel) {
+  UtEventLoop *self = ut_object_get_data(object);
+  FdWatch *watch = fd_watch_new(fd, callback, user_data, cancel);
+  watch->next = self->write_watches;
+  self->write_watches = watch;
+}
+
 void ut_event_loop_run(UtObject *object) {
   UtEventLoop *self = ut_object_get_data(object);
   while (true) {
+    // Do callbacks for any timers that have expired and work out time to next
+    // timer.
     const struct timespec *timeout = NULL;
     struct timespec first_timeout;
     while (self->timeouts != NULL && timeout == NULL) {
@@ -164,10 +247,56 @@ void ut_event_loop_run(UtObject *object) {
       }
     }
 
-    int n_fds = pselect(0, NULL, NULL, NULL, timeout, NULL);
-    if (n_fds < 0) {
-      return;
+    // Register file descriptors we are watching for.
+    int max_fd = -1;
+    fd_set read_fds;
+    FD_ZERO(&read_fds);
+    self->read_watches = remove_cancelled_watches(self->read_watches);
+    for (FdWatch *watch = self->read_watches; watch != NULL;
+         watch = watch->next) {
+      FD_SET(watch->fd, &read_fds);
+      if (watch->fd > max_fd) {
+        max_fd = watch->fd;
+      }
     }
+    fd_set write_fds;
+    FD_ZERO(&write_fds);
+    self->write_watches = remove_cancelled_watches(self->write_watches);
+    for (FdWatch *watch = self->write_watches; watch != NULL;
+         watch = watch->next) {
+      FD_SET(watch->fd, &write_fds);
+      if (watch->fd > max_fd) {
+        max_fd = watch->fd;
+      }
+    }
+
+    // Wait for file descriptors or timeout.
+    assert(pselect(max_fd + 1, &read_fds, &write_fds, NULL, timeout, NULL) >=
+           0);
+
+    // Do callbacks for each fd that has changed.
+    // Note they are checked for cancellation as they might be cancelled in
+    // these callbacks.
+    for (FdWatch *watch = self->read_watches; watch != NULL;
+         watch = watch->next) {
+      bool is_cancelled =
+          watch->cancel != NULL && ut_cancel_is_active(watch->cancel);
+      if (!is_cancelled && FD_ISSET(watch->fd, &read_fds)) {
+        watch->callback(watch->user_data);
+      }
+    }
+    for (FdWatch *watch = self->write_watches; watch != NULL;
+         watch = watch->next) {
+      bool is_cancelled =
+          watch->cancel != NULL && ut_cancel_is_active(watch->cancel);
+      if (!is_cancelled && FD_ISSET(watch->fd, &write_fds)) {
+        watch->callback(watch->user_data);
+      }
+    }
+
+    // Purge any watches that have been removed.
+    self->read_watches = remove_cancelled_watches(self->read_watches);
+    self->write_watches = remove_cancelled_watches(self->write_watches);
   }
 }
 
