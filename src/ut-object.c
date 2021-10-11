@@ -7,12 +7,14 @@
 struct _UtObject {
   UtObjectFunctions *functions;
   int ref_count;
+  void *data;
 };
 
 UtObject *ut_object_new(size_t data_size, UtObjectFunctions *functions) {
-  UtObject *object = malloc(sizeof(UtObject) + data_size);
+  UtObject *object = malloc(sizeof(UtObject));
   object->functions = functions;
   object->ref_count = 1;
+  object->data = malloc(data_size);
   return object;
 }
 
@@ -24,7 +26,7 @@ const char *ut_object_get_type_name(UtObject *object) {
   return object->functions->get_type_name();
 }
 
-void *ut_object_get_data(UtObject *object) { return object + sizeof(UtObject); }
+void *ut_object_get_data(UtObject *object) { return object->data; }
 
 UtObject *ut_object_ref(UtObject *object) {
   assert(object->ref_count > 0);
