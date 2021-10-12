@@ -2,18 +2,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "ut-cancel.h"
-#include "ut-event-loop.h"
-#include "ut-file.h"
-#include "ut-immutable-utf8-string.h"
-#include "ut-list.h"
-#include "ut-mutable-string.h"
-#include "ut-mutable-uint8-list.h"
-#include "ut-mutable-utf8-string.h"
-#include "ut-string.h"
-#include "ut-uint32-list.h"
-#include "ut-uint8-list.h"
-#include "ut-utf8-string.h"
+#include "ut.h"
 
 static void delay2_cb(void *user_data) { printf("delay 2s\n"); }
 
