@@ -46,6 +46,17 @@ int main(int argc, char **argv) {
   ut_file_open_read(readme);
   ut_file_read_all(readme, 1, read_cb, NULL, NULL);
 
+  UtObject *test_file = ut_file_new("TEST");
+  ut_file_open_write(test_file, true);
+  UtObject *test_data = ut_mutable_uint8_list_new();
+  ut_mutable_uint8_list_append(test_data, 0x48);
+  ut_mutable_uint8_list_append(test_data, 0x65);
+  ut_mutable_uint8_list_append(test_data, 0x6c);
+  ut_mutable_uint8_list_append(test_data, 0x6c);
+  ut_mutable_uint8_list_append(test_data, 0x6f);
+  ut_mutable_uint8_list_append(test_data, 0x0a);
+  ut_file_write_all(test_file, test_data, NULL, NULL, NULL);
+
   UtObject *loop = ut_event_loop_get();
 
   UtObject *timer_cancel = ut_cancel_new();
@@ -59,6 +70,7 @@ int main(int argc, char **argv) {
   ut_event_loop_run(loop);
 
   ut_object_unref(readme);
+  ut_object_unref(test_file);
   ut_object_unref(timer_cancel);
 
   return 0;

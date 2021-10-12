@@ -125,7 +125,7 @@ static FdWatch *remove_cancelled_watches(FdWatch *watches) {
       if (prev_watch != NULL) {
         prev_watch->next = watch->next;
       } else {
-        watches->next = watch->next;
+        watches = watch->next;
       }
       watch->next = NULL;
       free_fd_watch(watch);
