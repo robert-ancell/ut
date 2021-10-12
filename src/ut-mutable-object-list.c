@@ -44,7 +44,7 @@ static UtListFunctions list_functions = {.get_length =
                                              ut_mutable_object_list_get_length};
 
 static const char *ut_mutable_object_list_get_type_name() {
-  return "MmutableObjectList";
+  return "MutableObjectList";
 }
 
 static void ut_mutable_object_list_init(UtObject *object) {
