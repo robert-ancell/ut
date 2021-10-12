@@ -11,6 +11,7 @@
 #include "ut-mutable-list.h"
 #include "ut-mutable-uint8-list.h"
 #include "ut-object-private.h"
+#include "ut-uint8-list.h"
 
 typedef struct {
   char *path;
@@ -139,9 +140,9 @@ static void write_cb(void *user_data) {
   bool done = false;
   if (data->cancel == NULL || !ut_cancel_is_active(data->cancel)) {
     // Write remaining data.
-    ssize_t n_written = write(
-        self->fd, ut_mutable_uint8_list_get_data(data->data) + data->n_written,
-        ut_list_get_length(data->data) - data->n_written);
+    ssize_t n_written =
+        write(self->fd, ut_uint8_list_get_data(data->data) + data->n_written,
+              ut_list_get_length(data->data) - data->n_written);
     assert(n_written >= 0);
     data->n_written += n_written;
 

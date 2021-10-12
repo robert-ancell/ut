@@ -5,9 +5,15 @@
 #include "ut-cancel.h"
 #include "ut-event-loop.h"
 #include "ut-file.h"
+#include "ut-immutable-utf8-string.h"
 #include "ut-list.h"
+#include "ut-mutable-string.h"
 #include "ut-mutable-uint8-list.h"
+#include "ut-mutable-utf8-string.h"
+#include "ut-string.h"
+#include "ut-uint32-list.h"
 #include "ut-uint8-list.h"
+#include "ut-utf8-string.h"
 
 static void delay2_cb(void *user_data) { printf("delay 2s\n"); }
 
@@ -46,16 +52,26 @@ int main(int argc, char **argv) {
   ut_file_open_read(readme);
   ut_file_read_all(readme, 1, read_cb, NULL, NULL);
 
+  UtObject *string = ut_immutable_utf8_string_new("Hello");
+  UtObject *code_points = ut_string_get_code_points(string);
+  const uint32_t *code_point_data = ut_uint32_list_get_data(code_points);
+  printf("code points:");
+  for (size_t i = 0; i < ut_list_get_length(code_points); i++) {
+    printf(" %x", code_point_data[i]);
+  }
+  printf("\n");
+
   UtObject *test_file = ut_file_new("TEST");
   ut_file_open_write(test_file, true);
-  UtObject *test_data = ut_mutable_uint8_list_new();
-  ut_mutable_uint8_list_append(test_data, 0x48);
-  ut_mutable_uint8_list_append(test_data, 0x65);
-  ut_mutable_uint8_list_append(test_data, 0x6c);
-  ut_mutable_uint8_list_append(test_data, 0x6c);
-  ut_mutable_uint8_list_append(test_data, 0x6f);
-  ut_mutable_uint8_list_append(test_data, 0x0a);
+  UtObject *test_data = ut_immutable_utf8_string_new("Hello\n");
   ut_file_write_all(test_file, test_data, NULL, NULL, NULL);
+
+  UtObject *string2 = ut_mutable_utf8_string_new(" ");
+  printf("'%s'\n", ut_utf8_string_get_text(string2));
+  ut_mutable_string_prepend(string2, "Hello");
+  printf("'%s'\n", ut_utf8_string_get_text(string2));
+  ut_mutable_string_append(string2, "World!");
+  printf("'%s'\n", ut_utf8_string_get_text(string2));
 
   UtObject *loop = ut_event_loop_get();
 
