@@ -68,7 +68,8 @@ static UtObjectFunctions object_functions = {
     .cleanup = ut_mutable_object_list_cleanup,
     .interfaces = {{&ut_object_list_id, &object_list_functions},
                    {&ut_mutable_list_id, &mutable_list_functions},
-                   {&ut_list_id, &list_functions}}};
+                   {&ut_list_id, &list_functions},
+                   {NULL, NULL}}};
 
 UtObject *ut_mutable_object_list_new() {
   return ut_object_new(sizeof(UtMutableObjectList), &object_functions);

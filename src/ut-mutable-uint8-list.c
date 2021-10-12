@@ -65,7 +65,8 @@ static UtObjectFunctions object_functions = {
     .cleanup = ut_mutable_uint8_list_cleanup,
     .interfaces = {{&ut_uint8_list_id, &uint8_list_functions},
                    {&ut_mutable_list_id, &mutable_list_functions},
-                   {&ut_list_id, &list_functions}}};
+                   {&ut_list_id, &list_functions},
+                   {NULL, NULL}}};
 
 UtObject *ut_mutable_uint8_list_new() {
   return ut_object_new(sizeof(UtMutableUint8List), &object_functions);

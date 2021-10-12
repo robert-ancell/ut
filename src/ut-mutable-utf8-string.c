@@ -99,11 +99,12 @@ static UtObjectFunctions object_functions = {
     .get_type_name = ut_mutable_utf8_string_get_type_name,
     .init = ut_mutable_utf8_string_init,
     .cleanup = ut_mutable_utf8_string_cleanup,
-    {{&ut_utf8_string_id, &utf8_string_functions},
-     {&ut_string_id, &string_functions},
-     {&ut_mutable_string_id, &mutable_string_functions},
-     {&ut_uint8_list_id, &uint8_list_functions},
-     {&ut_list_id, &list_functions}}};
+    .interfaces = {{&ut_utf8_string_id, &utf8_string_functions},
+                   {&ut_string_id, &string_functions},
+                   {&ut_mutable_string_id, &mutable_string_functions},
+                   {&ut_uint8_list_id, &uint8_list_functions},
+                   {&ut_list_id, &list_functions},
+                   {NULL, NULL}}};
 
 UtObject *ut_mutable_utf8_string_new(const char *text) {
   UtObject *object =

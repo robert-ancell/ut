@@ -46,8 +46,9 @@ static UtObjectFunctions object_functions = {
     .get_type_name = ut_immutable_uint8_list_get_type_name,
     .init = ut_immutable_uint8_list_init,
     .cleanup = ut_immutable_uint8_list_cleanup,
-    {{&ut_uint8_list_id, &uint8_list_functions},
-     {&ut_list_id, &list_functions}}};
+    .interfaces = {{&ut_uint8_list_id, &uint8_list_functions},
+                   {&ut_list_id, &list_functions},
+                   {NULL, NULL}}};
 
 UtObject *ut_immutable_uint8_list_new(const uint8_t *data, size_t data_length) {
   UtObject *object =
