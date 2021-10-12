@@ -13,6 +13,7 @@
 #include "ut-object.h"
 #include "ut-object-list.h"
 #include "ut-string.h"
+#include "ut-tcp-client.h"
 #include "ut-uint32-list.h"
 #include "ut-uint8-list.h"
 #include "ut-utf8-string.h"

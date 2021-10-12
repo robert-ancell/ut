@@ -15,6 +15,7 @@ executable('ut-test',
            'ut-object.c',
            'ut-object-list.c',
            'ut-string.c',
+           'ut-tcp-client.c',
            'ut-uint8-list.c',
            'ut-uint32-list.c',
            'ut-utf8-string.c')

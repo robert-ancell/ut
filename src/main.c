@@ -27,6 +27,8 @@ static void read_cb(void *user_data, UtObject *data) {
          ut_uint8_list_get_data(data));
 }
 
+static void connect_cb(void *user_data) { printf("connect\n"); }
+
 int main(int argc, char **argv) {
   UtObject *list = ut_mutable_uint8_list_new();
   ut_mutable_uint8_list_append(list, 0x01);
@@ -54,6 +56,9 @@ int main(int argc, char **argv) {
   ut_file_open_write(test_file, true);
   UtObject *test_data = ut_immutable_utf8_string_new("Hello\n");
   ut_file_write_all(test_file, test_data, NULL, NULL, NULL);
+
+  UtObject *tcp_client = ut_tcp_client_new("93.184.216.34", 80); // example.com
+  ut_tcp_client_connect(tcp_client, connect_cb, NULL, NULL);
 
   UtObject *string2 = ut_mutable_utf8_string_new(" ");
   printf("'%s'\n", ut_utf8_string_get_text(string2));
