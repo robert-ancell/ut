@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
   UtObject *test_data = ut_immutable_utf8_string_new("Hello\n");
   ut_file_write_all(test_file, test_data, NULL, NULL, NULL);
 
-  UtObject *tcp_client = ut_tcp_client_new("93.184.216.34", 80); // example.com
+  UtObject *tcp_client = ut_tcp_client_new("example.com", 80);
   ut_tcp_client_connect(tcp_client, connect_cb, NULL, NULL);
 
   UtObject *string2 = ut_mutable_utf8_string_new(" ");

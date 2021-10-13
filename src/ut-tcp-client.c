@@ -1,8 +1,10 @@
 #include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
+#include <netdb.h>
 #include <netinet/in.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -14,26 +16,31 @@
 #include "ut-tcp-client.h"
 
 typedef struct {
-  int domain;
   char *address;
   uint16_t port;
   int fd;
+  bool connecting;
   bool connected;
 } UtTcpClient;
 
 typedef struct {
   UtTcpClient *self;
+  char *address;
+  int port;
   UtObject *watch_cancel;
   UtTcpClientConnectCallback callback;
   void *user_data;
   UtObject *cancel;
 } ConnectData;
 
-static ConnectData *connect_data_new(UtTcpClient *self,
+static ConnectData *connect_data_new(UtTcpClient *self, const char *address,
+                                     int port,
                                      UtTcpClientConnectCallback callback,
                                      void *user_data, UtObject *cancel) {
   ConnectData *data = malloc(sizeof(ConnectData));
   data->self = self;
+  data->address = strdup(address);
+  data->port = port;
   data->watch_cancel = ut_cancel_new();
   data->callback = callback;
   data->user_data = user_data;
@@ -42,6 +49,7 @@ static ConnectData *connect_data_new(UtTcpClient *self,
 }
 
 static void connect_data_free(ConnectData *data) {
+  free(data->address);
   ut_object_unref(data->watch_cancel);
   if (data->cancel) {
     ut_object_unref(data->cancel);
@@ -57,12 +65,44 @@ static void connect_cb(void *user_data) {
 
   int error; // FIXME: use
   getsockopt(self->fd, SOL_SOCKET, SO_ERROR, &error, NULL);
-  if (data->callback != NULL) {
+  assert(error == 0);
+
+  bool is_cancelled = data->cancel != NULL && ut_cancel_is_active(data->cancel);
+  if (!is_cancelled && data->callback != NULL) {
     data->callback(data->user_data);
   }
 
   ut_cancel_activate(data->watch_cancel);
   connect_data_free(data);
+}
+
+static void *lookup_thread_cb(void *data_) {
+  ConnectData *data = data_;
+
+  char port_string[6];
+  snprintf(port_string, 6, "%d", data->port);
+  struct addrinfo *addresses;
+  getaddrinfo(data->address, port_string, NULL, &addresses);
+  return addresses;
+}
+
+static void lookup_result_cb(void *user_data, void *result) {
+  ConnectData *data = user_data;
+  UtTcpClient *self = data->self;
+  struct addrinfo *addresses = result;
+
+  assert(addresses != NULL);
+  struct addrinfo *address = addresses;
+
+  self->fd = socket(address->ai_family, SOCK_STREAM | SOCK_NONBLOCK, 0);
+  assert(self->fd >= 0);
+
+  ut_event_loop_add_write_watch(self->fd, connect_cb, data, data->watch_cancel);
+
+  int connect_result = connect(self->fd, address->ai_addr, address->ai_addrlen);
+  assert(connect_result == 0 || errno == EINPROGRESS);
+
+  freeaddrinfo(addresses);
 }
 
 static void disconnect_client(UtTcpClient *self) {
@@ -74,7 +114,6 @@ static void disconnect_client(UtTcpClient *self) {
 
 static void ut_tcp_client_init(UtObject *object) {
   UtTcpClient *self = ut_object_get_data(object);
-  self->domain = 0;
   self->address = NULL;
   self->port = 0;
   self->fd = -1;
@@ -93,7 +132,6 @@ static UtObjectFunctions object_functions = {.init = ut_tcp_client_init,
 UtObject *ut_tcp_client_new(const char *address, uint16_t port) {
   UtObject *object = ut_object_new(sizeof(UtTcpClient), &object_functions);
   UtTcpClient *self = ut_object_get_data(object);
-  self->domain = AF_INET; // FIXME AF_INET6
   self->address = strdup(address);
   self->port = port;
   return object;
@@ -104,19 +142,15 @@ void ut_tcp_client_connect(UtObject *object,
                            UtObject *cancel) {
   assert(ut_object_is_tcp_client(object));
   UtTcpClient *self = ut_object_get_data(object);
-  assert(self->fd < 0);
-  self->fd = socket(self->domain, SOCK_STREAM | SOCK_NONBLOCK, 0);
-  assert(self->fd >= 0);
+  assert(!self->connecting);
+  self->connecting = true;
 
-  ConnectData *data = connect_data_new(self, callback, user_data, cancel);
-  ut_event_loop_add_write_watch(self->fd, connect_cb, data, data->watch_cancel);
-
-  struct sockaddr_in addr;
-  addr.sin_family = self->domain;
-  addr.sin_port = htons(self->port);
-  inet_pton(self->domain, self->address, &addr.sin_addr);
-  int result = connect(self->fd, (struct sockaddr *)&addr, sizeof(addr));
-  assert(result == 0 || errno == EINPROGRESS);
+  // Lookup address.
+  // FIXME: Cancel thread if this UtTcpClient is deleted.
+  ConnectData *data = connect_data_new(self, self->address, self->port,
+                                       callback, user_data, cancel);
+  ut_event_loop_run_in_thread(lookup_thread_cb, data, NULL, lookup_result_cb,
+                              data, NULL);
 }
 
 void ut_tcp_client_disconnect(UtObject *object) {
