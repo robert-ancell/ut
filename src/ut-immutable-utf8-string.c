@@ -38,7 +38,7 @@ static UtUint8ListFunctions uint8_list_functions = {
 
 static size_t ut_immutable_utf8_string_get_data_length(UtObject *object) {
   UtImmutableUtf8String *self = ut_object_get_data(object);
-  return strlen(self->text) + 1;
+  return strlen(self->text);
 }
 
 static UtListFunctions list_functions = {
