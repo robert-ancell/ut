@@ -6,6 +6,8 @@
 #pragma once
 
 typedef void (*UtEventLoopCallback)(void *user_data);
+typedef void *(*UtThreadCallback)(void *data);
+typedef void (*UtThreadResultCallback)(void *user_data, void *result);
 
 UtObject *ut_event_loop_get();
 
@@ -24,6 +26,13 @@ void ut_event_loop_add_read_watch(UtObject *object, int fd,
 void ut_event_loop_add_write_watch(UtObject *object, int fd,
                                    UtEventLoopCallback callback,
                                    void *user_data, UtObject *cancel);
+
+void ut_event_loop_run_in_thread(UtObject *object,
+                                 UtThreadCallback thread_callback,
+                                 void *thread_data,
+                                 UtEventLoopCallback thread_data_cleanup,
+                                 UtThreadResultCallback result_callback,
+                                 void *user_data, UtObject *cancel);
 
 void ut_event_loop_run(UtObject *object);
 

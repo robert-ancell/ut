@@ -1,5 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "ut.h"
@@ -15,6 +17,17 @@ static void delay5_cb(void *user_data) {
 }
 
 static void timer_cb(void *user_data) { printf("timer\n"); }
+
+static void *thread_cb(void *data) {
+  sleep(2);
+  return strdup("Hello World");
+}
+
+static void thread_result_cb(void *user_data, void *result) {
+  char *result_ = result;
+  printf("Thread result: '%s'\n", result_);
+  free(result_);
+}
 
 static void stdin_cb(void *user_data) {
   char buffer[1024];
@@ -74,6 +87,9 @@ int main(int argc, char **argv) {
   ut_event_loop_add_delay(loop, 5, delay5_cb, timer_cancel, NULL);
   ut_event_loop_add_delay(loop, 3, delay3_cb, NULL, NULL);
   ut_event_loop_add_timer(loop, 1, timer_cb, NULL, timer_cancel);
+
+  ut_event_loop_run_in_thread(loop, thread_cb, NULL, NULL, thread_result_cb,
+                              NULL, NULL);
 
   ut_event_loop_add_read_watch(loop, 0, stdin_cb, NULL, NULL);
 

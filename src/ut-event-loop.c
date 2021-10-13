@@ -1,8 +1,11 @@
 #include <assert.h>
+#include <pthread.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <sys/select.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "ut-cancel.h"
 #include "ut-event-loop.h"
@@ -29,10 +32,25 @@ struct _FdWatch {
   FdWatch *next;
 };
 
+typedef struct _WorkerThread WorkerThread;
+struct _WorkerThread {
+  pthread_t thread_id;
+  int complete_write_fd;
+  int complete_read_fd;
+  UtThreadCallback thread_callback;
+  void *thread_data;
+  UtEventLoopCallback thread_data_cleanup;
+  UtThreadResultCallback result_callback;
+  void *user_data;
+  UtObject *cancel;
+  WorkerThread *next;
+};
+
 typedef struct {
   Timeout *timeouts;
   FdWatch *read_watches;
   FdWatch *write_watches;
+  WorkerThread *worker_threads;
 } UtEventLoop;
 
 static int time_compare(struct timespec *a, struct timespec *b) {
@@ -137,6 +155,39 @@ static FdWatch *remove_cancelled_watches(FdWatch *watches) {
   return watches;
 }
 
+static WorkerThread *worker_thread_new(UtThreadCallback thread_callback,
+                                       void *thread_data,
+                                       UtEventLoopCallback thread_data_cleanup,
+                                       UtThreadResultCallback result_callback,
+                                       void *user_data, UtObject *cancel) {
+  WorkerThread *thread = malloc(sizeof(WorkerThread));
+  thread->thread_id = 0;
+  int fds[2];
+  assert(pipe(fds) == 0);
+  thread->complete_write_fd = fds[1];
+  thread->complete_read_fd = fds[0];
+  thread->thread_callback = thread_callback;
+  thread->thread_data = thread_data;
+  thread->thread_data_cleanup = thread_data_cleanup;
+  thread->result_callback = result_callback;
+  thread->user_data = user_data;
+  thread->cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
+  thread->next = NULL;
+  return thread;
+}
+
+static void free_worker_thread(WorkerThread *thread) {
+  close(thread->complete_write_fd);
+  close(thread->complete_read_fd);
+  if (thread->thread_data_cleanup != NULL) {
+    thread->thread_data_cleanup(thread->thread_data);
+  }
+  if (thread->cancel != NULL) {
+    ut_object_unref(thread->cancel);
+  }
+  free(thread);
+}
+
 static const char *ut_event_loop_get_type_name() { return "EventLoop"; }
 
 static void ut_event_loop_init(UtObject *object) {
@@ -144,6 +195,7 @@ static void ut_event_loop_init(UtObject *object) {
   self->timeouts = NULL;
   self->read_watches = NULL;
   self->write_watches = NULL;
+  self->worker_threads = NULL;
 }
 
 static void ut_event_loop_cleanup(UtObject *object) {
@@ -167,6 +219,14 @@ static void ut_event_loop_cleanup(UtObject *object) {
     free_fd_watch(watch);
   }
   self->write_watches = NULL;
+  WorkerThread *next_thread;
+  for (WorkerThread *thread = self->worker_threads; thread != NULL;
+       thread = next_thread) {
+    next_thread = thread->next;
+    // FIXME: Have to join
+    free_worker_thread(thread);
+  }
+  self->worker_threads = NULL;
 }
 
 static UtObjectFunctions object_functions = {.get_type_name =
@@ -214,6 +274,34 @@ void ut_event_loop_add_write_watch(UtObject *object, int fd,
   self->write_watches = watch;
 }
 
+static void *thread_cb(void *data) {
+  WorkerThread *thread = data;
+
+  void *result = thread->thread_callback(thread->thread_data);
+
+  // Notify the main loop.
+  uint8_t complete_data = 0;
+  assert(write(thread->complete_write_fd, &complete_data, 1) == 1);
+
+  return result;
+}
+
+void ut_event_loop_run_in_thread(UtObject *object,
+                                 UtThreadCallback thread_callback,
+                                 void *thread_data,
+                                 UtEventLoopCallback thread_data_cleanup,
+                                 UtThreadResultCallback result_callback,
+                                 void *user_data, UtObject *cancel) {
+  UtEventLoop *self = ut_object_get_data(object);
+  WorkerThread *thread =
+      worker_thread_new(thread_callback, thread_data, thread_data_cleanup,
+                        result_callback, user_data, cancel);
+  thread->next = self->worker_threads;
+  self->worker_threads = thread;
+
+  assert(pthread_create(&thread->thread_id, NULL, thread_cb, thread) == 0);
+}
+
 void ut_event_loop_run(UtObject *object) {
   UtEventLoop *self = ut_object_get_data(object);
   while (true) {
@@ -253,32 +341,62 @@ void ut_event_loop_run(UtObject *object) {
       }
     }
 
-    // Register file descriptors we are watching for.
     int max_fd = -1;
     fd_set read_fds;
+    fd_set write_fds;
     FD_ZERO(&read_fds);
+    FD_ZERO(&write_fds);
+
+    // Listen for thread completion.
+    for (WorkerThread *thread = self->worker_threads; thread != NULL;
+         thread = thread->next) {
+      FD_SET(thread->complete_read_fd, &read_fds);
+      max_fd =
+          thread->complete_read_fd > max_fd ? thread->complete_read_fd : max_fd;
+    }
+
+    // Register file descriptors we are watching for.
     self->read_watches = remove_cancelled_watches(self->read_watches);
     for (FdWatch *watch = self->read_watches; watch != NULL;
          watch = watch->next) {
       FD_SET(watch->fd, &read_fds);
-      if (watch->fd > max_fd) {
-        max_fd = watch->fd;
-      }
+      max_fd = watch->fd > max_fd ? watch->fd : max_fd;
     }
-    fd_set write_fds;
-    FD_ZERO(&write_fds);
     self->write_watches = remove_cancelled_watches(self->write_watches);
     for (FdWatch *watch = self->write_watches; watch != NULL;
          watch = watch->next) {
       FD_SET(watch->fd, &write_fds);
-      if (watch->fd > max_fd) {
-        max_fd = watch->fd;
-      }
+      max_fd = watch->fd > max_fd ? watch->fd : max_fd;
     }
 
     // Wait for file descriptors or timeout.
     assert(pselect(max_fd + 1, &read_fds, &write_fds, NULL, timeout, NULL) >=
            0);
+
+    // Complete any worker threads.
+    WorkerThread *prev_thread = NULL, *next_thread;
+    for (WorkerThread *thread = self->worker_threads; thread != NULL;
+         thread = next_thread) {
+      next_thread = thread->next;
+      if (FD_ISSET(thread->complete_read_fd, &read_fds)) {
+        void *result;
+        assert(pthread_join(thread->thread_id, &result) == 0);
+        bool is_cancelled =
+            thread->cancel != NULL && ut_cancel_is_active(thread->cancel);
+        if (thread->result_callback && !is_cancelled) {
+          thread->result_callback(thread->user_data, result);
+        }
+        if (prev_thread != NULL) {
+          prev_thread->next = thread->next;
+        } else {
+          self->worker_threads = thread->next;
+        }
+        thread->next = NULL;
+        free_worker_thread(thread);
+      } else {
+        prev_thread = thread;
+      }
+    }
 
     // Do callbacks for each fd that has changed.
     // Note they are checked for cancellation as they might be cancelled in
