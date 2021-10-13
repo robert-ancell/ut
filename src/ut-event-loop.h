@@ -9,31 +9,22 @@ typedef void (*UtEventLoopCallback)(void *user_data);
 typedef void *(*UtThreadCallback)(void *data);
 typedef void (*UtThreadResultCallback)(void *user_data, void *result);
 
-UtObject *ut_event_loop_get();
+void ut_event_loop_add_delay(time_t seconds, UtEventLoopCallback callback,
+                             void *user_data, UtObject *cancel);
 
-void ut_event_loop_add_delay(UtObject *object, time_t seconds,
-                             UtEventLoopCallback callback, void *user_data,
-                             UtObject *cancel);
+void ut_event_loop_add_timer(time_t seconds, UtEventLoopCallback callback,
+                             void *user_data, UtObject *cancel);
 
-void ut_event_loop_add_timer(UtObject *object, time_t seconds,
-                             UtEventLoopCallback callback, void *user_data,
-                             UtObject *cancel);
+void ut_event_loop_add_read_watch(int fd, UtEventLoopCallback callback,
+                                  void *user_data, UtObject *cancel);
 
-void ut_event_loop_add_read_watch(UtObject *object, int fd,
-                                  UtEventLoopCallback callback, void *user_data,
-                                  UtObject *cancel);
-
-void ut_event_loop_add_write_watch(UtObject *object, int fd,
-                                   UtEventLoopCallback callback,
+void ut_event_loop_add_write_watch(int fd, UtEventLoopCallback callback,
                                    void *user_data, UtObject *cancel);
 
-void ut_event_loop_run_in_thread(UtObject *object,
-                                 UtThreadCallback thread_callback,
+void ut_event_loop_run_in_thread(UtThreadCallback thread_callback,
                                  void *thread_data,
                                  UtEventLoopCallback thread_data_cleanup,
                                  UtThreadResultCallback result_callback,
                                  void *user_data, UtObject *cancel);
 
-void ut_event_loop_run(UtObject *object);
-
-bool ut_object_is_event_loop(UtObject *object);
+void ut_event_loop_run();

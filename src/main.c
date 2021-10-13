@@ -80,20 +80,18 @@ int main(int argc, char **argv) {
   ut_mutable_string_append(string2, "World!");
   printf("'%s'\n", ut_utf8_string_get_text(string2));
 
-  UtObject *loop = ut_event_loop_get();
-
   UtObject *timer_cancel = ut_cancel_new();
-  ut_event_loop_add_delay(loop, 2, delay2_cb, NULL, NULL);
-  ut_event_loop_add_delay(loop, 5, delay5_cb, timer_cancel, NULL);
-  ut_event_loop_add_delay(loop, 3, delay3_cb, NULL, NULL);
-  ut_event_loop_add_timer(loop, 1, timer_cb, NULL, timer_cancel);
+  ut_event_loop_add_delay(2, delay2_cb, NULL, NULL);
+  ut_event_loop_add_delay(5, delay5_cb, timer_cancel, NULL);
+  ut_event_loop_add_delay(3, delay3_cb, NULL, NULL);
+  ut_event_loop_add_timer(1, timer_cb, NULL, timer_cancel);
 
-  ut_event_loop_run_in_thread(loop, thread_cb, NULL, NULL, thread_result_cb,
-                              NULL, NULL);
+  ut_event_loop_run_in_thread(thread_cb, NULL, NULL, thread_result_cb, NULL,
+                              NULL);
 
-  ut_event_loop_add_read_watch(loop, 0, stdin_cb, NULL, NULL);
+  ut_event_loop_add_read_watch(0, stdin_cb, NULL, NULL);
 
-  ut_event_loop_run(loop);
+  ut_event_loop_run();
 
   ut_object_unref(readme);
   ut_object_unref(test_file);

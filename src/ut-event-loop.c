@@ -11,8 +11,6 @@
 #include "ut-event-loop.h"
 #include "ut-object-private.h"
 
-static UtObject *loop = NULL;
-
 typedef struct _Timeout Timeout;
 struct _Timeout {
   struct timespec when;
@@ -51,7 +49,9 @@ typedef struct {
   FdWatch *read_watches;
   FdWatch *write_watches;
   WorkerThread *worker_threads;
-} UtEventLoop;
+} EventLoop;
+
+static EventLoop *loop = NULL;
 
 static int time_compare(struct timespec *a, struct timespec *b) {
   if (a->tv_sec == b->tv_sec) {
@@ -83,9 +83,9 @@ static void free_timeout(Timeout *timeout) {
   free(timeout);
 }
 
-static void insert_timeout(UtEventLoop *self, Timeout *timeout) {
+static void insert_timeout(EventLoop *loop, Timeout *timeout) {
   Timeout *prev_timeout = NULL;
-  for (Timeout *next_timeout = self->timeouts; next_timeout != NULL;
+  for (Timeout *next_timeout = loop->timeouts; next_timeout != NULL;
        next_timeout = next_timeout->next) {
     if (time_compare(&next_timeout->when, &timeout->when) > 0) {
       break;
@@ -96,12 +96,12 @@ static void insert_timeout(UtEventLoop *self, Timeout *timeout) {
     timeout->next = prev_timeout->next;
     prev_timeout->next = timeout;
   } else {
-    timeout->next = self->timeouts;
-    self->timeouts = timeout;
+    timeout->next = loop->timeouts;
+    loop->timeouts = timeout;
   }
 }
 
-static void add_timeout(UtEventLoop *self, time_t seconds, bool repeat,
+static void add_timeout(EventLoop *loop, time_t seconds, bool repeat,
                         UtEventLoopCallback callback, void *user_data,
                         UtObject *cancel) {
   Timeout *t = malloc(sizeof(Timeout));
@@ -114,7 +114,7 @@ static void add_timeout(UtEventLoop *self, time_t seconds, bool repeat,
   t->cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
   t->next = NULL;
 
-  insert_timeout(self, t);
+  insert_timeout(loop, t);
 }
 
 static FdWatch *fd_watch_new(int fd, UtEventLoopCallback callback,
@@ -188,90 +188,44 @@ static void free_worker_thread(WorkerThread *thread) {
   free(thread);
 }
 
-static const char *ut_event_loop_get_type_name() { return "EventLoop"; }
-
-static void ut_event_loop_init(UtObject *object) {
-  UtEventLoop *self = ut_object_get_data(object);
-  self->timeouts = NULL;
-  self->read_watches = NULL;
-  self->write_watches = NULL;
-  self->worker_threads = NULL;
-}
-
-static void ut_event_loop_cleanup(UtObject *object) {
-  UtEventLoop *self = ut_object_get_data(object);
-  Timeout *next_timeout;
-  for (Timeout *timeout = self->timeouts; timeout != NULL;
-       timeout = next_timeout) {
-    next_timeout = timeout->next;
-    free_timeout(timeout);
-  }
-  self->timeouts = NULL;
-  FdWatch *next_watch;
-  for (FdWatch *watch = self->read_watches; watch != NULL; watch = next_watch) {
-    next_watch = watch->next;
-    free_fd_watch(watch);
-  }
-  self->read_watches = NULL;
-  for (FdWatch *watch = self->write_watches; watch != NULL;
-       watch = next_watch) {
-    next_watch = watch->next;
-    free_fd_watch(watch);
-  }
-  self->write_watches = NULL;
-  WorkerThread *next_thread;
-  for (WorkerThread *thread = self->worker_threads; thread != NULL;
-       thread = next_thread) {
-    next_thread = thread->next;
-    // FIXME: Have to join
-    free_worker_thread(thread);
-  }
-  self->worker_threads = NULL;
-}
-
-static UtObjectFunctions object_functions = {.get_type_name =
-                                                 ut_event_loop_get_type_name,
-                                             .init = ut_event_loop_init,
-                                             .cleanup = ut_event_loop_cleanup};
-
-UtObject *ut_event_loop_get() {
+static EventLoop *get_loop() {
   // FIXME: Check if this loop is for another thread, and make a new loop if so.
   if (loop == NULL) {
-    loop = ut_object_new(sizeof(UtEventLoop), &object_functions);
+    loop = malloc(sizeof(EventLoop));
+    loop->timeouts = NULL;
+    loop->read_watches = NULL;
+    loop->write_watches = NULL;
+    loop->worker_threads = NULL;
   }
   return loop;
 }
 
-void ut_event_loop_add_delay(UtObject *object, time_t seconds,
-                             UtEventLoopCallback callback, void *user_data,
-                             UtObject *cancel) {
-  UtEventLoop *self = ut_object_get_data(object);
-  add_timeout(self, seconds, false, callback, user_data, cancel);
+void ut_event_loop_add_delay(time_t seconds, UtEventLoopCallback callback,
+                             void *user_data, UtObject *cancel) {
+  EventLoop *loop = get_loop();
+  add_timeout(loop, seconds, false, callback, user_data, cancel);
 }
 
-void ut_event_loop_add_timer(UtObject *object, time_t seconds,
-                             UtEventLoopCallback callback, void *user_data,
-                             UtObject *cancel) {
-  UtEventLoop *self = ut_object_get_data(object);
-  add_timeout(self, seconds, true, callback, user_data, cancel);
+void ut_event_loop_add_timer(time_t seconds, UtEventLoopCallback callback,
+                             void *user_data, UtObject *cancel) {
+  EventLoop *loop = get_loop();
+  add_timeout(loop, seconds, true, callback, user_data, cancel);
 }
 
-void ut_event_loop_add_read_watch(UtObject *object, int fd,
-                                  UtEventLoopCallback callback, void *user_data,
-                                  UtObject *cancel) {
-  UtEventLoop *self = ut_object_get_data(object);
+void ut_event_loop_add_read_watch(int fd, UtEventLoopCallback callback,
+                                  void *user_data, UtObject *cancel) {
+  EventLoop *loop = get_loop();
   FdWatch *watch = fd_watch_new(fd, callback, user_data, cancel);
-  watch->next = self->read_watches;
-  self->read_watches = watch;
+  watch->next = loop->read_watches;
+  loop->read_watches = watch;
 }
 
-void ut_event_loop_add_write_watch(UtObject *object, int fd,
-                                   UtEventLoopCallback callback,
+void ut_event_loop_add_write_watch(int fd, UtEventLoopCallback callback,
                                    void *user_data, UtObject *cancel) {
-  UtEventLoop *self = ut_object_get_data(object);
+  EventLoop *loop = get_loop();
   FdWatch *watch = fd_watch_new(fd, callback, user_data, cancel);
-  watch->next = self->write_watches;
-  self->write_watches = watch;
+  watch->next = loop->write_watches;
+  loop->write_watches = watch;
 }
 
 static void *thread_cb(void *data) {
@@ -286,31 +240,30 @@ static void *thread_cb(void *data) {
   return result;
 }
 
-void ut_event_loop_run_in_thread(UtObject *object,
-                                 UtThreadCallback thread_callback,
+void ut_event_loop_run_in_thread(UtThreadCallback thread_callback,
                                  void *thread_data,
                                  UtEventLoopCallback thread_data_cleanup,
                                  UtThreadResultCallback result_callback,
                                  void *user_data, UtObject *cancel) {
-  UtEventLoop *self = ut_object_get_data(object);
+  EventLoop *loop = get_loop();
   WorkerThread *thread =
       worker_thread_new(thread_callback, thread_data, thread_data_cleanup,
                         result_callback, user_data, cancel);
-  thread->next = self->worker_threads;
-  self->worker_threads = thread;
+  thread->next = loop->worker_threads;
+  loop->worker_threads = thread;
 
   assert(pthread_create(&thread->thread_id, NULL, thread_cb, thread) == 0);
 }
 
-void ut_event_loop_run(UtObject *object) {
-  UtEventLoop *self = ut_object_get_data(object);
+void ut_event_loop_run() {
+  EventLoop *loop = get_loop();
   while (true) {
     // Do callbacks for any timers that have expired and work out time to next
     // timer.
     const struct timespec *timeout = NULL;
     struct timespec first_timeout;
-    while (self->timeouts != NULL && timeout == NULL) {
-      Timeout *t = self->timeouts;
+    while (loop->timeouts != NULL && timeout == NULL) {
+      Timeout *t = loop->timeouts;
       struct timespec now;
       assert(clock_gettime(CLOCK_MONOTONIC, &now) == 0);
 
@@ -320,7 +273,7 @@ void ut_event_loop_run(UtObject *object) {
           t->callback(t->user_data);
         }
 
-        self->timeouts = t->next;
+        loop->timeouts = t->next;
         t->next = NULL;
 
         bool repeats = t->frequency.tv_sec != 0 || t->frequency.tv_nsec != 0;
@@ -333,7 +286,7 @@ void ut_event_loop_run(UtObject *object) {
             t->when.tv_sec++;
             t->when.tv_nsec -= 1000000000;
           }
-          insert_timeout(self, t);
+          insert_timeout(loop, t);
         }
       } else {
         time_delta(&now, &t->when, &first_timeout);
@@ -348,7 +301,7 @@ void ut_event_loop_run(UtObject *object) {
     FD_ZERO(&write_fds);
 
     // Listen for thread completion.
-    for (WorkerThread *thread = self->worker_threads; thread != NULL;
+    for (WorkerThread *thread = loop->worker_threads; thread != NULL;
          thread = thread->next) {
       FD_SET(thread->complete_read_fd, &read_fds);
       max_fd =
@@ -356,14 +309,14 @@ void ut_event_loop_run(UtObject *object) {
     }
 
     // Register file descriptors we are watching for.
-    self->read_watches = remove_cancelled_watches(self->read_watches);
-    for (FdWatch *watch = self->read_watches; watch != NULL;
+    loop->read_watches = remove_cancelled_watches(loop->read_watches);
+    for (FdWatch *watch = loop->read_watches; watch != NULL;
          watch = watch->next) {
       FD_SET(watch->fd, &read_fds);
       max_fd = watch->fd > max_fd ? watch->fd : max_fd;
     }
-    self->write_watches = remove_cancelled_watches(self->write_watches);
-    for (FdWatch *watch = self->write_watches; watch != NULL;
+    loop->write_watches = remove_cancelled_watches(loop->write_watches);
+    for (FdWatch *watch = loop->write_watches; watch != NULL;
          watch = watch->next) {
       FD_SET(watch->fd, &write_fds);
       max_fd = watch->fd > max_fd ? watch->fd : max_fd;
@@ -375,7 +328,7 @@ void ut_event_loop_run(UtObject *object) {
 
     // Complete any worker threads.
     WorkerThread *prev_thread = NULL, *next_thread;
-    for (WorkerThread *thread = self->worker_threads; thread != NULL;
+    for (WorkerThread *thread = loop->worker_threads; thread != NULL;
          thread = next_thread) {
       next_thread = thread->next;
       if (FD_ISSET(thread->complete_read_fd, &read_fds)) {
@@ -389,7 +342,7 @@ void ut_event_loop_run(UtObject *object) {
         if (prev_thread != NULL) {
           prev_thread->next = thread->next;
         } else {
-          self->worker_threads = thread->next;
+          loop->worker_threads = thread->next;
         }
         thread->next = NULL;
         free_worker_thread(thread);
@@ -401,7 +354,7 @@ void ut_event_loop_run(UtObject *object) {
     // Do callbacks for each fd that has changed.
     // Note they are checked for cancellation as they might be cancelled in
     // these callbacks.
-    for (FdWatch *watch = self->read_watches; watch != NULL;
+    for (FdWatch *watch = loop->read_watches; watch != NULL;
          watch = watch->next) {
       bool is_cancelled =
           watch->cancel != NULL && ut_cancel_is_active(watch->cancel);
@@ -409,7 +362,7 @@ void ut_event_loop_run(UtObject *object) {
         watch->callback(watch->user_data);
       }
     }
-    for (FdWatch *watch = self->write_watches; watch != NULL;
+    for (FdWatch *watch = loop->write_watches; watch != NULL;
          watch = watch->next) {
       bool is_cancelled =
           watch->cancel != NULL && ut_cancel_is_active(watch->cancel);
@@ -419,11 +372,7 @@ void ut_event_loop_run(UtObject *object) {
     }
 
     // Purge any watches that have been removed.
-    self->read_watches = remove_cancelled_watches(self->read_watches);
-    self->write_watches = remove_cancelled_watches(self->write_watches);
+    loop->read_watches = remove_cancelled_watches(loop->read_watches);
+    loop->write_watches = remove_cancelled_watches(loop->write_watches);
   }
-}
-
-bool ut_object_is_event_loop(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
 }

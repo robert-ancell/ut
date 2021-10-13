@@ -109,8 +109,7 @@ void ut_tcp_client_connect(UtObject *object,
   assert(self->fd >= 0);
 
   ConnectData *data = connect_data_new(self, callback, user_data, cancel);
-  ut_event_loop_add_write_watch(ut_event_loop_get(), self->fd, connect_cb, data,
-                                data->watch_cancel);
+  ut_event_loop_add_write_watch(self->fd, connect_cb, data, data->watch_cancel);
 
   struct sockaddr_in addr;
   addr.sin_family = self->domain;

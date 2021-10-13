@@ -220,11 +220,9 @@ void ut_file_read(UtObject *object, size_t count, UtFileReadCallback callback,
   UtFile *self = ut_object_get_data(object);
   assert(self->fd >= 0);
 
-  UtObject *loop = ut_event_loop_get();
   ReadData *data =
       read_data_new(self, count, false, false, callback, user_data, cancel);
-  ut_event_loop_add_read_watch(loop, self->fd, read_cb, data,
-                               data->watch_cancel);
+  ut_event_loop_add_read_watch(self->fd, read_cb, data, data->watch_cancel);
 }
 
 void ut_file_read_stream(UtObject *object, size_t block_size,
@@ -233,11 +231,9 @@ void ut_file_read_stream(UtObject *object, size_t block_size,
   UtFile *self = ut_object_get_data(object);
   assert(self->fd >= 0);
 
-  UtObject *loop = ut_event_loop_get();
   ReadData *data =
       read_data_new(self, block_size, true, false, callback, user_data, cancel);
-  ut_event_loop_add_read_watch(loop, self->fd, read_cb, data,
-                               data->watch_cancel);
+  ut_event_loop_add_read_watch(self->fd, read_cb, data, data->watch_cancel);
 }
 
 void ut_file_read_all(UtObject *object, size_t block_size,
@@ -246,11 +242,9 @@ void ut_file_read_all(UtObject *object, size_t block_size,
   UtFile *self = ut_object_get_data(object);
   assert(self->fd >= 0);
 
-  UtObject *loop = ut_event_loop_get();
   ReadData *data =
       read_data_new(self, block_size, true, true, callback, user_data, cancel);
-  ut_event_loop_add_read_watch(loop, self->fd, read_cb, data,
-                               data->watch_cancel);
+  ut_event_loop_add_read_watch(self->fd, read_cb, data, data->watch_cancel);
 }
 
 void ut_file_write(UtObject *object, UtObject *data,
@@ -259,10 +253,9 @@ void ut_file_write(UtObject *object, UtObject *data,
   UtFile *self = ut_object_get_data(object);
   assert(self->fd >= 0);
 
-  UtObject *loop = ut_event_loop_get();
   WriteData *callback_data =
       write_data_new(self, data, false, callback, user_data, cancel);
-  ut_event_loop_add_write_watch(loop, self->fd, write_cb, callback_data,
+  ut_event_loop_add_write_watch(self->fd, write_cb, callback_data,
                                 callback_data->watch_cancel);
 }
 
@@ -272,10 +265,9 @@ void ut_file_write_all(UtObject *object, UtObject *data,
   UtFile *self = ut_object_get_data(object);
   assert(self->fd >= 0);
 
-  UtObject *loop = ut_event_loop_get();
   WriteData *callback_data =
       write_data_new(self, data, true, callback, user_data, cancel);
-  ut_event_loop_add_write_watch(loop, self->fd, write_cb, callback_data,
+  ut_event_loop_add_write_watch(self->fd, write_cb, callback_data,
                                 callback_data->watch_cancel);
 }
 
