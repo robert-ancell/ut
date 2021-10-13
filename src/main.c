@@ -40,7 +40,20 @@ static void read_cb(void *user_data, UtObject *data) {
          ut_uint8_list_get_data(data));
 }
 
-static void connect_cb(void *user_data) { printf("connect\n"); }
+static void http_read_cb(void *user_data, UtObject *data) {
+  printf("http read:\n%.*s'\n", (int)ut_list_get_length(data),
+         ut_uint8_list_get_data(data));
+}
+
+static void http_connect_cb(void *user_data) {
+  UtObject *tcp_client = user_data;
+
+  printf("http connect\n");
+  UtObject *request =
+      ut_immutable_utf8_string_new("GET / HTTP/1.1\nHost: example.com\n\n");
+  ut_tcp_client_write_all(tcp_client, request, NULL, NULL, NULL);
+  ut_tcp_client_read(tcp_client, 65535, http_read_cb, NULL, NULL);
+}
 
 int main(int argc, char **argv) {
   UtObject *list = ut_mutable_uint8_list_new();
@@ -71,7 +84,7 @@ int main(int argc, char **argv) {
   ut_file_write_all(test_file, test_data, NULL, NULL, NULL);
 
   UtObject *tcp_client = ut_tcp_client_new("example.com", 80);
-  ut_tcp_client_connect(tcp_client, connect_cb, NULL, NULL);
+  ut_tcp_client_connect(tcp_client, http_connect_cb, tcp_client, NULL);
 
   UtObject *string2 = ut_mutable_utf8_string_new(" ");
   printf("'%s'\n", ut_utf8_string_get_text(string2));
