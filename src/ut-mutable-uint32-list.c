@@ -6,6 +6,7 @@
 #include "ut-mutable-uint32-list.h"
 #include "ut-object-private.h"
 #include "ut-uint32-list.h"
+#include "ut-uint32.h"
 
 typedef struct {
   uint32_t *data;
@@ -36,13 +37,20 @@ void ut_mutable_uint32_list_resize(UtObject *object, size_t length) {
 static UtMutableListFunctions mutable_list_functions = {
     .resize = ut_mutable_uint32_list_resize};
 
-size_t ut_mutable_uint32_list_get_length(UtObject *object) {
+static size_t ut_mutable_uint32_list_get_length(UtObject *object) {
   UtMutableUint32List *self = ut_object_get_data(object);
   return self->data_length;
 }
 
-static UtListFunctions list_functions = {.get_length =
-                                             ut_mutable_uint32_list_get_length};
+static UtObject *ut_mutable_uint32_list_get_element(UtObject *object,
+                                                    size_t index) {
+  UtMutableUint32List *self = ut_object_get_data(object);
+  return ut_uint32_new(self->data[index]);
+}
+
+static UtListFunctions list_functions = {
+    .get_length = ut_mutable_uint32_list_get_length,
+    .get_element = ut_mutable_uint32_list_get_element};
 
 static const char *ut_mutable_uint32_list_get_type_name() {
   return "MutableUint32List";

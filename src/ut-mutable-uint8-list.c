@@ -6,6 +6,7 @@
 #include "ut-mutable-uint8-list.h"
 #include "ut-object-private.h"
 #include "ut-uint8-list.h"
+#include "ut-uint8.h"
 
 typedef struct {
   uint8_t *data;
@@ -36,13 +37,20 @@ void ut_mutable_uint8_list_resize(UtObject *object, size_t length) {
 static UtMutableListFunctions mutable_list_functions = {
     .resize = ut_mutable_uint8_list_resize};
 
-size_t ut_mutable_uint8_list_get_length(UtObject *object) {
+static size_t ut_mutable_uint8_list_get_length(UtObject *object) {
   UtMutableUint8List *self = ut_object_get_data(object);
   return self->data_length;
 }
 
-static UtListFunctions list_functions = {.get_length =
-                                             ut_mutable_uint8_list_get_length};
+static UtObject *ut_mutable_uint8_list_get_element(UtObject *object,
+                                                   size_t index) {
+  UtMutableUint8List *self = ut_object_get_data(object);
+  return ut_uint8_new(self->data[index]);
+}
+
+static UtListFunctions list_functions = {
+    .get_length = ut_mutable_uint8_list_get_length,
+    .get_element = ut_mutable_uint8_list_get_element};
 
 static const char *ut_mutable_uint8_list_get_type_name() {
   return "MutableUint8List";

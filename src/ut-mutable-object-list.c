@@ -35,13 +35,20 @@ void ut_mutable_object_list_resize(UtObject *object, size_t length) {
 static UtMutableListFunctions mutable_list_functions = {
     .resize = ut_mutable_object_list_resize};
 
-size_t ut_mutable_object_list_get_length(UtObject *object) {
+static size_t ut_mutable_object_list_get_length(UtObject *object) {
   UtMutableObjectList *self = ut_object_get_data(object);
   return self->data_length;
 }
 
-static UtListFunctions list_functions = {.get_length =
-                                             ut_mutable_object_list_get_length};
+static UtObject *ut_mutable_object_list_get_element_ref(UtObject *object,
+                                                        size_t index) {
+  UtMutableObjectList *self = ut_object_get_data(object);
+  return ut_object_ref(self->data[index]);
+}
+
+static UtListFunctions list_functions = {
+    .get_length = ut_mutable_object_list_get_length,
+    .get_element = ut_mutable_object_list_get_element_ref};
 
 static const char *ut_mutable_object_list_get_type_name() {
   return "MutableObjectList";
