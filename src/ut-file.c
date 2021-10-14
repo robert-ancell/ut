@@ -15,6 +15,7 @@
 #include "ut-uint8-list.h"
 
 typedef struct {
+  UtObject object;
   char *path;
   int fd;
   UtObject *stream;
@@ -28,14 +29,16 @@ static void close_file(UtFile *self) {
 }
 
 static void ut_file_init(UtObject *object) {
-  UtFile *self = ut_object_get_data(object);
+  UtFile *self = (UtFile *)object;
+  ;
   self->path = NULL;
   self->fd = -1;
   self->stream = NULL;
 }
 
 static void ut_file_cleanup(UtObject *object) {
-  UtFile *self = ut_object_get_data(object);
+  UtFile *self = (UtFile *)object;
+  ;
   // FIXME: Cancel read/writes
   free(self->path);
   self->path = NULL;
@@ -51,14 +54,16 @@ static UtObjectFunctions object_functions = {.init = ut_file_init,
 
 UtObject *ut_file_new(const char *path) {
   UtObject *object = ut_object_new(sizeof(UtFile), &object_functions);
-  UtFile *self = ut_object_get_data(object);
+  UtFile *self = (UtFile *)object;
+  ;
   self->path = strdup(path);
   return object;
 }
 
 void ut_file_open_read(UtObject *object) {
   assert(ut_object_is_file(object));
-  UtFile *self = ut_object_get_data(object);
+  UtFile *self = (UtFile *)object;
+  ;
   assert(self->fd == -1);
   self->fd = open(self->path, O_RDONLY);
   self->stream = ut_fd_stream_new(self->fd);
@@ -66,7 +71,8 @@ void ut_file_open_read(UtObject *object) {
 
 void ut_file_open_write(UtObject *object, bool create) {
   assert(ut_object_is_file(object));
-  UtFile *self = ut_object_get_data(object);
+  UtFile *self = (UtFile *)object;
+  ;
   assert(self->fd == -1);
   int flags = O_TRUNC;
   if (create) {
@@ -79,7 +85,8 @@ void ut_file_open_write(UtObject *object, bool create) {
 
 void ut_file_read(UtObject *object, size_t count, UtFileReadCallback callback,
                   void *user_data, UtObject *cancel) {
-  UtFile *self = ut_object_get_data(object);
+  UtFile *self = (UtFile *)object;
+  ;
   assert(self->stream != NULL);
 
   ut_fd_stream_read(self->stream, count, callback, user_data, cancel);
@@ -88,7 +95,8 @@ void ut_file_read(UtObject *object, size_t count, UtFileReadCallback callback,
 void ut_file_read_stream(UtObject *object, size_t block_size,
                          UtFileReadCallback callback, void *user_data,
                          UtObject *cancel) {
-  UtFile *self = ut_object_get_data(object);
+  UtFile *self = (UtFile *)object;
+  ;
   assert(self->stream != NULL);
 
   ut_fd_stream_read_stream(self->stream, block_size, callback, user_data,
@@ -98,7 +106,8 @@ void ut_file_read_stream(UtObject *object, size_t block_size,
 void ut_file_read_all(UtObject *object, size_t block_size,
                       UtFileReadCallback callback, void *user_data,
                       UtObject *cancel) {
-  UtFile *self = ut_object_get_data(object);
+  UtFile *self = (UtFile *)object;
+  ;
   assert(self->stream != NULL);
 
   ut_fd_stream_read_all(self->stream, block_size, callback, user_data, cancel);
@@ -107,7 +116,8 @@ void ut_file_read_all(UtObject *object, size_t block_size,
 void ut_file_write(UtObject *object, UtObject *data,
                    UtFileWriteCallback callback, void *user_data,
                    UtObject *cancel) {
-  UtFile *self = ut_object_get_data(object);
+  UtFile *self = (UtFile *)object;
+  ;
   assert(self->stream != NULL);
 
   ut_fd_stream_write(self->stream, data, callback, user_data, cancel);
@@ -116,7 +126,8 @@ void ut_file_write(UtObject *object, UtObject *data,
 void ut_file_write_all(UtObject *object, UtObject *data,
                        UtFileWriteCallback callback, void *user_data,
                        UtObject *cancel) {
-  UtFile *self = ut_object_get_data(object);
+  UtFile *self = (UtFile *)object;
+  ;
   assert(self->stream != NULL);
 
   ut_fd_stream_write_all(self->stream, data, callback, user_data, cancel);
@@ -124,7 +135,8 @@ void ut_file_write_all(UtObject *object, UtObject *data,
 
 void ut_file_close(UtObject *object) {
   assert(ut_object_is_file(object));
-  UtFile *self = ut_object_get_data(object);
+  UtFile *self = (UtFile *)object;
+  ;
   close_file(self);
 }
 

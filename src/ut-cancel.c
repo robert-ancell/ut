@@ -2,13 +2,14 @@
 #include "ut-object-private.h"
 
 typedef struct {
+  UtObject object;
   bool is_active;
 } UtCancel;
 
 static const char *ut_cancel_get_type_name() { return "Cancel"; }
 
 static void ut_cancel_init(UtObject *object) {
-  UtCancel *self = ut_object_get_data(object);
+  UtCancel *self = (UtCancel *)object;
   self->is_active = false;
 }
 
@@ -24,12 +25,12 @@ UtObject *ut_cancel_new() {
 }
 
 void ut_cancel_activate(UtObject *object) {
-  UtCancel *self = ut_object_get_data(object);
+  UtCancel *self = (UtCancel *)object;
   self->is_active = true;
 }
 
 bool ut_cancel_is_active(UtObject *object) {
-  UtCancel *self = ut_object_get_data(object);
+  UtCancel *self = (UtCancel *)object;
   return self->is_active;
 }
 

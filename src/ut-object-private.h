@@ -17,10 +17,13 @@ typedef struct {
   } interfaces[];
 } UtObjectFunctions;
 
-UtObject *ut_object_new(size_t data_size, UtObjectFunctions *functions);
+struct _UtObject {
+  UtObjectFunctions *functions;
+  int ref_count;
+};
+
+UtObject *ut_object_new(size_t object_size, UtObjectFunctions *functions);
 
 bool ut_object_is_type(UtObject *object, UtObjectFunctions *functions);
-
-void *ut_object_get_data(UtObject *object);
 
 void *ut_object_get_interface(UtObject *object, void *interface_id);

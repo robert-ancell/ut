@@ -9,6 +9,7 @@
 #include "ut-uint32.h"
 
 typedef struct {
+  UtObject object;
   uint32_t *data;
   size_t data_length;
 } UtMutableUint32List;
@@ -22,7 +23,7 @@ static void resize_list(UtMutableUint32List *self, size_t length) {
 }
 
 const uint32_t *ut_mutable_uint32_list_get_list_data(UtObject *object) {
-  UtMutableUint32List *self = ut_object_get_data(object);
+  UtMutableUint32List *self = (UtMutableUint32List *)object;
   return self->data;
 }
 
@@ -30,7 +31,7 @@ static UtUint32ListFunctions uint32_list_functions = {
     .get_data = ut_mutable_uint32_list_get_list_data};
 
 void ut_mutable_uint32_list_resize(UtObject *object, size_t length) {
-  UtMutableUint32List *self = ut_object_get_data(object);
+  UtMutableUint32List *self = (UtMutableUint32List *)object;
   resize_list(self, length);
 }
 
@@ -38,13 +39,13 @@ static UtMutableListFunctions mutable_list_functions = {
     .resize = ut_mutable_uint32_list_resize};
 
 static size_t ut_mutable_uint32_list_get_length(UtObject *object) {
-  UtMutableUint32List *self = ut_object_get_data(object);
+  UtMutableUint32List *self = (UtMutableUint32List *)object;
   return self->data_length;
 }
 
 static UtObject *ut_mutable_uint32_list_get_element(UtObject *object,
                                                     size_t index) {
-  UtMutableUint32List *self = ut_object_get_data(object);
+  UtMutableUint32List *self = (UtMutableUint32List *)object;
   return ut_uint32_new(self->data[index]);
 }
 
@@ -57,13 +58,13 @@ static const char *ut_mutable_uint32_list_get_type_name() {
 }
 
 static void ut_mutable_uint32_list_init(UtObject *object) {
-  UtMutableUint32List *self = ut_object_get_data(object);
+  UtMutableUint32List *self = (UtMutableUint32List *)object;
   self->data = NULL;
   self->data_length = 0;
 }
 
 static void ut_mutable_uint32_list_cleanup(UtObject *object) {
-  UtMutableUint32List *self = ut_object_get_data(object);
+  UtMutableUint32List *self = (UtMutableUint32List *)object;
   free(self->data);
 }
 
@@ -87,7 +88,7 @@ void ut_mutable_uint32_list_append(UtObject *object, uint32_t data) {
 void ut_mutable_uint32_list_append_block(UtObject *object, const uint32_t *data,
                                          size_t data_length) {
   assert(ut_object_is_type(object, &object_functions));
-  UtMutableUint32List *self = ut_object_get_data(object);
+  UtMutableUint32List *self = (UtMutableUint32List *)object;
   ut_mutable_uint32_list_insert_block(object, self->data_length, data,
                                       data_length);
 }
@@ -101,7 +102,7 @@ void ut_mutable_uint32_list_insert_block(UtObject *object, size_t index,
                                          const uint32_t *data,
                                          size_t data_length) {
   assert(ut_object_is_type(object, &object_functions));
-  UtMutableUint32List *self = ut_object_get_data(object);
+  UtMutableUint32List *self = (UtMutableUint32List *)object;
 
   size_t orig_data_length = self->data_length;
   resize_list(self, self->data_length + data_length);
@@ -121,7 +122,7 @@ void ut_mutable_uint32_list_insert_block(UtObject *object, size_t index,
 
 uint32_t *ut_mutable_uint32_list_get_data(UtObject *object) {
   assert(ut_object_is_type(object, &object_functions));
-  UtMutableUint32List *self = ut_object_get_data(object);
+  UtMutableUint32List *self = (UtMutableUint32List *)object;
   return self->data;
 }
 

@@ -5,17 +5,10 @@
 #include "ut-object-private.h"
 #include "ut-object.h"
 
-struct _UtObject {
-  UtObjectFunctions *functions;
-  int ref_count;
-  void *data;
-};
-
-UtObject *ut_object_new(size_t data_size, UtObjectFunctions *functions) {
-  UtObject *object = malloc(sizeof(UtObject));
+UtObject *ut_object_new(size_t object_size, UtObjectFunctions *functions) {
+  UtObject *object = malloc(object_size);
   object->functions = functions;
   object->ref_count = 1;
-  object->data = malloc(data_size);
 
   if (functions->init != NULL) {
     functions->init(object);
@@ -39,8 +32,6 @@ char *ut_object_to_string(UtObject *object) {
 
   return strdup(ut_object_get_type_name(object));
 }
-
-void *ut_object_get_data(UtObject *object) { return object->data; }
 
 UtObject *ut_object_ref(UtObject *object) {
   assert(object->ref_count > 0);

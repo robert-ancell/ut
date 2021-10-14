@@ -10,11 +10,12 @@
 #include "ut-utf8-string.h"
 
 typedef struct {
+  UtObject object;
   const char *text;
 } UtImmutableUtf8String;
 
 static const char *ut_immutable_utf8_string_get_text(UtObject *object) {
-  UtImmutableUtf8String *self = ut_object_get_data(object);
+  UtImmutableUtf8String *self = (UtImmutableUtf8String *)object;
   return self->text;
 }
 
@@ -29,7 +30,7 @@ static UtStringFunctions string_functions = {
     .get_code_points = ut_immutable_utf8_string_get_code_points};
 
 static const uint8_t *ut_immutable_utf8_string_get_data(UtObject *object) {
-  UtImmutableUtf8String *self = ut_object_get_data(object);
+  UtImmutableUtf8String *self = (UtImmutableUtf8String *)object;
   return (const uint8_t *)self->text;
 }
 
@@ -37,7 +38,7 @@ static UtUint8ListFunctions uint8_list_functions = {
     .get_data = ut_immutable_utf8_string_get_data};
 
 static size_t ut_immutable_utf8_string_get_data_length(UtObject *object) {
-  UtImmutableUtf8String *self = ut_object_get_data(object);
+  UtImmutableUtf8String *self = (UtImmutableUtf8String *)object;
   return strlen(self->text);
 }
 
@@ -59,7 +60,7 @@ static UtObjectFunctions object_functions = {
 UtObject *ut_immutable_utf8_string_new(const char *text) {
   UtObject *object =
       ut_object_new(sizeof(UtImmutableUtf8String), &object_functions);
-  UtImmutableUtf8String *self = ut_object_get_data(object);
+  UtImmutableUtf8String *self = (UtImmutableUtf8String *)object;
   self->text = text;
   return object;
 }

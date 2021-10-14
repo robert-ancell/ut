@@ -13,11 +13,12 @@
 #include "ut-utf8-string.h"
 
 typedef struct {
+  UtObject object;
   UtObject *data;
 } UtMutableUtf8String;
 
 static const char *ut_mutable_utf8_string_get_text(UtObject *object) {
-  UtMutableUtf8String *self = ut_object_get_data(object);
+  UtMutableUtf8String *self = (UtMutableUtf8String *)object;
   return (const char *)ut_uint8_list_get_data(self->data);
 }
 
@@ -32,13 +33,13 @@ static UtStringFunctions string_functions = {
     .get_code_points = ut_mutable_utf8_string_get_code_points};
 
 static void ut_mutable_utf8_string_clear(UtObject *object) {
-  UtMutableUtf8String *self = ut_object_get_data(object);
+  UtMutableUtf8String *self = (UtMutableUtf8String *)object;
   ut_mutable_list_clear(self->data);
   ut_mutable_uint8_list_append(self->data, '\0');
 }
 
 static void ut_mutable_utf8_string_prepend(UtObject *object, const char *text) {
-  UtMutableUtf8String *self = ut_object_get_data(object);
+  UtMutableUtf8String *self = (UtMutableUtf8String *)object;
   size_t text_length = strlen(text);
   size_t orig_length = ut_list_get_length(self->data);
   ut_mutable_list_resize(self->data,
@@ -52,7 +53,7 @@ static void ut_mutable_utf8_string_prepend(UtObject *object, const char *text) {
 }
 
 static void ut_mutable_utf8_string_append(UtObject *object, const char *text) {
-  UtMutableUtf8String *self = ut_object_get_data(object);
+  UtMutableUtf8String *self = (UtMutableUtf8String *)object;
   size_t text_length = strlen(text);
   size_t orig_length = ut_list_get_length(self->data);
   ut_mutable_list_resize(self->data, orig_length + text_length);
@@ -66,7 +67,7 @@ static UtMutableStringFunctions mutable_string_functions = {
     .append = ut_mutable_utf8_string_append};
 
 static const uint8_t *ut_mutable_utf8_string_get_data(UtObject *object) {
-  UtMutableUtf8String *self = ut_object_get_data(object);
+  UtMutableUtf8String *self = (UtMutableUtf8String *)object;
   return ut_uint8_list_get_data(self->data);
 }
 
@@ -74,7 +75,7 @@ static UtUint8ListFunctions uint8_list_functions = {
     .get_data = ut_mutable_utf8_string_get_data};
 
 static size_t ut_mutable_utf8_string_get_data_length(UtObject *object) {
-  UtMutableUtf8String *self = ut_object_get_data(object);
+  UtMutableUtf8String *self = (UtMutableUtf8String *)object;
   return ut_list_get_length(self->data);
 }
 
@@ -86,12 +87,12 @@ static const char *ut_mutable_utf8_string_get_type_name() {
 }
 
 static void ut_mutable_utf8_string_init(UtObject *object) {
-  UtMutableUtf8String *self = ut_object_get_data(object);
+  UtMutableUtf8String *self = (UtMutableUtf8String *)object;
   self->data = ut_mutable_uint8_list_new();
 }
 
 static void ut_mutable_utf8_string_cleanup(UtObject *object) {
-  UtMutableUtf8String *self = ut_object_get_data(object);
+  UtMutableUtf8String *self = (UtMutableUtf8String *)object;
   ut_object_unref(self->data);
 }
 
@@ -109,7 +110,7 @@ static UtObjectFunctions object_functions = {
 UtObject *ut_mutable_utf8_string_new(const char *text) {
   UtObject *object =
       ut_object_new(sizeof(UtMutableUtf8String), &object_functions);
-  UtMutableUtf8String *self = ut_object_get_data(object);
+  UtMutableUtf8String *self = (UtMutableUtf8String *)object;
   ut_mutable_list_resize(self->data, strlen(text));
   memcpy(ut_mutable_uint8_list_get_data(self->data), text, strlen(text) + 1);
   return object;

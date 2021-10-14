@@ -8,12 +8,13 @@
 #include "ut-uint8.h"
 
 typedef struct {
+  UtObject object;
   uint8_t *data;
   size_t data_length;
 } UtImmutableUint8List;
 
 const uint8_t *ut_immutable_uint8_list_get_data(UtObject *object) {
-  UtImmutableUint8List *self = ut_object_get_data(object);
+  UtImmutableUint8List *self = (UtImmutableUint8List *)object;
   return self->data;
 }
 
@@ -21,13 +22,13 @@ static UtUint8ListFunctions uint8_list_functions = {
     .get_data = ut_immutable_uint8_list_get_data};
 
 static size_t ut_immutable_uint8_list_get_length(UtObject *object) {
-  UtImmutableUint8List *self = ut_object_get_data(object);
+  UtImmutableUint8List *self = (UtImmutableUint8List *)object;
   return self->data_length;
 }
 
 static UtObject *ut_immutable_uint8_list_get_element(UtObject *object,
                                                      size_t index) {
-  UtImmutableUint8List *self = ut_object_get_data(object);
+  UtImmutableUint8List *self = (UtImmutableUint8List *)object;
   return ut_uint8_new(self->data[index]);
 }
 
@@ -40,13 +41,13 @@ static const char *ut_immutable_uint8_list_get_type_name() {
 }
 
 static void ut_immutable_uint8_list_init(UtObject *object) {
-  UtImmutableUint8List *self = ut_object_get_data(object);
+  UtImmutableUint8List *self = (UtImmutableUint8List *)object;
   self->data = NULL;
   self->data_length = 0;
 }
 
 static void ut_immutable_uint8_list_cleanup(UtObject *object) {
-  UtImmutableUint8List *self = ut_object_get_data(object);
+  UtImmutableUint8List *self = (UtImmutableUint8List *)object;
   free(self->data);
 }
 
@@ -61,7 +62,7 @@ static UtObjectFunctions object_functions = {
 UtObject *ut_immutable_uint8_list_new(const uint8_t *data, size_t data_length) {
   UtObject *object =
       ut_object_new(sizeof(UtImmutableUint8List), &object_functions);
-  UtImmutableUint8List *self = ut_object_get_data(object);
+  UtImmutableUint8List *self = (UtImmutableUint8List *)object;
   self->data = malloc(sizeof(uint8_t) * data_length);
   for (size_t i = 0; i < data_length; i++) {
     self->data[i] = data[i];

@@ -17,6 +17,7 @@
 #include "ut-tcp-client.h"
 
 typedef struct {
+  UtObject object;
   char *address;
   uint16_t port;
   int fd;
@@ -117,7 +118,7 @@ static void disconnect_client(UtTcpClient *self) {
 }
 
 static void ut_tcp_client_init(UtObject *object) {
-  UtTcpClient *self = ut_object_get_data(object);
+  UtTcpClient *self = (UtTcpClient *)object;
   self->address = NULL;
   self->port = 0;
   self->fd = -1;
@@ -127,7 +128,7 @@ static void ut_tcp_client_init(UtObject *object) {
 }
 
 static void ut_tcp_client_cleanup(UtObject *object) {
-  UtTcpClient *self = ut_object_get_data(object);
+  UtTcpClient *self = (UtTcpClient *)object;
   free(self->address);
   disconnect_client(self);
 }
@@ -137,7 +138,7 @@ static UtObjectFunctions object_functions = {.init = ut_tcp_client_init,
 
 UtObject *ut_tcp_client_new(const char *address, uint16_t port) {
   UtObject *object = ut_object_new(sizeof(UtTcpClient), &object_functions);
-  UtTcpClient *self = ut_object_get_data(object);
+  UtTcpClient *self = (UtTcpClient *)object;
   self->address = strdup(address);
   self->port = port;
   return object;
@@ -147,7 +148,7 @@ void ut_tcp_client_connect(UtObject *object,
                            UtTcpClientConnectCallback callback, void *user_data,
                            UtObject *cancel) {
   assert(ut_object_is_tcp_client(object));
-  UtTcpClient *self = ut_object_get_data(object);
+  UtTcpClient *self = (UtTcpClient *)object;
   assert(!self->connecting);
   self->connecting = true;
 
@@ -163,7 +164,7 @@ void ut_tcp_client_read(UtObject *object, size_t count,
                         UtTcpClientReadCallback callback, void *user_data,
                         UtObject *cancel) {
   assert(ut_object_is_tcp_client(object));
-  UtTcpClient *self = ut_object_get_data(object);
+  UtTcpClient *self = (UtTcpClient *)object;
   assert(self->stream != NULL);
 
   ut_fd_stream_read(self->stream, count, callback, user_data, cancel);
@@ -173,7 +174,7 @@ void ut_tcp_client_write(UtObject *object, UtObject *data,
                          UtTcpClientWriteCallback callback, void *user_data,
                          UtObject *cancel) {
   assert(ut_object_is_tcp_client(object));
-  UtTcpClient *self = ut_object_get_data(object);
+  UtTcpClient *self = (UtTcpClient *)object;
   assert(self->stream != NULL);
 
   ut_fd_stream_write(self->stream, data, callback, user_data, cancel);
@@ -183,7 +184,7 @@ void ut_tcp_client_write_all(UtObject *object, UtObject *data,
                              UtTcpClientWriteCallback callback, void *user_data,
                              UtObject *cancel) {
   assert(ut_object_is_tcp_client(object));
-  UtTcpClient *self = ut_object_get_data(object);
+  UtTcpClient *self = (UtTcpClient *)object;
   assert(self->stream != NULL);
 
   ut_fd_stream_write_all(self->stream, data, callback, user_data, cancel);
@@ -191,7 +192,7 @@ void ut_tcp_client_write_all(UtObject *object, UtObject *data,
 
 void ut_tcp_client_disconnect(UtObject *object) {
   assert(ut_object_is_tcp_client(object));
-  UtTcpClient *self = ut_object_get_data(object);
+  UtTcpClient *self = (UtTcpClient *)object;
   disconnect_client(self);
 }
 

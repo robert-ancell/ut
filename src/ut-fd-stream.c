@@ -14,6 +14,7 @@
 #include "ut-uint8-list.h"
 
 typedef struct {
+  UtObject object;
   int fd;
 } UtFdStream;
 
@@ -167,7 +168,7 @@ static void write_cb(void *user_data) {
 }
 
 static void ut_fd_stream_init(UtObject *object) {
-  UtFdStream *self = ut_object_get_data(object);
+  UtFdStream *self = (UtFdStream *)object;
   self->fd = -1;
 }
 
@@ -177,7 +178,7 @@ static UtObjectFunctions object_functions = {
 
 UtObject *ut_fd_stream_new(int fd) {
   UtObject *object = ut_object_new(sizeof(UtFdStream), &object_functions);
-  UtFdStream *self = ut_object_get_data(object);
+  UtFdStream *self = (UtFdStream *)object;
   self->fd = fd;
   return object;
 }
@@ -185,7 +186,7 @@ UtObject *ut_fd_stream_new(int fd) {
 void ut_fd_stream_read(UtObject *object, size_t count,
                        UtFdStreamReadCallback callback, void *user_data,
                        UtObject *cancel) {
-  UtFdStream *self = ut_object_get_data(object);
+  UtFdStream *self = (UtFdStream *)object;
   assert(self->fd >= 0);
 
   ReadData *data =
@@ -196,7 +197,7 @@ void ut_fd_stream_read(UtObject *object, size_t count,
 void ut_fd_stream_read_stream(UtObject *object, size_t block_size,
                               UtFdStreamReadCallback callback, void *user_data,
                               UtObject *cancel) {
-  UtFdStream *self = ut_object_get_data(object);
+  UtFdStream *self = (UtFdStream *)object;
   assert(self->fd >= 0);
 
   ReadData *data =
@@ -207,7 +208,7 @@ void ut_fd_stream_read_stream(UtObject *object, size_t block_size,
 void ut_fd_stream_read_all(UtObject *object, size_t block_size,
                            UtFdStreamReadCallback callback, void *user_data,
                            UtObject *cancel) {
-  UtFdStream *self = ut_object_get_data(object);
+  UtFdStream *self = (UtFdStream *)object;
   assert(self->fd >= 0);
 
   ReadData *data =
@@ -218,7 +219,7 @@ void ut_fd_stream_read_all(UtObject *object, size_t block_size,
 void ut_fd_stream_write(UtObject *object, UtObject *data,
                         UtFdStreamWriteCallback callback, void *user_data,
                         UtObject *cancel) {
-  UtFdStream *self = ut_object_get_data(object);
+  UtFdStream *self = (UtFdStream *)object;
   assert(self->fd >= 0);
 
   WriteData *callback_data =
@@ -230,7 +231,7 @@ void ut_fd_stream_write(UtObject *object, UtObject *data,
 void ut_fd_stream_write_all(UtObject *object, UtObject *data,
                             UtFdStreamWriteCallback callback, void *user_data,
                             UtObject *cancel) {
-  UtFdStream *self = ut_object_get_data(object);
+  UtFdStream *self = (UtFdStream *)object;
   assert(self->fd >= 0);
 
   WriteData *callback_data =
