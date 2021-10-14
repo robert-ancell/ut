@@ -8,6 +8,7 @@
 typedef struct {
   const char *(*get_type_name)();
   void (*init)(UtObject *object);
+  char *(*to_string)(UtObject *object);
   void (*cleanup)(UtObject *object);
 
   struct {
