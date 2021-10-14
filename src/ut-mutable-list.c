@@ -15,3 +15,7 @@ void ut_mutable_list_resize(UtObject *object, size_t length) {
   assert(mutable_list_functions != NULL);
   mutable_list_functions->resize(object, length);
 }
+
+bool ut_object_implements_mutable_list(UtObject *object) {
+  return ut_object_get_interface(object, &ut_mutable_list_id) != NULL;
+}

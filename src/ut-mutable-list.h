@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stddef.h>
 
 #include "ut-object.h"
@@ -13,3 +14,5 @@ extern int ut_mutable_list_id;
 void ut_mutable_list_clear(UtObject *object);
 
 void ut_mutable_list_resize(UtObject *object, size_t length);
+
+bool ut_object_implements_mutable_list(UtObject *object);

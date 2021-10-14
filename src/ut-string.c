@@ -18,3 +18,7 @@ UtObject *ut_string_get_code_points(UtObject *object) {
   assert(string_functions != NULL);
   return string_functions->get_code_points(object);
 }
+
+bool ut_object_implements_string(UtObject *object) {
+  return ut_object_get_interface(object, &ut_string_id) != NULL;
+}

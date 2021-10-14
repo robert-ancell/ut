@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stddef.h>
 
 #include "ut-object.h"
@@ -15,3 +16,5 @@ size_t ut_list_get_length(UtObject *object);
 
 // Returns a reference.
 UtObject *ut_list_get_element(UtObject *object, size_t index);
+
+bool ut_object_implements_list(UtObject *object);

@@ -25,3 +25,7 @@ void ut_mutable_string_append(UtObject *object, const char *text) {
   assert(mutable_string_functions != NULL);
   mutable_string_functions->append(object, text);
 }
+
+bool ut_object_implements_mutable_string(UtObject *object) {
+  return ut_object_get_interface(object, &ut_mutable_string_id) != NULL;
+}

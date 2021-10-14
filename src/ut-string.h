@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #include "ut-object.h"
 
 #pragma once
@@ -12,3 +14,5 @@ extern int ut_string_id;
 char *ut_string_get_text(UtObject *object);
 
 UtObject *ut_string_get_code_points(UtObject *object);
+
+bool ut_object_implements_string(UtObject *object);

@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "ut-object.h"
@@ -11,3 +12,5 @@ typedef struct {
 extern int ut_uint8_list_id;
 
 const uint8_t *ut_uint8_list_get_data(UtObject *object);
+
+bool ut_object_implements_uint8_list(UtObject *object);

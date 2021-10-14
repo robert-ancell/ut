@@ -11,3 +11,7 @@ UtObject *ut_object_list_get_element(UtObject *object, size_t index) {
   assert(object_list_functions != NULL);
   return object_list_functions->get_element(object, index);
 }
+
+bool ut_object_implements_object_list(UtObject *object) {
+  return ut_object_get_interface(object, &ut_object_list_id) != NULL;
+}

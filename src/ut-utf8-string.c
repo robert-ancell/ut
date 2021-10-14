@@ -71,3 +71,7 @@ UtObject *ut_utf8_string_get_code_points(UtObject *object) {
 
   return code_points;
 }
+
+bool ut_object_implements_utf8_string(UtObject *object) {
+  return ut_object_get_interface(object, &ut_utf8_string_id) != NULL;
+}
