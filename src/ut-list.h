@@ -17,4 +17,6 @@ size_t ut_list_get_length(UtObject *object);
 // Returns a reference.
 UtObject *ut_list_get_element(UtObject *object, size_t index);
 
+char *ut_list_to_string(UtObject *object);
+
 bool ut_object_implements_list(UtObject *object);

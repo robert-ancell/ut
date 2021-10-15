@@ -74,6 +74,7 @@ static void ut_mutable_uint8_list_cleanup(UtObject *object) {
 static UtObjectFunctions object_functions = {
     .type_name = "MutableUint8List",
     .init = ut_mutable_uint8_list_init,
+    .to_string = ut_list_to_string,
     .cleanup = ut_mutable_uint8_list_cleanup,
     .interfaces = {{&ut_uint8_list_id, &uint8_list_functions},
                    {&ut_mutable_list_id, &mutable_list_functions},
