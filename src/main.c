@@ -65,6 +65,11 @@ int main(int argc, char **argv) {
   printf("%s\n", ut_object_get_type_name(list));
   ut_object_unref(list);
 
+  UtObject *map = ut_hash_map_new();
+  ut_map_insert_string_take(map, "one", ut_uint8_new(1));
+  ut_map_insert_string_take(map, "two", ut_uint8_new(42));
+  ut_map_insert_string_take(map, "two", ut_uint8_new(2));
+
   UtObject *readme = ut_file_new("README.md");
   ut_file_open_read(readme);
   ut_file_read_all(readme, 1, read_cb, NULL, NULL);
