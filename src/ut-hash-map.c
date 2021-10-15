@@ -190,6 +190,7 @@ static void ut_hash_map_cleanup(UtObject *object) {
 static UtObjectFunctions object_functions = {
     .type_name = "HashMap",
     .init = ut_hash_map_init,
+    .to_string = ut_map_to_string,
     .cleanup = ut_hash_map_cleanup,
     .interfaces = {{&ut_map_id, &map_functions}, {NULL, NULL}}};
 

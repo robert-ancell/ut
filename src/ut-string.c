@@ -1,7 +1,9 @@
 #include <assert.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
+#include "ut-mutable-string.h"
 #include "ut-mutable-uint32-list.h"
 #include "ut-object-private.h"
 #include "ut-string.h"
@@ -70,6 +72,45 @@ UtObject *ut_string_get_code_points(UtObject *object) {
   }
 
   return code_points;
+}
+
+char *ut_string_to_string(UtObject *object) {
+  UtObject *string = ut_mutable_string_new("\"");
+  for (const char *c = ut_string_get_text(object); *c != '\0'; c++) {
+    if (*c == 0x7) {
+      ut_mutable_string_append(string, "\\a");
+    } else if (*c == 0x8) {
+      ut_mutable_string_append(string, "\\b");
+    } else if (*c == 0x9) {
+      ut_mutable_string_append(string, "\\t");
+    } else if (*c == 0xa) {
+      ut_mutable_string_append(string, "\\n");
+    } else if (*c == 0xb) {
+      ut_mutable_string_append(string, "\\v");
+    } else if (*c == 0xc) {
+      ut_mutable_string_append(string, "\\f");
+    } else if (*c == 0xd) {
+      ut_mutable_string_append(string, "\\r");
+    } else if (*c == 0x1b) {
+      ut_mutable_string_append(string, "\\e");
+    } else if (*c == 0x22) {
+      ut_mutable_string_append(string, "\\\"");
+    } else if (*c == 0x5c) {
+      ut_mutable_string_append(string, "\\\\");
+    } else if (*c == 0x7f || *c <= 0x1f) {
+      ut_mutable_string_append(string, "\\x");
+      char hex_value[3];
+      snprintf(hex_value, 3, "%02x", *c);
+      ut_mutable_string_append(string, hex_value);
+    } else {
+      ut_mutable_string_append_code_point(string, *c);
+    }
+  }
+  ut_mutable_string_append(string, "\"");
+
+  char *result = strdup(ut_string_get_text(string));
+  ut_object_unref(string);
+  return result;
 }
 
 bool ut_object_implements_string(UtObject *object) {

@@ -1,12 +1,14 @@
 #include <assert.h>
 
+#include "ut-list.h"
 #include "ut-mutable-list.h"
 #include "ut-object-private.h"
 
 int ut_mutable_list_id = 0;
 
 void ut_mutable_list_append(UtObject *object, UtObject *item) {
-  ut_mutable_list_insert(object, -1, item);
+  size_t length = ut_list_get_length(object);
+  ut_mutable_list_insert(object, length, item);
 }
 
 void ut_mutable_list_prepend(UtObject *object, UtObject *item) {

@@ -52,6 +52,7 @@ static void ut_mutable_string_cleanup(UtObject *object) {
 static UtObjectFunctions object_functions = {
     .type_name = "MutableString",
     .init = ut_mutable_string_init,
+    .to_string = ut_string_to_string,
     .cleanup = ut_mutable_string_cleanup,
     .interfaces = {{&ut_string_id, &string_functions},
                    {&ut_uint8_list_id, &uint8_list_functions},
@@ -61,18 +62,20 @@ static UtObjectFunctions object_functions = {
 UtObject *ut_mutable_string_new(const char *text) {
   UtObject *object = ut_object_new(sizeof(UtMutableString), &object_functions);
   UtMutableString *self = (UtMutableString *)object;
-  ut_mutable_list_resize(self->data, strlen(text));
+  ut_mutable_list_resize(self->data, strlen(text) + 1);
   memcpy(ut_mutable_uint8_list_get_data(self->data), text, strlen(text) + 1);
   return object;
 }
 
 void ut_mutable_string_clear(UtObject *object) {
+  assert(ut_object_is_mutable_string(object));
   UtMutableString *self = (UtMutableString *)object;
   ut_mutable_list_clear(self->data);
   ut_mutable_uint8_list_append(self->data, '\0');
 }
 
 void ut_mutable_string_prepend(UtObject *object, const char *text) {
+  assert(ut_object_is_mutable_string(object));
   UtMutableString *self = (UtMutableString *)object;
   size_t text_length = strlen(text);
   size_t orig_length = ut_list_get_length(self->data);
@@ -87,12 +90,50 @@ void ut_mutable_string_prepend(UtObject *object, const char *text) {
 }
 
 void ut_mutable_string_append(UtObject *object, const char *text) {
+  assert(ut_object_is_mutable_string(object));
   UtMutableString *self = (UtMutableString *)object;
   size_t text_length = strlen(text);
   size_t orig_length = ut_list_get_length(self->data);
   ut_mutable_list_resize(self->data, orig_length + text_length);
-  memcpy(ut_mutable_uint8_list_get_data(self->data) + orig_length, text,
+  memcpy(ut_mutable_uint8_list_get_data(self->data) + orig_length - 1, text,
          text_length + 1);
+}
+
+void ut_mutable_string_append_code_point(UtObject *object,
+                                         uint32_t code_point) {
+  assert(ut_object_is_mutable_string(object));
+  UtMutableString *self = (UtMutableString *)object;
+  assert(code_point <= 0x1fffff);
+  size_t byte_count;
+  if (code_point <= 0x7f) {
+    byte_count = 1;
+  } else if (code_point <= 0x7ff) {
+    byte_count = 2;
+  } else if (code_point <= 0x1fff) {
+    byte_count = 3;
+  } else {
+    byte_count = 4;
+  }
+  size_t orig_length = ut_list_get_length(self->data);
+  ut_mutable_list_resize(self->data, orig_length + byte_count);
+  uint8_t *data = ut_mutable_uint8_list_get_data(self->data);
+  size_t offset = orig_length - 1;
+  if (code_point <= 0x7f) {
+    data[offset] = code_point;
+  } else if (code_point <= 0x7ff) {
+    data[offset] = 0xc0 | (code_point >> 6);
+    data[offset + 1] = 0x80 | (code_point & 0x3f);
+  } else if (code_point <= 0x1fff) {
+    data[offset] = 0xe0 | (code_point >> 12);
+    data[offset + 1] = 0x80 | ((code_point >> 6) & 0x3f);
+    data[offset + 2] = 0x80 | (code_point & 0x3f);
+  } else {
+    data[offset] = 0xe0 | (code_point >> 18);
+    data[offset + 1] = 0x80 | ((code_point >> 12) & 0x3f);
+    data[offset + 2] = 0x80 | ((code_point >> 6) & 0x3f);
+    data[offset + 3] = 0x80 | (code_point & 0x3f);
+  }
+  data[offset + byte_count] = '\0';
 }
 
 bool ut_object_is_mutable_string(UtObject *object) {

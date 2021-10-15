@@ -25,10 +25,6 @@ void ut_mutable_object_list_insert(UtObject *object, size_t index,
                                    UtObject *item) {
   UtMutableObjectList *self = (UtMutableObjectList *)object;
   assert(index <= self->data_length);
-  if (index < 0) {
-    index = self->data_length + 1 + index;
-  }
-  assert(index >= 0);
   self->data_length++;
   self->data = realloc(self->data, sizeof(UtObject *) * self->data_length);
   for (size_t i = self->data_length - 1; i > index; i--) {

@@ -3,8 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ut-mutable-string.h"
 #include "ut-object-private.h"
 #include "ut-object.h"
+#include "ut-string.h"
 
 UtObject *ut_object_new(size_t object_size, UtObjectFunctions *functions) {
   UtObject *object = malloc(object_size);
@@ -31,7 +33,13 @@ char *ut_object_to_string(UtObject *object) {
     return object->functions->to_string(object);
   }
 
-  return strdup(ut_object_get_type_name(object));
+  UtObject *string = ut_mutable_string_new("<");
+  ut_mutable_string_append(string, ut_object_get_type_name(object));
+  ut_mutable_string_append(string, ">");
+
+  char *result = strdup(ut_string_get_text(string));
+  ut_object_unref(string);
+  return result;
 }
 
 bool ut_object_equal(UtObject *object1, UtObject *object2) {

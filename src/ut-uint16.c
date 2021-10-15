@@ -1,4 +1,6 @@
 #include <assert.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "ut-object-private.h"
 #include "ut-uint16.h"
@@ -8,7 +10,15 @@ typedef struct {
   uint16_t value;
 } UtUint16;
 
-static UtObjectFunctions object_functions = {};
+static char *ut_uint16_to_string(UtObject *object) {
+  UtUint16 *self = (UtUint16 *)object;
+  char string[6];
+  snprintf(string, 6, "%d", self->value);
+  return strdup(string);
+}
+
+static UtObjectFunctions object_functions = {.type_name = "Uint16",
+                                             .to_string = ut_uint16_to_string};
 
 UtObject *ut_uint16_new(uint16_t value) {
   UtObject *object = ut_object_new(sizeof(UtUint16), &object_functions);
