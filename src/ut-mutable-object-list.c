@@ -51,10 +51,6 @@ static UtListFunctions list_functions = {
     .get_length = ut_mutable_object_list_get_length,
     .get_element = ut_mutable_object_list_get_element_ref};
 
-static const char *ut_mutable_object_list_get_type_name() {
-  return "MutableObjectList";
-}
-
 static void ut_mutable_object_list_init(UtObject *object) {
   UtMutableObjectList *self = (UtMutableObjectList *)object;
   self->data = NULL;
@@ -71,7 +67,7 @@ static void ut_mutable_object_list_cleanup(UtObject *object) {
 }
 
 static UtObjectFunctions object_functions = {
-    .get_type_name = ut_mutable_object_list_get_type_name,
+    .type_name = "MutableObjectList",
     .init = ut_mutable_object_list_init,
     .cleanup = ut_mutable_object_list_cleanup,
     .interfaces = {{&ut_object_list_id, &object_list_functions},

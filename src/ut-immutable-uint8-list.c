@@ -36,10 +36,6 @@ static UtListFunctions list_functions = {
     .get_length = ut_immutable_uint8_list_get_length,
     .get_element = ut_immutable_uint8_list_get_element};
 
-static const char *ut_immutable_uint8_list_get_type_name() {
-  return "ImmutableUint8List";
-}
-
 static void ut_immutable_uint8_list_init(UtObject *object) {
   UtImmutableUint8List *self = (UtImmutableUint8List *)object;
   self->data = NULL;
@@ -52,7 +48,7 @@ static void ut_immutable_uint8_list_cleanup(UtObject *object) {
 }
 
 static UtObjectFunctions object_functions = {
-    .get_type_name = ut_immutable_uint8_list_get_type_name,
+    .type_name = "ImmutableUint8List",
     .init = ut_immutable_uint8_list_init,
     .cleanup = ut_immutable_uint8_list_cleanup,
     .interfaces = {{&ut_uint8_list_id, &uint8_list_functions},

@@ -6,19 +6,13 @@ typedef struct {
   bool is_active;
 } UtCancel;
 
-static const char *ut_cancel_get_type_name() { return "Cancel"; }
-
 static void ut_cancel_init(UtObject *object) {
   UtCancel *self = (UtCancel *)object;
   self->is_active = false;
 }
 
-static void ut_cancel_cleanup(UtObject *object) {}
-
-static UtObjectFunctions object_functions = {.get_type_name =
-                                                 ut_cancel_get_type_name,
-                                             .init = ut_cancel_init,
-                                             .cleanup = ut_cancel_cleanup};
+static UtObjectFunctions object_functions = {.type_name = "Cancel",
+                                             .init = ut_cancel_init};
 
 UtObject *ut_cancel_new() {
   return ut_object_new(sizeof(UtCancel), &object_functions);

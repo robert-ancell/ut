@@ -82,10 +82,6 @@ static size_t ut_mutable_utf8_string_get_data_length(UtObject *object) {
 static UtListFunctions list_functions = {
     .get_length = ut_mutable_utf8_string_get_data_length};
 
-static const char *ut_mutable_utf8_string_get_type_name() {
-  return "MutableUtf8String";
-}
-
 static void ut_mutable_utf8_string_init(UtObject *object) {
   UtMutableUtf8String *self = (UtMutableUtf8String *)object;
   self->data = ut_mutable_uint8_list_new();
@@ -97,7 +93,7 @@ static void ut_mutable_utf8_string_cleanup(UtObject *object) {
 }
 
 static UtObjectFunctions object_functions = {
-    .get_type_name = ut_mutable_utf8_string_get_type_name,
+    .type_name = "MutableUtf8String",
     .init = ut_mutable_utf8_string_init,
     .cleanup = ut_mutable_utf8_string_cleanup,
     .interfaces = {{&ut_utf8_string_id, &utf8_string_functions},

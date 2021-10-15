@@ -53,10 +53,6 @@ static UtListFunctions list_functions = {
     .get_length = ut_mutable_uint32_list_get_length,
     .get_element = ut_mutable_uint32_list_get_element};
 
-static const char *ut_mutable_uint32_list_get_type_name() {
-  return "MutableUint32List";
-}
-
 static void ut_mutable_uint32_list_init(UtObject *object) {
   UtMutableUint32List *self = (UtMutableUint32List *)object;
   self->data = NULL;
@@ -69,7 +65,7 @@ static void ut_mutable_uint32_list_cleanup(UtObject *object) {
 }
 
 static UtObjectFunctions object_functions = {
-    .get_type_name = ut_mutable_uint32_list_get_type_name,
+    .type_name = "MutableUint32List",
     .init = ut_mutable_uint32_list_init,
     .cleanup = ut_mutable_uint32_list_cleanup,
     .interfaces = {{&ut_uint32_list_id, &uint32_list_functions},

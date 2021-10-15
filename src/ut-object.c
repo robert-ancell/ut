@@ -22,7 +22,7 @@ bool ut_object_is_type(UtObject *object, UtObjectFunctions *functions) {
 }
 
 const char *ut_object_get_type_name(UtObject *object) {
-  return object->functions->get_type_name();
+  return object->functions->type_name;
 }
 
 char *ut_object_to_string(UtObject *object) {

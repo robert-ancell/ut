@@ -45,12 +45,8 @@ static size_t ut_immutable_utf8_string_get_data_length(UtObject *object) {
 static UtListFunctions list_functions = {
     .get_length = ut_immutable_utf8_string_get_data_length};
 
-static const char *ut_immutable_utf8_string_get_type_name() {
-  return "ImmutableUtf8String";
-}
-
 static UtObjectFunctions object_functions = {
-    .get_type_name = ut_immutable_utf8_string_get_type_name,
+    .type_name = "ImmutableUtf8String",
     .interfaces = {{&ut_utf8_string_id, &utf8_string_functions},
                    {&ut_string_id, &string_functions},
                    {&ut_uint8_list_id, &uint8_list_functions},
