@@ -21,6 +21,22 @@ UtObject *ut_mutable_object_list_get_element(UtObject *object, size_t index) {
 static UtObjectListFunctions object_list_functions = {
     .get_element = ut_mutable_object_list_get_element};
 
+void ut_mutable_object_list_insert(UtObject *object, size_t index,
+                                   UtObject *item) {
+  UtMutableObjectList *self = (UtMutableObjectList *)object;
+  assert(index <= self->data_length);
+  if (index < 0) {
+    index = self->data_length + 1 + index;
+  }
+  assert(index >= 0);
+  self->data_length++;
+  self->data = realloc(self->data, sizeof(UtObject *) * self->data_length);
+  for (size_t i = self->data_length - 1; i > index; i--) {
+    self->data[i] = self->data[i - 1];
+  }
+  self->data[index] = ut_object_ref(item);
+}
+
 void ut_mutable_object_list_resize(UtObject *object, size_t length) {
   UtMutableObjectList *self = (UtMutableObjectList *)object;
   for (size_t i = length; i < self->data_length; i++) {
@@ -34,6 +50,7 @@ void ut_mutable_object_list_resize(UtObject *object, size_t length) {
 }
 
 static UtMutableListFunctions mutable_list_functions = {
+    .insert = ut_mutable_object_list_insert,
     .resize = ut_mutable_object_list_resize};
 
 static size_t ut_mutable_object_list_get_length(UtObject *object) {

@@ -5,6 +5,21 @@
 
 int ut_mutable_list_id = 0;
 
+void ut_mutable_list_append(UtObject *object, UtObject *item) {
+  ut_mutable_list_insert(object, -1, item);
+}
+
+void ut_mutable_list_prepend(UtObject *object, UtObject *item) {
+  ut_mutable_list_insert(object, 0, item);
+}
+
+void ut_mutable_list_insert(UtObject *object, size_t index, UtObject *item) {
+  UtMutableListFunctions *mutable_list_functions =
+      ut_object_get_interface(object, &ut_mutable_list_id);
+  assert(mutable_list_functions != NULL);
+  mutable_list_functions->insert(object, index, item);
+}
+
 void ut_mutable_list_clear(UtObject *object) {
   ut_mutable_list_resize(object, 0);
 }

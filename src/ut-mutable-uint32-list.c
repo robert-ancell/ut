@@ -30,12 +30,19 @@ const uint32_t *ut_mutable_uint32_list_get_list_data(UtObject *object) {
 static UtUint32ListFunctions uint32_list_functions = {
     .get_data = ut_mutable_uint32_list_get_list_data};
 
+void ut_mutable_uint32_list_insert_object(UtObject *object, size_t index,
+                                          UtObject *item) {
+  assert(ut_object_is_uint32(item));
+  ut_mutable_uint32_list_insert(object, index, ut_uint32_get_value(item));
+}
+
 void ut_mutable_uint32_list_resize(UtObject *object, size_t length) {
   UtMutableUint32List *self = (UtMutableUint32List *)object;
   resize_list(self, length);
 }
 
 static UtMutableListFunctions mutable_list_functions = {
+    .insert = ut_mutable_uint32_list_insert_object,
     .resize = ut_mutable_uint32_list_resize};
 
 static size_t ut_mutable_uint32_list_get_length(UtObject *object) {
