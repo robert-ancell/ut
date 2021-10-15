@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -31,6 +32,24 @@ char *ut_object_to_string(UtObject *object) {
   }
 
   return strdup(ut_object_get_type_name(object));
+}
+
+bool ut_object_equal(UtObject *object1, UtObject *object2) {
+  // Default equality is comparing an object against itself.
+  if (object1->functions->equal == NULL) {
+    return object1 == object2;
+  }
+
+  return object1->functions->equal(object1, object2);
+}
+
+int ut_object_get_hash(UtObject *object) {
+  // Default has is based off the memory address of the object.
+  if (object->functions->hash == NULL) {
+    return (intptr_t)object;
+  }
+
+  return object->functions->hash(object);
 }
 
 UtObject *ut_object_ref(UtObject *object) {
