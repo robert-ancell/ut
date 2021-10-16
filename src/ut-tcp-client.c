@@ -170,6 +170,15 @@ void ut_tcp_client_read(UtObject *object, size_t count,
   ut_fd_stream_read(self->stream, count, callback, user_data, cancel);
 }
 
+void ut_tcp_client_read_all(UtObject *object, UtTcpClientReadCallback callback,
+                            void *user_data, UtObject *cancel) {
+  assert(ut_object_is_tcp_client(object));
+  UtTcpClient *self = (UtTcpClient *)object;
+  assert(self->stream != NULL);
+
+  ut_fd_stream_read_all(self->stream, 65535, callback, user_data, cancel);
+}
+
 void ut_tcp_client_write(UtObject *object, UtObject *data,
                          UtTcpClientWriteCallback callback, void *user_data,
                          UtObject *cancel) {
