@@ -69,6 +69,8 @@ static void read_data_free(ReadData *data) {
 static void report_read_data(ReadData *data) {
   UtFdStream *self = data->self;
 
+  // FIXME: Can report more data than requested in a single read - trim buffer
+  // in this case.
   ut_mutable_list_resize(self->read_buffer, self->read_buffer_length);
   if (data->callback != NULL) {
     data->callback(data->user_data, self->read_buffer);
@@ -113,12 +115,35 @@ static void read_cb(void *user_data) {
   }
 }
 
+static void add_read_watch(ReadData *data) {
+  UtFdStream *self = data->self;
+  ut_event_loop_add_read_watch(self->fd, read_cb, data, data->watch_cancel);
+}
+
+static void buffered_read_cb(void *user_data) {
+  ReadData *data = user_data;
+  if (data->cancel != NULL && ut_cancel_is_active(data->cancel)) {
+    return;
+  }
+  report_read_data(data);
+  if (data->cancel != NULL && ut_cancel_is_active(data->cancel)) {
+    return;
+  }
+  add_read_watch(data);
+}
+
 static void start_read(UtFdStream *self, size_t block_length, bool read_all,
                        bool accumulate, UtFdStreamReadCallback callback,
                        void *user_data, UtObject *cancel) {
   ReadData *data = read_data_new(self, block_length, read_all, accumulate,
                                  callback, user_data, cancel);
-  ut_event_loop_add_read_watch(self->fd, read_cb, data, data->watch_cancel);
+
+  // If have buffered data, process that first.
+  if (self->read_buffer_length > 0) {
+    ut_event_loop_add_delay(0, buffered_read_cb, data, cancel);
+  } else {
+    add_read_watch(data);
+  }
 }
 
 static WriteData *write_data_new(UtFdStream *self, UtObject *data_,
