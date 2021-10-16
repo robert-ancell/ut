@@ -71,11 +71,15 @@ static void report_read_data(ReadData *data) {
   // FIXME: Can report more data than requested in a single read - trim buffer
   // in this case.
   ut_mutable_list_resize(self->read_buffer, self->read_buffer_length);
+  size_t n_used;
   if (data->callback != NULL) {
-    data->callback(data->user_data, self->read_buffer);
+    n_used = data->callback(data->user_data, self->read_buffer);
+  } else {
+    n_used = self->read_buffer_length;
   }
-  ut_mutable_list_clear(self->read_buffer);
-  self->read_buffer_length = 0;
+
+  ut_mutable_list_remove(self->read_buffer, 0, n_used);
+  self->read_buffer_length -= n_used;
 }
 
 static void read_cb(void *user_data) {

@@ -5,7 +5,7 @@
 
 #pragma once
 
-typedef void (*UtFdStreamReadCallback)(void *user_data, UtObject *data);
+typedef size_t (*UtFdStreamReadCallback)(void *user_data, UtObject *data);
 
 typedef void (*UtFdStreamWriteCallback)(void *user_data, size_t n_written);
 

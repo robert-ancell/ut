@@ -8,7 +8,7 @@
 
 typedef void (*UtTcpClientConnectCallback)(void *user_data);
 
-typedef void (*UtTcpClientReadCallback)(void *user_data, UtObject *data);
+typedef size_t (*UtTcpClientReadCallback)(void *user_data, UtObject *data);
 
 typedef void (*UtTcpClientWriteCallback)(void *user_data, size_t n_written);
 

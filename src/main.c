@@ -35,14 +35,16 @@ static void stdin_cb(void *user_data) {
   printf("stdin - '%.*s'\n", (int)n_read, buffer);
 }
 
-static void read_cb(void *user_data, UtObject *data) {
+static size_t read_cb(void *user_data, UtObject *data) {
   printf("read - '%.*s'\n", (int)ut_list_get_length(data),
          ut_uint8_list_get_data(data));
+  return ut_list_get_length(data);
 }
 
-static void http_read_cb(void *user_data, UtObject *data) {
+static size_t http_read_cb(void *user_data, UtObject *data) {
   printf("http read:\n%.*s'\n", (int)ut_list_get_length(data),
          ut_uint8_list_get_data(data));
+  return ut_list_get_length(data);
 }
 
 static void http_connect_cb(void *user_data) {

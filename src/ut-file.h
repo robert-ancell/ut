@@ -5,7 +5,7 @@
 
 #pragma once
 
-typedef void (*UtFileReadCallback)(void *user_data, UtObject *data);
+typedef size_t (*UtFileReadCallback)(void *user_data, UtObject *data);
 
 typedef void (*UtFileWriteCallback)(void *user_data, size_t n_written);
 
