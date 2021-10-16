@@ -113,6 +113,21 @@ char *ut_string_to_string(UtObject *object) {
   return result;
 }
 
+int ut_string_equal(UtObject *object, UtObject *other) {
+  if (!ut_object_implements_string(other)) {
+    return false;
+  }
+  return strcmp(ut_string_get_text(object), ut_string_get_text(other)) == 0;
+}
+
+int ut_string_hash(UtObject *object) {
+  int hash = 0;
+  for (const char *c = ut_string_get_text(object); *c != '\0'; c++) {
+    hash = hash * 31 + *c;
+  }
+  return hash;
+}
+
 bool ut_object_implements_string(UtObject *object) {
   return ut_object_get_interface(object, &ut_string_id) != NULL;
 }

@@ -42,13 +42,13 @@ char *ut_object_to_string(UtObject *object) {
   return result;
 }
 
-bool ut_object_equal(UtObject *object1, UtObject *object2) {
+bool ut_object_equal(UtObject *object, UtObject *other) {
   // Default equality is comparing an object against itself.
-  if (object1->functions->equal == NULL) {
-    return object1 == object2;
+  if (object->functions->equal == NULL) {
+    return object == other;
   }
 
-  return object1->functions->equal(object1, object2);
+  return object->functions->equal(object, other);
 }
 
 int ut_object_get_hash(UtObject *object) {

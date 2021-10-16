@@ -17,8 +17,24 @@ static char *ut_uint16_to_string(UtObject *object) {
   return strdup(string);
 }
 
+static int ut_uint16_equal(UtObject *object, UtObject *other) {
+  UtUint16 *self = (UtUint16 *)object;
+  if (!ut_object_is_uint16(other)) {
+    return false;
+  }
+  UtUint16 *other_self = (UtUint16 *)other;
+  return self->value = other_self->value;
+}
+
+static int ut_uint16_hash(UtObject *object) {
+  UtUint16 *self = (UtUint16 *)object;
+  return self->value;
+}
+
 static UtObjectFunctions object_functions = {.type_name = "Uint16",
-                                             .to_string = ut_uint16_to_string};
+                                             .to_string = ut_uint16_to_string,
+                                             .equal = ut_uint16_equal,
+                                             .hash = ut_uint16_hash};
 
 UtObject *ut_uint16_new(uint16_t value) {
   UtObject *object = ut_object_new(sizeof(UtUint16), &object_functions);

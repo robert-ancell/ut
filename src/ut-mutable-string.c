@@ -53,6 +53,8 @@ static UtObjectFunctions object_functions = {
     .type_name = "MutableString",
     .init = ut_mutable_string_init,
     .to_string = ut_string_to_string,
+    .equal = ut_string_equal,
+    .hash = ut_string_hash,
     .cleanup = ut_mutable_string_cleanup,
     .interfaces = {{&ut_string_id, &string_functions},
                    {&ut_uint8_list_id, &uint8_list_functions},

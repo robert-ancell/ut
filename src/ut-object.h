@@ -6,7 +6,7 @@ const char *ut_object_get_type_name(UtObject *object);
 
 char *ut_object_to_string(UtObject *object);
 
-bool ut_object_equal(UtObject *object1, UtObject *object2);
+bool ut_object_equal(UtObject *object, UtObject *other);
 
 int ut_object_get_hash(UtObject *object);
 
