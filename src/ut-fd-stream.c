@@ -20,11 +20,12 @@ typedef struct {
   size_t read_buffer_length;
 } UtFdStream;
 
+typedef enum { READ_MODE_SINGLE, READ_MODE_STREAM, READ_MODE_ALL } ReadMode;
+
 typedef struct {
   UtFdStream *self;
   size_t block_length;
-  bool read_all;
-  bool accumulate;
+  ReadMode mode;
   UtObject *watch_cancel;
   UtFdStreamReadCallback callback;
   void *user_data;
@@ -43,14 +44,12 @@ typedef struct {
 } WriteData;
 
 static ReadData *read_data_new(UtFdStream *self, size_t block_length,
-                               bool read_all, bool accumulate,
-                               UtFdStreamReadCallback callback, void *user_data,
-                               UtObject *cancel) {
+                               ReadMode mode, UtFdStreamReadCallback callback,
+                               void *user_data, UtObject *cancel) {
   ReadData *data = malloc(sizeof(ReadData));
   data->self = self;
   data->block_length = block_length;
-  data->read_all = read_all;
-  data->accumulate = accumulate;
+  data->mode = mode;
   data->watch_cancel = ut_cancel_new();
   data->callback = callback;
   data->user_data = user_data;
@@ -97,12 +96,12 @@ static void read_cb(void *user_data) {
     assert(n_read >= 0);
     self->read_buffer_length += n_read;
 
-    // Done if EOF or only doing single read.
-    done = n_read == 0 || !data->read_all;
-
-    // Report either the final data or the read block.
-    if (done || !data->accumulate) {
+    if (n_read == 0) {
       report_read_data(data);
+      done = data->mode == READ_MODE_SINGLE || self->read_buffer_length == 0;
+    } else if (data->mode != READ_MODE_ALL) {
+      report_read_data(data);
+      done = data->mode == READ_MODE_SINGLE;
     }
   } else {
     done = true;
@@ -126,17 +125,20 @@ static void buffered_read_cb(void *user_data) {
     return;
   }
   report_read_data(data);
+  if (data->mode == READ_MODE_SINGLE) {
+    return;
+  }
   if (data->cancel != NULL && ut_cancel_is_active(data->cancel)) {
     return;
   }
   add_read_watch(data);
 }
 
-static void start_read(UtFdStream *self, size_t block_length, bool read_all,
-                       bool accumulate, UtFdStreamReadCallback callback,
-                       void *user_data, UtObject *cancel) {
-  ReadData *data = read_data_new(self, block_length, read_all, accumulate,
-                                 callback, user_data, cancel);
+static void start_read(UtFdStream *self, size_t block_length, ReadMode mode,
+                       UtFdStreamReadCallback callback, void *user_data,
+                       UtObject *cancel) {
+  ReadData *data =
+      read_data_new(self, block_length, mode, callback, user_data, cancel);
 
   // If have buffered data, process that first.
   if (self->read_buffer_length > 0) {
@@ -232,7 +234,7 @@ void ut_fd_stream_read(UtObject *object, size_t count,
   UtFdStream *self = (UtFdStream *)object;
   assert(self->fd >= 0);
 
-  start_read(self, count, false, false, callback, user_data, cancel);
+  start_read(self, count, READ_MODE_SINGLE, callback, user_data, cancel);
 }
 
 void ut_fd_stream_read_stream(UtObject *object, size_t block_size,
@@ -241,7 +243,7 @@ void ut_fd_stream_read_stream(UtObject *object, size_t block_size,
   UtFdStream *self = (UtFdStream *)object;
   assert(self->fd >= 0);
 
-  start_read(self, block_size, true, false, callback, user_data, cancel);
+  start_read(self, block_size, READ_MODE_STREAM, callback, user_data, cancel);
 }
 
 void ut_fd_stream_read_all(UtObject *object, size_t block_size,
@@ -250,7 +252,7 @@ void ut_fd_stream_read_all(UtObject *object, size_t block_size,
   UtFdStream *self = (UtFdStream *)object;
   assert(self->fd >= 0);
 
-  start_read(self, block_size, true, true, callback, user_data, cancel);
+  start_read(self, block_size, READ_MODE_ALL, callback, user_data, cancel);
 }
 
 void ut_fd_stream_write(UtObject *object, UtObject *data,
