@@ -13,7 +13,8 @@ typedef struct {
   size_t data_length;
 } UtMutableObjectList;
 
-UtObject *ut_mutable_object_list_get_element(UtObject *object, size_t index) {
+static UtObject *ut_mutable_object_list_get_element(UtObject *object,
+                                                    size_t index) {
   UtMutableObjectList *self = (UtMutableObjectList *)object;
   return self->data[index];
 }
@@ -21,8 +22,8 @@ UtObject *ut_mutable_object_list_get_element(UtObject *object, size_t index) {
 static UtObjectListFunctions object_list_functions = {
     .get_element = ut_mutable_object_list_get_element};
 
-void ut_mutable_object_list_insert(UtObject *object, size_t index,
-                                   UtObject *item) {
+static void ut_mutable_object_list_insert(UtObject *object, size_t index,
+                                          UtObject *item) {
   UtMutableObjectList *self = (UtMutableObjectList *)object;
   assert(index <= self->data_length);
   self->data_length++;
@@ -33,7 +34,22 @@ void ut_mutable_object_list_insert(UtObject *object, size_t index,
   self->data[index] = ut_object_ref(item);
 }
 
-void ut_mutable_object_list_resize(UtObject *object, size_t length) {
+static void ut_mutable_object_list_remove(UtObject *object, size_t index,
+                                          size_t count) {
+  UtMutableObjectList *self = (UtMutableObjectList *)object;
+  assert(index <= self->data_length);
+  assert(index + count <= self->data_length);
+  for (size_t i = index; i < index + count; i++) {
+    ut_object_unref(self->data[i]);
+  }
+  for (size_t i = index; i < self->data_length - count; i++) {
+    self->data[i] = self->data[i + count];
+  }
+  self->data_length -= count;
+  self->data = realloc(self->data, sizeof(UtObject *) * self->data_length);
+}
+
+static void ut_mutable_object_list_resize(UtObject *object, size_t length) {
   UtMutableObjectList *self = (UtMutableObjectList *)object;
   for (size_t i = length; i < self->data_length; i++) {
     ut_object_unref(self->data[i]);
@@ -47,6 +63,7 @@ void ut_mutable_object_list_resize(UtObject *object, size_t length) {
 
 static UtMutableListFunctions mutable_list_functions = {
     .insert = ut_mutable_object_list_insert,
+    .remove = ut_mutable_object_list_remove,
     .resize = ut_mutable_object_list_resize};
 
 static size_t ut_mutable_object_list_get_length(UtObject *object) {

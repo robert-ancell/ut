@@ -22,6 +22,13 @@ void ut_mutable_list_insert(UtObject *object, size_t index, UtObject *item) {
   mutable_list_functions->insert(object, index, item);
 }
 
+void ut_mutable_list_remove(UtObject *object, size_t index, size_t count) {
+  UtMutableListFunctions *mutable_list_functions =
+      ut_object_get_interface(object, &ut_mutable_list_id);
+  assert(mutable_list_functions != NULL);
+  mutable_list_functions->remove(object, index, count);
+}
+
 void ut_mutable_list_clear(UtObject *object) {
   ut_mutable_list_resize(object, 0);
 }

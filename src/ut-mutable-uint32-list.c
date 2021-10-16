@@ -22,7 +22,7 @@ static void resize_list(UtMutableUint32List *self, size_t length) {
   self->data_length = length;
 }
 
-const uint32_t *ut_mutable_uint32_list_get_list_data(UtObject *object) {
+static const uint32_t *ut_mutable_uint32_list_get_list_data(UtObject *object) {
   UtMutableUint32List *self = (UtMutableUint32List *)object;
   return self->data;
 }
@@ -30,19 +30,31 @@ const uint32_t *ut_mutable_uint32_list_get_list_data(UtObject *object) {
 static UtUint32ListFunctions uint32_list_functions = {
     .get_data = ut_mutable_uint32_list_get_list_data};
 
-void ut_mutable_uint32_list_insert_object(UtObject *object, size_t index,
-                                          UtObject *item) {
+static void ut_mutable_uint32_list_insert_object(UtObject *object, size_t index,
+                                                 UtObject *item) {
   assert(ut_object_is_uint32(item));
   ut_mutable_uint32_list_insert(object, index, ut_uint32_get_value(item));
 }
 
-void ut_mutable_uint32_list_resize(UtObject *object, size_t length) {
+static void ut_mutable_uint32_list_remove(UtObject *object, size_t index,
+                                          size_t count) {
+  UtMutableUint32List *self = (UtMutableUint32List *)object;
+  assert(index <= self->data_length);
+  assert(index + count <= self->data_length);
+  for (size_t i = index; i < self->data_length - count; i++) {
+    self->data[i] = self->data[i + count];
+  }
+  resize_list(self, self->data_length - count);
+}
+
+static void ut_mutable_uint32_list_resize(UtObject *object, size_t length) {
   UtMutableUint32List *self = (UtMutableUint32List *)object;
   resize_list(self, length);
 }
 
 static UtMutableListFunctions mutable_list_functions = {
     .insert = ut_mutable_uint32_list_insert_object,
+    .remove = ut_mutable_uint32_list_remove,
     .resize = ut_mutable_uint32_list_resize};
 
 static size_t ut_mutable_uint32_list_get_length(UtObject *object) {

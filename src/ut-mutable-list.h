@@ -7,6 +7,7 @@
 
 typedef struct {
   void (*insert)(UtObject *object, size_t index, UtObject *item);
+  void (*remove)(UtObject *object, size_t index, size_t count);
   void (*resize)(UtObject *object, size_t length);
 } UtMutableListFunctions;
 
@@ -17,6 +18,8 @@ void ut_mutable_list_append(UtObject *object, UtObject *item);
 void ut_mutable_list_prepend(UtObject *object, UtObject *item);
 
 void ut_mutable_list_insert(UtObject *object, size_t index, UtObject *item);
+
+void ut_mutable_list_remove(UtObject *object, size_t index, size_t count);
 
 void ut_mutable_list_clear(UtObject *object);
 
