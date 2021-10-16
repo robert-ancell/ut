@@ -12,6 +12,9 @@ ut_sources = [
   'ut-float64.c',
   'ut-general-error.c',
   'ut-hash-table.c',
+  'ut-http-client.c',
+  'ut-http-header.c',
+  'ut-http-response.c',
   'ut-input-stream.c',
   'ut-int64.c',
   'ut-json.c',
@@ -58,6 +61,10 @@ executable('ut-json-test',
 
 executable('ut-local-file-test',
            'ut-local-file-test.c',
+           ut_sources)
+
+executable('ut-http-client-test',
+           'ut-http-client-test.c',
            ut_sources)
 
 executable('ut-map-test',
