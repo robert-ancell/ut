@@ -66,6 +66,17 @@ static void read_data_free(ReadData *data) {
   free(data);
 }
 
+static void report_read_data(ReadData *data) {
+  UtFdStream *self = data->self;
+
+  ut_mutable_list_resize(self->read_buffer, self->read_buffer_length);
+  if (data->callback != NULL) {
+    data->callback(data->user_data, self->read_buffer);
+  }
+  ut_mutable_list_clear(self->read_buffer);
+  self->read_buffer_length = 0;
+}
+
 static void read_cb(void *user_data) {
   ReadData *data = user_data;
   UtFdStream *self = data->self;
@@ -89,14 +100,7 @@ static void read_cb(void *user_data) {
 
     // Report either the final data or the read block.
     if (done || !data->accumulate) {
-      ut_mutable_list_resize(self->read_buffer, self->read_buffer_length);
-      if (data->callback != NULL) {
-        data->callback(data->user_data, self->read_buffer);
-      }
-      if (!data->accumulate) {
-        ut_mutable_list_clear(self->read_buffer);
-        self->read_buffer_length = 0;
-      }
+      report_read_data(data);
     }
   } else {
     done = true;
