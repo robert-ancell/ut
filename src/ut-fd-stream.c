@@ -16,6 +16,8 @@
 typedef struct {
   UtObject object;
   int fd;
+  UtObject *read_buffer;
+  size_t read_buffer_length;
 } UtFdStream;
 
 typedef struct {
@@ -24,8 +26,6 @@ typedef struct {
   bool read_all;
   bool accumulate;
   UtObject *watch_cancel;
-  UtObject *buffer;
-  size_t length;
   UtFdStreamReadCallback callback;
   void *user_data;
   UtObject *cancel;
@@ -52,8 +52,6 @@ static ReadData *read_data_new(UtFdStream *self, size_t block_length,
   data->read_all = read_all;
   data->accumulate = accumulate;
   data->watch_cancel = ut_cancel_new();
-  data->buffer = ut_mutable_uint8_list_new();
-  data->length = 0;
   data->callback = callback;
   data->user_data = user_data;
   data->cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
@@ -62,7 +60,6 @@ static ReadData *read_data_new(UtFdStream *self, size_t block_length,
 
 static void read_data_free(ReadData *data) {
   ut_object_unref(data->watch_cancel);
-  ut_object_unref(data->buffer);
   if (data->cancel) {
     ut_object_unref(data->cancel);
   }
@@ -76,27 +73,29 @@ static void read_cb(void *user_data) {
   bool done = false;
   if (data->cancel == NULL || !ut_cancel_is_active(data->cancel)) {
     // Make space to read a new block.
-    ut_mutable_list_resize(data->buffer, data->length + data->block_length);
+    ut_mutable_list_resize(self->read_buffer,
+                           self->read_buffer_length + data->block_length);
 
     // Read a block.
-    ssize_t n_read = read(
-        self->fd, ut_mutable_uint8_list_get_data(data->buffer) + data->length,
-        data->block_length);
+    ssize_t n_read = read(self->fd,
+                          ut_mutable_uint8_list_get_data(self->read_buffer) +
+                              self->read_buffer_length,
+                          data->block_length);
     assert(n_read >= 0);
-    data->length += n_read;
+    self->read_buffer_length += n_read;
 
     // Done if EOF or only doing single read.
     done = n_read == 0 || !data->read_all;
 
     // Report either the final data or the read block.
     if (done || !data->accumulate) {
-      ut_mutable_list_resize(data->buffer, data->length);
+      ut_mutable_list_resize(self->read_buffer, self->read_buffer_length);
       if (data->callback != NULL) {
-        data->callback(data->user_data, data->buffer);
+        data->callback(data->user_data, self->read_buffer);
       }
       if (!data->accumulate) {
-        ut_mutable_list_clear(data->buffer);
-        data->length = 0;
+        ut_mutable_list_clear(self->read_buffer);
+        self->read_buffer_length = 0;
       }
     }
   } else {
@@ -170,11 +169,18 @@ static void write_cb(void *user_data) {
 static void ut_fd_stream_init(UtObject *object) {
   UtFdStream *self = (UtFdStream *)object;
   self->fd = -1;
+  self->read_buffer = ut_mutable_uint8_list_new();
+  self->read_buffer_length = 0;
 }
 
-static UtObjectFunctions object_functions = {
-    .init = ut_fd_stream_init,
-};
+static void ut_fd_stream_cleanup(UtObject *object) {
+  UtFdStream *self = (UtFdStream *)object;
+  ut_object_unref(self->read_buffer);
+}
+
+static UtObjectFunctions object_functions = {.type_name = "FdStream",
+                                             .init = ut_fd_stream_init,
+                                             .cleanup = ut_fd_stream_cleanup};
 
 UtObject *ut_fd_stream_new(int fd) {
   UtObject *object = ut_object_new(sizeof(UtFdStream), &object_functions);
