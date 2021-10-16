@@ -109,6 +109,14 @@ static void read_cb(void *user_data) {
   }
 }
 
+static void start_read(UtFdStream *self, size_t block_length, bool read_all,
+                       bool accumulate, UtFdStreamReadCallback callback,
+                       void *user_data, UtObject *cancel) {
+  ReadData *data = read_data_new(self, block_length, read_all, accumulate,
+                                 callback, user_data, cancel);
+  ut_event_loop_add_read_watch(self->fd, read_cb, data, data->watch_cancel);
+}
+
 static WriteData *write_data_new(UtFdStream *self, UtObject *data_,
                                  bool write_all,
                                  UtFdStreamWriteCallback callback,
@@ -195,9 +203,7 @@ void ut_fd_stream_read(UtObject *object, size_t count,
   UtFdStream *self = (UtFdStream *)object;
   assert(self->fd >= 0);
 
-  ReadData *data =
-      read_data_new(self, count, false, false, callback, user_data, cancel);
-  ut_event_loop_add_read_watch(self->fd, read_cb, data, data->watch_cancel);
+  start_read(self, count, false, false, callback, user_data, cancel);
 }
 
 void ut_fd_stream_read_stream(UtObject *object, size_t block_size,
@@ -206,9 +212,7 @@ void ut_fd_stream_read_stream(UtObject *object, size_t block_size,
   UtFdStream *self = (UtFdStream *)object;
   assert(self->fd >= 0);
 
-  ReadData *data =
-      read_data_new(self, block_size, true, false, callback, user_data, cancel);
-  ut_event_loop_add_read_watch(self->fd, read_cb, data, data->watch_cancel);
+  start_read(self, block_size, true, false, callback, user_data, cancel);
 }
 
 void ut_fd_stream_read_all(UtObject *object, size_t block_size,
@@ -217,9 +221,7 @@ void ut_fd_stream_read_all(UtObject *object, size_t block_size,
   UtFdStream *self = (UtFdStream *)object;
   assert(self->fd >= 0);
 
-  ReadData *data =
-      read_data_new(self, block_size, true, true, callback, user_data, cancel);
-  ut_event_loop_add_read_watch(self->fd, read_cb, data, data->watch_cancel);
+  start_read(self, block_size, true, true, callback, user_data, cancel);
 }
 
 void ut_fd_stream_write(UtObject *object, UtObject *data,
