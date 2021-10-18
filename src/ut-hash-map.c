@@ -137,7 +137,7 @@ static void ut_hash_map_remove(UtObject *object, UtObject *key) {
 
 static UtObject *ut_hash_map_get_items(UtObject *object) {
   UtHashMap *self = (UtHashMap *)object;
-  UtObject *items = ut_mutable_object_list_new();
+  UtObject *items = ut_object_array_new();
   for (UtHashMapItem *item = self->items; item != NULL; item = item->next) {
     ut_mutable_list_append(items, (UtObject *)item);
   }
@@ -146,7 +146,7 @@ static UtObject *ut_hash_map_get_items(UtObject *object) {
 
 static UtObject *ut_hash_map_get_keys(UtObject *object) {
   UtHashMap *self = (UtHashMap *)object;
-  UtObject *keys = ut_mutable_object_list_new();
+  UtObject *keys = ut_object_array_new();
   for (UtHashMapItem *item = self->items; item != NULL; item = item->next) {
     ut_mutable_list_append(keys, item->key);
   }
@@ -155,7 +155,7 @@ static UtObject *ut_hash_map_get_keys(UtObject *object) {
 
 static UtObject *ut_hash_map_get_values(UtObject *object) {
   UtHashMap *self = (UtHashMap *)object;
-  UtObject *values = ut_mutable_object_list_new();
+  UtObject *values = ut_object_array_new();
   for (UtHashMapItem *item = self->items; item != NULL; item = item->next) {
     ut_mutable_list_append(values, item->value);
   }

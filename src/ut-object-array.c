@@ -13,17 +13,16 @@ typedef struct {
   size_t data_length;
 } UtObjectArray;
 
-static UtObject *ut_mutable_object_list_get_element(UtObject *object,
-                                                    size_t index) {
+static UtObject *ut_object_array_get_element(UtObject *object, size_t index) {
   UtObjectArray *self = (UtObjectArray *)object;
   return self->data[index];
 }
 
 static UtObjectListFunctions object_list_functions = {
-    .get_element = ut_mutable_object_list_get_element};
+    .get_element = ut_object_array_get_element};
 
-static void ut_mutable_object_list_insert(UtObject *object, size_t index,
-                                          UtObject *item) {
+static void ut_object_array_insert(UtObject *object, size_t index,
+                                   UtObject *item) {
   UtObjectArray *self = (UtObjectArray *)object;
   assert(index <= self->data_length);
   self->data_length++;
@@ -34,8 +33,8 @@ static void ut_mutable_object_list_insert(UtObject *object, size_t index,
   self->data[index] = ut_object_ref(item);
 }
 
-static void ut_mutable_object_list_remove(UtObject *object, size_t index,
-                                          size_t count) {
+static void ut_object_array_remove(UtObject *object, size_t index,
+                                   size_t count) {
   UtObjectArray *self = (UtObjectArray *)object;
   assert(index <= self->data_length);
   assert(index + count <= self->data_length);
@@ -49,7 +48,7 @@ static void ut_mutable_object_list_remove(UtObject *object, size_t index,
   self->data = realloc(self->data, sizeof(UtObject *) * self->data_length);
 }
 
-static void ut_mutable_object_list_resize(UtObject *object, size_t length) {
+static void ut_object_array_resize(UtObject *object, size_t length) {
   UtObjectArray *self = (UtObjectArray *)object;
   for (size_t i = length; i < self->data_length; i++) {
     ut_object_unref(self->data[i]);
@@ -62,32 +61,32 @@ static void ut_mutable_object_list_resize(UtObject *object, size_t length) {
 }
 
 static UtMutableListFunctions mutable_list_functions = {
-    .insert = ut_mutable_object_list_insert,
-    .remove = ut_mutable_object_list_remove,
-    .resize = ut_mutable_object_list_resize};
+    .insert = ut_object_array_insert,
+    .remove = ut_object_array_remove,
+    .resize = ut_object_array_resize};
 
-static size_t ut_mutable_object_list_get_length(UtObject *object) {
+static size_t ut_object_array_get_length(UtObject *object) {
   UtObjectArray *self = (UtObjectArray *)object;
   return self->data_length;
 }
 
-static UtObject *ut_mutable_object_list_get_element_ref(UtObject *object,
-                                                        size_t index) {
+static UtObject *ut_object_array_get_element_ref(UtObject *object,
+                                                 size_t index) {
   UtObjectArray *self = (UtObjectArray *)object;
   return ut_object_ref(self->data[index]);
 }
 
 static UtListFunctions list_functions = {
-    .get_length = ut_mutable_object_list_get_length,
-    .get_element = ut_mutable_object_list_get_element_ref};
+    .get_length = ut_object_array_get_length,
+    .get_element = ut_object_array_get_element_ref};
 
-static void ut_mutable_object_list_init(UtObject *object) {
+static void ut_object_array_init(UtObject *object) {
   UtObjectArray *self = (UtObjectArray *)object;
   self->data = NULL;
   self->data_length = 0;
 }
 
-static void ut_mutable_object_list_cleanup(UtObject *object) {
+static void ut_object_array_cleanup(UtObject *object) {
   UtObjectArray *self = (UtObjectArray *)object;
   for (int i = 0; i < self->data_length; i++) {
     ut_object_unref(self->data[i]);
@@ -98,19 +97,19 @@ static void ut_mutable_object_list_cleanup(UtObject *object) {
 
 static UtObjectFunctions object_functions = {
     .type_name = "ObjectArray",
-    .init = ut_mutable_object_list_init,
+    .init = ut_object_array_init,
     .to_string = ut_list_to_string,
-    .cleanup = ut_mutable_object_list_cleanup,
+    .cleanup = ut_object_array_cleanup,
     .interfaces = {{&ut_object_list_id, &object_list_functions},
                    {&ut_mutable_list_id, &mutable_list_functions},
                    {&ut_list_id, &list_functions},
                    {NULL, NULL}}};
 
-UtObject *ut_mutable_object_list_new() {
+UtObject *ut_object_array_new() {
   return ut_object_new(sizeof(UtObjectArray), &object_functions);
 }
 
-void ut_mutable_object_list_append(UtObject *object, UtObject *element) {
+void ut_object_array_append(UtObject *object, UtObject *element) {
   assert(ut_object_is_type(object, &object_functions));
   UtObjectArray *self = (UtObjectArray *)object;
 

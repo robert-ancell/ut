@@ -5,6 +5,6 @@
 
 #pragma once
 
-UtObject *ut_mutable_object_list_new();
+UtObject *ut_object_array_new();
 
 bool ut_object_is_object_array(UtObject *object);
