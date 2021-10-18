@@ -22,6 +22,10 @@ void ut_tcp_client_read(UtObject *object, size_t count,
                         UtTcpClientReadCallback callback, void *user_data,
                         UtObject *cancel);
 
+void ut_tcp_client_read_stream(UtObject *object, size_t block_size,
+                               UtTcpClientReadCallback callback,
+                               void *user_data, UtObject *cancel);
+
 void ut_tcp_client_read_all(UtObject *object, UtTcpClientReadCallback callback,
                             void *user_data, UtObject *cancel);
 
