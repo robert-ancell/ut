@@ -17,6 +17,8 @@ typedef struct {
 
 extern int ut_map_id;
 
+UtObject *ut_map_new();
+
 size_t ut_map_get_length(UtObject *object);
 
 void ut_map_insert(UtObject *object, UtObject *key, UtObject *value);
