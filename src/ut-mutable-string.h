@@ -7,6 +7,8 @@
 
 UtObject *ut_mutable_string_new(const char *text);
 
+UtObject *ut_mutable_string_new_sized(const char *text, size_t length);
+
 void ut_mutable_string_clear(UtObject *object);
 
 void ut_mutable_string_prepend(UtObject *object, const char *text);

@@ -62,10 +62,16 @@ static UtObjectFunctions object_functions = {
                    {NULL, NULL}}};
 
 UtObject *ut_mutable_string_new(const char *text) {
+  return ut_mutable_string_new_sized(text, strlen(text));
+}
+
+UtObject *ut_mutable_string_new_sized(const char *text, size_t length) {
   UtObject *object = ut_object_new(sizeof(UtMutableString), &object_functions);
   UtMutableString *self = (UtMutableString *)object;
-  ut_mutable_list_resize(self->data, strlen(text) + 1);
-  memcpy(ut_mutable_uint8_list_get_data(self->data), text, strlen(text) + 1);
+  ut_mutable_list_resize(self->data, length + 1);
+  uint8_t *buffer = ut_mutable_uint8_list_get_data(self->data);
+  memcpy(buffer, text, length);
+  buffer[length] = '\0';
   return object;
 }
 
