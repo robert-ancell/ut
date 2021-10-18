@@ -1,11 +1,11 @@
 ut_sources = [
   'ut-cancel.c',
   'ut-constant-string.c',
+  'ut-constant-uint8-array.c',
   'ut-event-loop.c',
   'ut-fd-stream.c',
   'ut-file.c',
   'ut-hash-map.c',
-  'ut-immutable-uint8-list.c',
   'ut-list.c',
   'ut-map.c',
   'ut-map-item.c',
