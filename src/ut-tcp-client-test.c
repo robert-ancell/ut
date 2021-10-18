@@ -13,7 +13,7 @@ static void http_connect_cb(void *user_data) {
 
   printf("http connect\n");
   UtObject *request =
-      ut_immutable_string_new("GET / HTTP/1.1\nHost: example.com\n\n");
+      ut_constant_string_new("GET / HTTP/1.1\nHost: example.com\n\n");
   ut_tcp_client_write_all(tcp_client, request, NULL, NULL, NULL);
   ut_tcp_client_read(tcp_client, 65535, http_read_cb, NULL, NULL);
 }

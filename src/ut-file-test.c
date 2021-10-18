@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
 
   UtObject *test_file = ut_file_new("TEST");
   ut_file_open_write(test_file, true);
-  UtObject *test_data = ut_immutable_string_new("Hello\n");
+  UtObject *test_data = ut_constant_string_new("Hello\n");
   ut_file_write_all(test_file, test_data, NULL, NULL, NULL);
 
   ut_event_loop_run();

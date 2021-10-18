@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "ut-hash-map.h"
-#include "ut-immutable-string.h"
 #include "ut-list.h"
 #include "ut-map-item.h"
 #include "ut-map.h"
@@ -34,14 +33,14 @@ void ut_map_insert_take(UtObject *object, UtObject *key, UtObject *value) {
 }
 
 void ut_map_insert_string(UtObject *object, const char *key, UtObject *value) {
-  UtObject *key_ = ut_immutable_string_new(key);
+  UtObject *key_ = ut_string_new(key);
   ut_map_insert(object, key_, value);
   ut_object_unref(key_);
 }
 
 void ut_map_insert_string_take(UtObject *object, const char *key,
                                UtObject *value) {
-  ut_map_insert_take(object, ut_immutable_string_new(key), value);
+  ut_map_insert_take(object, ut_string_new(key), value);
 }
 
 UtObject *ut_map_lookup(UtObject *object, UtObject *key) {

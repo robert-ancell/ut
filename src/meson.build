@@ -1,10 +1,10 @@
 ut_sources = [
   'ut-cancel.c',
+  'ut-constant-string.c',
   'ut-event-loop.c',
   'ut-fd-stream.c',
   'ut-file.c',
   'ut-hash-map.c',
-  'ut-immutable-string.c',
   'ut-immutable-uint8-list.c',
   'ut-list.c',
   'ut-map.c',
@@ -27,16 +27,16 @@ ut_sources = [
   'ut-uint32-array.c'
 ]
 
+executable('ut-constant-string-test',
+           'ut-constant-string-test.c',
+           ut_sources)
+
 executable('ut-event-loop-test',
            'ut-event-loop-test.c',
            ut_sources)
 
 executable('ut-file-test',
            'ut-file-test.c',
-           ut_sources)
-
-executable('ut-immutable-string-test',
-           'ut-immutable-string-test.c',
            ut_sources)
 
 executable('ut-map-test',

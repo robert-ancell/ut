@@ -10,6 +10,8 @@ typedef struct {
 
 extern int ut_string_id;
 
+UtObject *ut_string_new(const char *text);
+
 const char *ut_string_get_text(UtObject *object);
 
 UtObject *ut_string_get_code_points(UtObject *object);

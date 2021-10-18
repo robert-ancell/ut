@@ -10,6 +10,10 @@
 
 int ut_string_id = 0;
 
+UtObject *ut_string_new(const char *text) {
+  return ut_mutable_string_new(text);
+}
+
 const char *ut_string_get_text(UtObject *object) {
   UtStringFunctions *string_functions =
       ut_object_get_interface(object, &ut_string_id);
