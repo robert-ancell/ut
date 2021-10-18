@@ -69,7 +69,8 @@ static void connect_cb(void *user_data) {
   self->stream = ut_fd_stream_new(self->fd);
 
   int error; // FIXME: use
-  getsockopt(self->fd, SOL_SOCKET, SO_ERROR, &error, NULL);
+  socklen_t error_length = sizeof(error);
+  getsockopt(self->fd, SOL_SOCKET, SO_ERROR, &error, &error_length);
   assert(error == 0);
 
   bool is_cancelled = data->cancel != NULL && ut_cancel_is_active(data->cancel);
