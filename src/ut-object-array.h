@@ -7,4 +7,4 @@
 
 UtObject *ut_mutable_object_list_new();
 
-bool ut_object_is_mutable_object_list(UtObject *object);
+bool ut_object_is_object_array(UtObject *object);

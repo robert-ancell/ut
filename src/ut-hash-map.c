@@ -6,7 +6,7 @@
 #include "ut-map-item.h"
 #include "ut-map.h"
 #include "ut-mutable-list.h"
-#include "ut-mutable-object-list.h"
+#include "ut-object-array.h"
 #include "ut-object-private.h"
 
 typedef struct _UtHashMapItem UtHashMapItem;

@@ -9,8 +9,8 @@
 #include "ut-fd-stream.h"
 #include "ut-list.h"
 #include "ut-mutable-list.h"
-#include "ut-mutable-uint8-list.h"
 #include "ut-object-private.h"
+#include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
 
 typedef struct {
@@ -94,7 +94,7 @@ static void read_cb(void *user_data) {
 
     // Read a block.
     ssize_t n_read = read(self->fd,
-                          ut_mutable_uint8_list_get_data(self->read_buffer) +
+                          ut_uint8_array_get_data(self->read_buffer) +
                               self->read_buffer_length,
                           data->block_length);
     assert(n_read >= 0);
@@ -212,7 +212,7 @@ static void write_cb(void *user_data) {
 static void ut_fd_stream_init(UtObject *object) {
   UtFdStream *self = (UtFdStream *)object;
   self->fd = -1;
-  self->read_buffer = ut_mutable_uint8_list_new();
+  self->read_buffer = ut_uint8_array_new();
   self->read_buffer_length = 0;
 }
 

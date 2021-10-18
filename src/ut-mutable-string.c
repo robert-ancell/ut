@@ -5,9 +5,9 @@
 #include "ut-list.h"
 #include "ut-mutable-list.h"
 #include "ut-mutable-string.h"
-#include "ut-mutable-uint8-list.h"
 #include "ut-object-private.h"
 #include "ut-string.h"
+#include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
 
 typedef struct {
@@ -41,7 +41,7 @@ static UtListFunctions list_functions = {.get_length =
 
 static void ut_mutable_string_init(UtObject *object) {
   UtMutableString *self = (UtMutableString *)object;
-  self->data = ut_mutable_uint8_list_new();
+  self->data = ut_uint8_array_new();
 }
 
 static void ut_mutable_string_cleanup(UtObject *object) {
@@ -69,7 +69,7 @@ UtObject *ut_mutable_string_new_sized(const char *text, size_t length) {
   UtObject *object = ut_object_new(sizeof(UtMutableString), &object_functions);
   UtMutableString *self = (UtMutableString *)object;
   ut_mutable_list_resize(self->data, length + 1);
-  uint8_t *buffer = ut_mutable_uint8_list_get_data(self->data);
+  uint8_t *buffer = ut_uint8_array_get_data(self->data);
   memcpy(buffer, text, length);
   buffer[length] = '\0';
   return object;
@@ -79,7 +79,7 @@ void ut_mutable_string_clear(UtObject *object) {
   assert(ut_object_is_mutable_string(object));
   UtMutableString *self = (UtMutableString *)object;
   ut_mutable_list_clear(self->data);
-  ut_mutable_uint8_list_append(self->data, '\0');
+  ut_uint8_array_append(self->data, '\0');
 }
 
 void ut_mutable_string_prepend(UtObject *object, const char *text) {
@@ -89,7 +89,7 @@ void ut_mutable_string_prepend(UtObject *object, const char *text) {
   size_t orig_length = ut_list_get_length(self->data);
   ut_mutable_list_resize(self->data,
                          ut_list_get_length(self->data) + text_length);
-  uint8_t *data = ut_mutable_uint8_list_get_data(self->data);
+  uint8_t *data = ut_uint8_array_get_data(self->data);
   size_t data_length = ut_list_get_length(self->data);
   for (size_t i = 0; i < orig_length; i++) {
     data[data_length - i - 1] = data[data_length - i - text_length - 1];
@@ -103,7 +103,7 @@ void ut_mutable_string_append(UtObject *object, const char *text) {
   size_t text_length = strlen(text);
   size_t orig_length = ut_list_get_length(self->data);
   ut_mutable_list_resize(self->data, orig_length + text_length);
-  memcpy(ut_mutable_uint8_list_get_data(self->data) + orig_length - 1, text,
+  memcpy(ut_uint8_array_get_data(self->data) + orig_length - 1, text,
          text_length + 1);
 }
 
@@ -124,7 +124,7 @@ void ut_mutable_string_append_code_point(UtObject *object,
   }
   size_t orig_length = ut_list_get_length(self->data);
   ut_mutable_list_resize(self->data, orig_length + byte_count);
-  uint8_t *data = ut_mutable_uint8_list_get_data(self->data);
+  uint8_t *data = ut_uint8_array_get_data(self->data);
   size_t offset = orig_length - 1;
   if (code_point <= 0x7f) {
     data[offset] = code_point;

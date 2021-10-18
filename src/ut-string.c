@@ -4,9 +4,9 @@
 #include <string.h>
 
 #include "ut-mutable-string.h"
-#include "ut-mutable-uint32-list.h"
 #include "ut-object-private.h"
 #include "ut-string.h"
+#include "ut-uint32-array.h"
 
 int ut_string_id = 0;
 
@@ -20,12 +20,12 @@ const char *ut_string_get_text(UtObject *object) {
 UtObject *ut_string_get_code_points(UtObject *object) {
   const char *text = ut_string_get_text(object);
   size_t text_length = strlen(text);
-  UtObject *code_points = ut_mutable_uint32_list_new();
+  UtObject *code_points = ut_uint32_array_new();
   size_t offset = 0;
   while (offset < text_length) {
     uint8_t byte1 = text[offset];
     if ((byte1 & 0x80) == 0) {
-      ut_mutable_uint32_list_append(code_points, byte1);
+      ut_uint32_array_append(code_points, byte1);
       offset++;
     } else if ((byte1 & 0xe0) == 0xc0) {
       if (text_length - offset < 2) {
@@ -35,8 +35,7 @@ UtObject *ut_string_get_code_points(UtObject *object) {
       if ((byte2 & 0xc0) != 0x80) {
         return code_points;
       }
-      ut_mutable_uint32_list_append(code_points,
-                                    (byte1 & 0x1f) << 6 | (byte2 & 0x3f));
+      ut_uint32_array_append(code_points, (byte1 & 0x1f) << 6 | (byte2 & 0x3f));
       offset += 2;
     } else if ((byte1 & 0xf0) == 0xe0) {
       if (text_length - offset < 3) {
@@ -47,9 +46,9 @@ UtObject *ut_string_get_code_points(UtObject *object) {
       if ((byte2 & 0xc0) != 0x80 || (byte3 & 0xc0) != 0x80) {
         return code_points;
       }
-      ut_mutable_uint32_list_append(code_points, (byte1 & 0x0f) << 12 |
-                                                     (byte2 & 0x3f) << 6 |
-                                                     (byte3 & 0x3f));
+      ut_uint32_array_append(code_points, (byte1 & 0x0f) << 12 |
+                                              (byte2 & 0x3f) << 6 |
+                                              (byte3 & 0x3f));
       offset += 3;
     } else if ((byte1 & 0xf8) == 0xf0) {
       if (text_length - offset < 4) {
@@ -62,9 +61,9 @@ UtObject *ut_string_get_code_points(UtObject *object) {
           (byte4 & 0xc0) != 0x80) {
         return code_points;
       }
-      ut_mutable_uint32_list_append(
-          code_points, (byte1 & 0x07) << 18 | (byte2 & 0x3f) << 12 |
-                           (byte3 & 0x3f) << 6 | (byte4 & 0x3f));
+      ut_uint32_array_append(code_points,
+                             (byte1 & 0x07) << 18 | (byte2 & 0x3f) << 12 |
+                                 (byte3 & 0x3f) << 6 | (byte4 & 0x3f));
       offset += 4;
     } else {
       return code_points;

@@ -10,21 +10,21 @@ ut_sources = [
   'ut-map.c',
   'ut-map-item.c',
   'ut-mutable-list.c',
-  'ut-mutable-object-list.c',
   'ut-mutable-string.c',
-  'ut-mutable-uint8-list.c',
-  'ut-mutable-uint16-list.c',
-  'ut-mutable-uint32-list.c',
   'ut-object.c',
+  'ut-object-array.c',
   'ut-object-list.c',
   'ut-string.c',
   'ut-tcp-client.c',
   'ut-uint8.c',
+  'ut-uint8-array.c',
   'ut-uint8-list.c',
   'ut-uint16.c',
+  'ut-uint16-array.c',
   'ut-uint16-list.c',
   'ut-uint32.c',
-  'ut-uint32-list.c'
+  'ut-uint32-list.c',
+  'ut-uint32-array.c'
 ]
 
 executable('ut-event-loop-test',
@@ -47,10 +47,10 @@ executable('ut-mutable-string-test',
            'ut-mutable-string-test.c',
            ut_sources)
 
-executable('ut-mutable-uint8-list-test',
-           'ut-mutable-uint8-list-test.c',
-           ut_sources)
-
 executable('ut-tcp-client-test',
            'ut-tcp-client-test.c',
+           ut_sources)
+
+executable('ut-uint8-array-test',
+           'ut-uint8-array-test.c',
            ut_sources)
