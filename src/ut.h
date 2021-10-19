@@ -4,6 +4,7 @@
 #include "ut-event-loop.h"
 #include "ut-file.h"
 #include "ut-hash-map.h"
+#include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-map-item.h"
 #include "ut-map.h"

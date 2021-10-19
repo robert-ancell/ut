@@ -7,6 +7,7 @@
 #include "ut-cancel.h"
 #include "ut-event-loop.h"
 #include "ut-fd-stream.h"
+#include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-mutable-list.h"
 #include "ut-object-private.h"
@@ -21,14 +22,12 @@ typedef struct {
   size_t read_buffer_length;
 } UtFdStream;
 
-typedef enum { READ_MODE_SINGLE, READ_MODE_STREAM, READ_MODE_ALL } ReadMode;
-
 typedef struct {
   UtFdStream *self;
   size_t block_length;
-  ReadMode mode;
+  bool read_all;
   UtObject *watch_cancel;
-  UtFdStreamReadCallback callback;
+  UtInputStreamCallback callback;
   void *user_data;
   UtObject *cancel;
 } ReadData;
@@ -45,12 +44,12 @@ typedef struct {
 } WriteData;
 
 static ReadData *read_data_new(UtFdStream *self, size_t block_length,
-                               ReadMode mode, UtFdStreamReadCallback callback,
+                               bool read_all, UtInputStreamCallback callback,
                                void *user_data, UtObject *cancel) {
   ReadData *data = malloc(sizeof(ReadData));
   data->self = self;
   data->block_length = block_length;
-  data->mode = mode;
+  data->read_all = read_all;
   data->watch_cancel = ut_cancel_new();
   data->callback = callback;
   data->user_data = user_data;
@@ -103,10 +102,10 @@ static void read_cb(void *user_data) {
 
     if (n_read == 0) {
       report_read_data(data);
-      done = data->mode == READ_MODE_SINGLE || self->read_buffer_length == 0;
-    } else if (data->mode != READ_MODE_ALL) {
+      done = self->read_buffer_length == 0;
+    } else if (!data->read_all) {
       report_read_data(data);
-      done = data->mode == READ_MODE_SINGLE;
+      done = true;
     }
   } else {
     done = true;
@@ -130,20 +129,17 @@ static void buffered_read_cb(void *user_data) {
     return;
   }
   report_read_data(data);
-  if (data->mode == READ_MODE_SINGLE) {
-    return;
-  }
   if (data->cancel != NULL && ut_cancel_is_active(data->cancel)) {
     return;
   }
   add_read_watch(data);
 }
 
-static void start_read(UtFdStream *self, size_t block_length, ReadMode mode,
-                       UtFdStreamReadCallback callback, void *user_data,
+static void start_read(UtFdStream *self, size_t block_length, bool read_all,
+                       UtInputStreamCallback callback, void *user_data,
                        UtObject *cancel) {
   ReadData *data =
-      read_data_new(self, block_length, mode, callback, user_data, cancel);
+      read_data_new(self, block_length, read_all, callback, user_data, cancel);
 
   // If have buffered data, process that first.
   if (self->read_buffer_length > 0) {
@@ -222,6 +218,27 @@ static void ut_fd_stream_cleanup(UtObject *object) {
   ut_object_unref(self->read_buffer);
 }
 
+static void ut_fd_stream_read(UtObject *object, size_t block_size,
+                              UtInputStreamCallback callback, void *user_data,
+                              UtObject *cancel) {
+  UtFdStream *self = (UtFdStream *)object;
+  assert(self->fd >= 0);
+
+  start_read(self, block_size, false, callback, user_data, cancel);
+}
+
+static void ut_fd_stream_read_all(UtObject *object, size_t block_size,
+                                  UtInputStreamCallback callback,
+                                  void *user_data, UtObject *cancel) {
+  UtFdStream *self = (UtFdStream *)object;
+  assert(self->fd >= 0);
+
+  start_read(self, block_size, true, callback, user_data, cancel);
+}
+
+static UtInputStreamFunctions input_stream_functions = {
+    .read = ut_fd_stream_read, .read_all = ut_fd_stream_read_all};
+
 static void ut_fd_stream_write(UtObject *object, UtObject *data,
                                UtOutputStreamCallback callback, void *user_data,
                                UtObject *cancel) {
@@ -253,7 +270,8 @@ static UtObjectFunctions object_functions = {
     .type_name = "FdStream",
     .init = ut_fd_stream_init,
     .cleanup = ut_fd_stream_cleanup,
-    .interfaces = {{&ut_output_stream_id, &output_stream_functions},
+    .interfaces = {{&ut_input_stream_id, &input_stream_functions},
+                   {&ut_output_stream_id, &output_stream_functions},
                    {NULL, NULL}}};
 
 UtObject *ut_fd_stream_new(int fd) {
@@ -261,33 +279,6 @@ UtObject *ut_fd_stream_new(int fd) {
   UtFdStream *self = (UtFdStream *)object;
   self->fd = fd;
   return object;
-}
-
-void ut_fd_stream_read(UtObject *object, size_t count,
-                       UtFdStreamReadCallback callback, void *user_data,
-                       UtObject *cancel) {
-  UtFdStream *self = (UtFdStream *)object;
-  assert(self->fd >= 0);
-
-  start_read(self, count, READ_MODE_SINGLE, callback, user_data, cancel);
-}
-
-void ut_fd_stream_read_stream(UtObject *object, size_t block_size,
-                              UtFdStreamReadCallback callback, void *user_data,
-                              UtObject *cancel) {
-  UtFdStream *self = (UtFdStream *)object;
-  assert(self->fd >= 0);
-
-  start_read(self, block_size, READ_MODE_STREAM, callback, user_data, cancel);
-}
-
-void ut_fd_stream_read_all(UtObject *object, size_t block_size,
-                           UtFdStreamReadCallback callback, void *user_data,
-                           UtObject *cancel) {
-  UtFdStream *self = (UtFdStream *)object;
-  assert(self->fd >= 0);
-
-  start_read(self, block_size, READ_MODE_ALL, callback, user_data, cancel);
 }
 
 bool ut_object_is_fd_stream(UtObject *object) {

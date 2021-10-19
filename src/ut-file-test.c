@@ -15,7 +15,7 @@ static size_t read_cb(void *user_data, UtObject *data) {
 int main(int argc, char **argv) {
   UtObject *readme = ut_file_new("README.md");
   ut_file_open_read(readme);
-  ut_file_read_all(readme, 1, read_cb, NULL, NULL);
+  ut_input_stream_read_all(readme, 1, read_cb, NULL, NULL);
 
   UtObject *test_file = ut_file_new("TEST");
   ut_file_open_write(test_file, true);

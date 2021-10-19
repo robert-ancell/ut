@@ -13,6 +13,7 @@
 #include "ut-cancel.h"
 #include "ut-event-loop.h"
 #include "ut-fd-stream.h"
+#include "ut-input-stream.h"
 #include "ut-object-private.h"
 #include "ut-output-stream.h"
 #include "ut-tcp-client.h"
@@ -135,6 +136,30 @@ static void ut_tcp_client_cleanup(UtObject *object) {
   disconnect_client(self);
 }
 
+static void ut_tcp_client_read(UtObject *object, size_t block_size,
+                               UtInputStreamCallback callback, void *user_data,
+                               UtObject *cancel) {
+  assert(ut_object_is_tcp_client(object));
+  UtTcpClient *self = (UtTcpClient *)object;
+  assert(self->stream != NULL);
+
+  ut_input_stream_read(self->stream, block_size, callback, user_data, cancel);
+}
+
+static void ut_tcp_client_read_all(UtObject *object, size_t block_size,
+                                   UtInputStreamCallback callback,
+                                   void *user_data, UtObject *cancel) {
+  assert(ut_object_is_tcp_client(object));
+  UtTcpClient *self = (UtTcpClient *)object;
+  assert(self->stream != NULL);
+
+  ut_input_stream_read_all(self->stream, block_size, callback, user_data,
+                           cancel);
+}
+
+static UtInputStreamFunctions input_stream_functions = {
+    .read = ut_tcp_client_read, .read_all = ut_tcp_client_read_all};
+
 static void ut_tcp_client_write(UtObject *object, UtObject *data,
                                 UtOutputStreamCallback callback,
                                 void *user_data, UtObject *cancel) {
@@ -160,7 +185,8 @@ static UtObjectFunctions object_functions = {
     .type_name = "TcpClient",
     .init = ut_tcp_client_init,
     .cleanup = ut_tcp_client_cleanup,
-    .interfaces = {{&ut_output_stream_id, &output_stream_functions},
+    .interfaces = {{&ut_input_stream_id, &input_stream_functions},
+                   {&ut_output_stream_id, &output_stream_functions},
                    {NULL, NULL}}};
 
 UtObject *ut_tcp_client_new(const char *address, uint16_t port) {
@@ -185,36 +211,6 @@ void ut_tcp_client_connect(UtObject *object,
                                        callback, user_data, cancel);
   ut_event_loop_run_in_thread(lookup_thread_cb, data, NULL, lookup_result_cb,
                               data, NULL);
-}
-
-void ut_tcp_client_read(UtObject *object, size_t count,
-                        UtTcpClientReadCallback callback, void *user_data,
-                        UtObject *cancel) {
-  assert(ut_object_is_tcp_client(object));
-  UtTcpClient *self = (UtTcpClient *)object;
-  assert(self->stream != NULL);
-
-  ut_fd_stream_read(self->stream, count, callback, user_data, cancel);
-}
-
-void ut_tcp_client_read_stream(UtObject *object, size_t block_size,
-                               UtTcpClientReadCallback callback,
-                               void *user_data, UtObject *cancel) {
-  assert(ut_object_is_tcp_client(object));
-  UtTcpClient *self = (UtTcpClient *)object;
-  assert(self->stream != NULL);
-
-  ut_fd_stream_read_stream(self->stream, block_size, callback, user_data,
-                           cancel);
-}
-
-void ut_tcp_client_read_all(UtObject *object, UtTcpClientReadCallback callback,
-                            void *user_data, UtObject *cancel) {
-  assert(ut_object_is_tcp_client(object));
-  UtTcpClient *self = (UtTcpClient *)object;
-  assert(self->stream != NULL);
-
-  ut_fd_stream_read_all(self->stream, 65535, callback, user_data, cancel);
 }
 
 void ut_tcp_client_disconnect(UtObject *object) {

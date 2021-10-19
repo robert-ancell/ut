@@ -5,20 +5,6 @@
 
 #pragma once
 
-typedef size_t (*UtFdStreamReadCallback)(void *user_data, UtObject *data);
-
 UtObject *ut_fd_stream_new(int fd);
-
-void ut_fd_stream_read(UtObject *object, size_t count,
-                       UtFdStreamReadCallback callback, void *user_data,
-                       UtObject *cancel);
-
-void ut_fd_stream_read_stream(UtObject *object, size_t block_size,
-                              UtFdStreamReadCallback callback, void *user_data,
-                              UtObject *cancel);
-
-void ut_fd_stream_read_all(UtObject *object, size_t block_size,
-                           UtFdStreamReadCallback callback, void *user_data,
-                           UtObject *cancel);
 
 bool ut_object_is_fd_stream(UtObject *object);

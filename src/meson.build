@@ -6,6 +6,7 @@ ut_sources = [
   'ut-fd-stream.c',
   'ut-file.c',
   'ut-hash-map.c',
+  'ut-input-stream.c',
   'ut-list.c',
   'ut-map.c',
   'ut-map-item.c',
