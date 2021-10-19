@@ -102,7 +102,7 @@ void ut_uint8_array_append(UtObject *object, uint8_t data) {
 
 void ut_uint8_array_append_block(UtObject *object, const uint8_t *data,
                                  size_t data_length) {
-  assert(ut_object_is_type(object, &object_functions));
+  assert(ut_object_is_uint8_array(object));
   UtUint8Array *self = (UtUint8Array *)object;
   ut_uint8_array_insert_block(object, self->data_length, data, data_length);
 }
@@ -113,7 +113,7 @@ void ut_uint8_array_insert(UtObject *object, size_t index, uint8_t data) {
 
 void ut_uint8_array_insert_block(UtObject *object, size_t index,
                                  const uint8_t *data, size_t data_length) {
-  assert(ut_object_is_type(object, &object_functions));
+  assert(ut_object_is_uint8_array(object));
   UtUint8Array *self = (UtUint8Array *)object;
 
   size_t orig_data_length = self->data_length;
@@ -133,7 +133,7 @@ void ut_uint8_array_insert_block(UtObject *object, size_t index,
 }
 
 uint8_t *ut_uint8_array_get_data(UtObject *object) {
-  assert(ut_object_is_type(object, &object_functions));
+  assert(ut_object_is_uint8_array(object));
   UtUint8Array *self = (UtUint8Array *)object;
   return self->data;
 }

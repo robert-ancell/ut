@@ -110,7 +110,7 @@ UtObject *ut_object_array_new() {
 }
 
 void ut_object_array_append(UtObject *object, UtObject *element) {
-  assert(ut_object_is_type(object, &object_functions));
+  assert(ut_object_is_object_array(object));
   UtObjectArray *self = (UtObjectArray *)object;
 
   self->data_length++;

@@ -102,7 +102,7 @@ void ut_uint32_array_append(UtObject *object, uint32_t data) {
 
 void ut_uint32_array_append_block(UtObject *object, const uint32_t *data,
                                   size_t data_length) {
-  assert(ut_object_is_type(object, &object_functions));
+  assert(ut_object_is_uint32_array(object));
   UtUint32Array *self = (UtUint32Array *)object;
   ut_uint32_array_insert_block(object, self->data_length, data, data_length);
 }
@@ -113,7 +113,7 @@ void ut_uint32_array_insert(UtObject *object, size_t index, uint32_t data) {
 
 void ut_uint32_array_insert_block(UtObject *object, size_t index,
                                   const uint32_t *data, size_t data_length) {
-  assert(ut_object_is_type(object, &object_functions));
+  assert(ut_object_is_uint32_array(object));
   UtUint32Array *self = (UtUint32Array *)object;
 
   size_t orig_data_length = self->data_length;
@@ -133,7 +133,7 @@ void ut_uint32_array_insert_block(UtObject *object, size_t index,
 }
 
 uint32_t *ut_uint32_array_get_data(UtObject *object) {
-  assert(ut_object_is_type(object, &object_functions));
+  assert(ut_object_is_uint32_array(object));
   UtUint32Array *self = (UtUint32Array *)object;
   return self->data;
 }
