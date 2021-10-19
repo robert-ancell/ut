@@ -7,6 +7,7 @@ ut_sources = [
   'ut-file.c',
   'ut-hash-map.c',
   'ut-input-stream.c',
+  'ut-int64.c',
   'ut-list.c',
   'ut-map.c',
   'ut-map-item.c',
@@ -27,7 +28,8 @@ ut_sources = [
   'ut-uint16-list.c',
   'ut-uint32.c',
   'ut-uint32-list.c',
-  'ut-uint32-array.c'
+  'ut-uint32-array.c',
+  'ut-uint64.c',
 ]
 
 executable('ut-constant-string-test',
