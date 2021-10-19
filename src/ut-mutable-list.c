@@ -11,8 +11,18 @@ void ut_mutable_list_append(UtObject *object, UtObject *item) {
   ut_mutable_list_insert(object, length, item);
 }
 
+void ut_mutable_list_append_take(UtObject *object, UtObject *item) {
+  ut_mutable_list_append(object, item);
+  ut_object_unref(item);
+}
+
 void ut_mutable_list_prepend(UtObject *object, UtObject *item) {
   ut_mutable_list_insert(object, 0, item);
+}
+
+void ut_mutable_list_prepend_take(UtObject *object, UtObject *item) {
+  ut_mutable_list_prepend(object, item);
+  ut_object_unref(item);
 }
 
 void ut_mutable_list_insert(UtObject *object, size_t index, UtObject *item) {
@@ -20,6 +30,12 @@ void ut_mutable_list_insert(UtObject *object, size_t index, UtObject *item) {
       ut_object_get_interface(object, &ut_mutable_list_id);
   assert(mutable_list_functions != NULL);
   mutable_list_functions->insert(object, index, item);
+}
+
+void ut_mutable_list_insert_take(UtObject *object, size_t index,
+                                 UtObject *item) {
+  ut_mutable_list_insert(object, index, item);
+  ut_object_unref(item);
 }
 
 void ut_mutable_list_remove(UtObject *object, size_t index, size_t count) {

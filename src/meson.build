@@ -9,6 +9,7 @@ ut_sources = [
   'ut-hash-map.c',
   'ut-input-stream.c',
   'ut-int64.c',
+  'ut-json.c',
   'ut-list.c',
   'ut-map.c',
   'ut-map-item.c',
@@ -44,6 +45,10 @@ executable('ut-event-loop-test',
 
 executable('ut-file-test',
            'ut-file-test.c',
+           ut_sources)
+
+executable('ut-json-test',
+           'ut-json-test.c',
            ut_sources)
 
 executable('ut-map-test',
