@@ -17,6 +17,7 @@ ut_sources = [
   'ut-object-list.c',
   'ut-output-stream.c',
   'ut-string.c',
+  'ut-string-array.c',
   'ut-tcp-client.c',
   'ut-uint8.c',
   'ut-uint8-array.c',
