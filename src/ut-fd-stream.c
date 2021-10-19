@@ -10,6 +10,7 @@
 #include "ut-list.h"
 #include "ut-mutable-list.h"
 #include "ut-object-private.h"
+#include "ut-output-stream.h"
 #include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
 
@@ -38,7 +39,7 @@ typedef struct {
   size_t n_written;
   bool write_all;
   UtObject *watch_cancel;
-  UtFdStreamWriteCallback callback;
+  UtOutputStreamCallback callback;
   void *user_data;
   UtObject *cancel;
 } WriteData;
@@ -154,7 +155,7 @@ static void start_read(UtFdStream *self, size_t block_length, ReadMode mode,
 
 static WriteData *write_data_new(UtFdStream *self, UtObject *data_,
                                  bool write_all,
-                                 UtFdStreamWriteCallback callback,
+                                 UtOutputStreamCallback callback,
                                  void *user_data, UtObject *cancel) {
   WriteData *data = malloc(sizeof(WriteData));
   data->self = self;
@@ -221,9 +222,39 @@ static void ut_fd_stream_cleanup(UtObject *object) {
   ut_object_unref(self->read_buffer);
 }
 
-static UtObjectFunctions object_functions = {.type_name = "FdStream",
-                                             .init = ut_fd_stream_init,
-                                             .cleanup = ut_fd_stream_cleanup};
+static void ut_fd_stream_write(UtObject *object, UtObject *data,
+                               UtOutputStreamCallback callback, void *user_data,
+                               UtObject *cancel) {
+  UtFdStream *self = (UtFdStream *)object;
+  assert(self->fd >= 0);
+
+  WriteData *callback_data =
+      write_data_new(self, data, false, callback, user_data, cancel);
+  ut_event_loop_add_write_watch(self->fd, write_cb, callback_data,
+                                callback_data->watch_cancel);
+}
+
+static void ut_fd_stream_write_all(UtObject *object, UtObject *data,
+                                   UtOutputStreamCallback callback,
+                                   void *user_data, UtObject *cancel) {
+  UtFdStream *self = (UtFdStream *)object;
+  assert(self->fd >= 0);
+
+  WriteData *callback_data =
+      write_data_new(self, data, true, callback, user_data, cancel);
+  ut_event_loop_add_write_watch(self->fd, write_cb, callback_data,
+                                callback_data->watch_cancel);
+}
+
+static UtOutputStreamFunctions output_stream_functions = {
+    .write = ut_fd_stream_write, .write_all = ut_fd_stream_write_all};
+
+static UtObjectFunctions object_functions = {
+    .type_name = "FdStream",
+    .init = ut_fd_stream_init,
+    .cleanup = ut_fd_stream_cleanup,
+    .interfaces = {{&ut_output_stream_id, &output_stream_functions},
+                   {NULL, NULL}}};
 
 UtObject *ut_fd_stream_new(int fd) {
   UtObject *object = ut_object_new(sizeof(UtFdStream), &object_functions);
@@ -257,30 +288,6 @@ void ut_fd_stream_read_all(UtObject *object, size_t block_size,
   assert(self->fd >= 0);
 
   start_read(self, block_size, READ_MODE_ALL, callback, user_data, cancel);
-}
-
-void ut_fd_stream_write(UtObject *object, UtObject *data,
-                        UtFdStreamWriteCallback callback, void *user_data,
-                        UtObject *cancel) {
-  UtFdStream *self = (UtFdStream *)object;
-  assert(self->fd >= 0);
-
-  WriteData *callback_data =
-      write_data_new(self, data, false, callback, user_data, cancel);
-  ut_event_loop_add_write_watch(self->fd, write_cb, callback_data,
-                                callback_data->watch_cancel);
-}
-
-void ut_fd_stream_write_all(UtObject *object, UtObject *data,
-                            UtFdStreamWriteCallback callback, void *user_data,
-                            UtObject *cancel) {
-  UtFdStream *self = (UtFdStream *)object;
-  assert(self->fd >= 0);
-
-  WriteData *callback_data =
-      write_data_new(self, data, true, callback, user_data, cancel);
-  ut_event_loop_add_write_watch(self->fd, write_cb, callback_data,
-                                callback_data->watch_cancel);
 }
 
 bool ut_object_is_fd_stream(UtObject *object) {

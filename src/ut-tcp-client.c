@@ -14,6 +14,7 @@
 #include "ut-event-loop.h"
 #include "ut-fd-stream.h"
 #include "ut-object-private.h"
+#include "ut-output-stream.h"
 #include "ut-tcp-client.h"
 
 typedef struct {
@@ -134,8 +135,33 @@ static void ut_tcp_client_cleanup(UtObject *object) {
   disconnect_client(self);
 }
 
-static UtObjectFunctions object_functions = {.init = ut_tcp_client_init,
-                                             .cleanup = ut_tcp_client_cleanup};
+static void ut_tcp_client_write(UtObject *object, UtObject *data,
+                                UtOutputStreamCallback callback,
+                                void *user_data, UtObject *cancel) {
+  UtTcpClient *self = (UtTcpClient *)object;
+  assert(self->stream != NULL);
+
+  ut_output_stream_write(self->stream, data, callback, user_data, cancel);
+}
+
+static void ut_tcp_client_write_all(UtObject *object, UtObject *data,
+                                    UtOutputStreamCallback callback,
+                                    void *user_data, UtObject *cancel) {
+  UtTcpClient *self = (UtTcpClient *)object;
+  assert(self->stream != NULL);
+
+  ut_output_stream_write_all(self->stream, data, callback, user_data, cancel);
+}
+
+static UtOutputStreamFunctions output_stream_functions = {
+    .write = ut_tcp_client_write, .write_all = ut_tcp_client_write_all};
+
+static UtObjectFunctions object_functions = {
+    .type_name = "TcpClient",
+    .init = ut_tcp_client_init,
+    .cleanup = ut_tcp_client_cleanup,
+    .interfaces = {{&ut_output_stream_id, &output_stream_functions},
+                   {NULL, NULL}}};
 
 UtObject *ut_tcp_client_new(const char *address, uint16_t port) {
   UtObject *object = ut_object_new(sizeof(UtTcpClient), &object_functions);
@@ -189,26 +215,6 @@ void ut_tcp_client_read_all(UtObject *object, UtTcpClientReadCallback callback,
   assert(self->stream != NULL);
 
   ut_fd_stream_read_all(self->stream, 65535, callback, user_data, cancel);
-}
-
-void ut_tcp_client_write(UtObject *object, UtObject *data,
-                         UtTcpClientWriteCallback callback, void *user_data,
-                         UtObject *cancel) {
-  assert(ut_object_is_tcp_client(object));
-  UtTcpClient *self = (UtTcpClient *)object;
-  assert(self->stream != NULL);
-
-  ut_fd_stream_write(self->stream, data, callback, user_data, cancel);
-}
-
-void ut_tcp_client_write_all(UtObject *object, UtObject *data,
-                             UtTcpClientWriteCallback callback, void *user_data,
-                             UtObject *cancel) {
-  assert(ut_object_is_tcp_client(object));
-  UtTcpClient *self = (UtTcpClient *)object;
-  assert(self->stream != NULL);
-
-  ut_fd_stream_write_all(self->stream, data, callback, user_data, cancel);
 }
 
 void ut_tcp_client_disconnect(UtObject *object) {

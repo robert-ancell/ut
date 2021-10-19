@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #pragma once
 
 typedef struct _UtObject UtObject;
