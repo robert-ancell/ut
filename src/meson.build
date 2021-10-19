@@ -14,6 +14,7 @@ ut_sources = [
   'ut-map-item.c',
   'ut-mutable-list.c',
   'ut-mutable-string.c',
+  'ut-null.c',
   'ut-object.c',
   'ut-object-array.c',
   'ut-object-list.c',
