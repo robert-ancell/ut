@@ -1,4 +1,5 @@
 ut_sources = [
+  'ut-boolean.c',
   'ut-cancel.c',
   'ut-constant-string.c',
   'ut-constant-uint8-array.c',
