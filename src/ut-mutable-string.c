@@ -15,6 +15,41 @@ typedef struct {
   UtObject *data;
 } UtMutableString;
 
+static ssize_t get_utf8_code_unit_length(uint32_t code_point) {
+  if (code_point <= 0x7f) {
+    return 1;
+  } else if (code_point <= 0x7ff) {
+    return 2;
+  } else if (code_point <= 0xffff) {
+    return 3;
+  } else if (code_point <= 0x10ffff) {
+    return 4;
+  } else {
+    return -1;
+  }
+}
+
+static void write_utf8_code_unit(uint8_t *data, size_t offset,
+                                 uint32_t code_point) {
+  if (code_point <= 0x7f) {
+    data[offset] = code_point;
+  } else if (code_point <= 0x7ff) {
+    data[offset] = 0xc0 | (code_point >> 6);
+    data[offset + 1] = 0x80 | (code_point & 0x3f);
+  } else if (code_point <= 0xffff) {
+    data[offset] = 0xe0 | (code_point >> 12);
+    data[offset + 1] = 0x80 | ((code_point >> 6) & 0x3f);
+    data[offset + 2] = 0x80 | (code_point & 0x3f);
+  } else if (code_point <= 0x10ffff) {
+    data[offset] = 0xf0 | (code_point >> 18);
+    data[offset + 1] = 0x80 | ((code_point >> 12) & 0x3f);
+    data[offset + 2] = 0x80 | ((code_point >> 6) & 0x3f);
+    data[offset + 3] = 0x80 | (code_point & 0x3f);
+  } else {
+    assert(false);
+  }
+}
+
 static const char *ut_mutable_string_get_text(UtObject *object) {
   UtMutableString *self = (UtMutableString *)object;
   return (const char *)ut_uint8_list_get_data(self->data);
@@ -78,8 +113,9 @@ UtObject *ut_mutable_string_new_sized(const char *text, size_t length) {
 void ut_mutable_string_clear(UtObject *object) {
   assert(ut_object_is_mutable_string(object));
   UtMutableString *self = (UtMutableString *)object;
-  ut_mutable_list_clear(self->data);
-  ut_uint8_array_append(self->data, '\0');
+  ut_mutable_list_resize(self->data, 1);
+  uint8_t *buffer = ut_uint8_array_get_data(self->data);
+  buffer[0] = '\0';
 }
 
 void ut_mutable_string_prepend(UtObject *object, const char *text) {
@@ -97,6 +133,21 @@ void ut_mutable_string_prepend(UtObject *object, const char *text) {
   memcpy(data, text, text_length);
 }
 
+void ut_mutable_string_prepend_code_point(UtObject *object,
+                                          uint32_t code_point) {
+  assert(ut_object_is_mutable_string(object));
+  UtMutableString *self = (UtMutableString *)object;
+  size_t byte_count = get_utf8_code_unit_length(code_point);
+  assert(byte_count > 0);
+  size_t orig_length = ut_list_get_length(self->data);
+  ut_mutable_list_resize(self->data, orig_length + byte_count);
+  uint8_t *data = ut_uint8_array_get_data(self->data);
+  for (size_t i = orig_length + byte_count - 1; i >= byte_count; i--) {
+    data[i] = data[i - byte_count];
+  }
+  write_utf8_code_unit(data, 0, code_point);
+}
+
 void ut_mutable_string_append(UtObject *object, const char *text) {
   assert(ut_object_is_mutable_string(object));
   UtMutableString *self = (UtMutableString *)object;
@@ -111,37 +162,13 @@ void ut_mutable_string_append_code_point(UtObject *object,
                                          uint32_t code_point) {
   assert(ut_object_is_mutable_string(object));
   UtMutableString *self = (UtMutableString *)object;
-  assert(code_point <= 0x1fffff);
-  size_t byte_count;
-  if (code_point <= 0x7f) {
-    byte_count = 1;
-  } else if (code_point <= 0x7ff) {
-    byte_count = 2;
-  } else if (code_point <= 0x1fff) {
-    byte_count = 3;
-  } else {
-    byte_count = 4;
-  }
+  size_t byte_count = get_utf8_code_unit_length(code_point);
+  assert(byte_count > 0);
   size_t orig_length = ut_list_get_length(self->data);
   ut_mutable_list_resize(self->data, orig_length + byte_count);
   uint8_t *data = ut_uint8_array_get_data(self->data);
-  size_t offset = orig_length - 1;
-  if (code_point <= 0x7f) {
-    data[offset] = code_point;
-  } else if (code_point <= 0x7ff) {
-    data[offset] = 0xc0 | (code_point >> 6);
-    data[offset + 1] = 0x80 | (code_point & 0x3f);
-  } else if (code_point <= 0x1fff) {
-    data[offset] = 0xe0 | (code_point >> 12);
-    data[offset + 1] = 0x80 | ((code_point >> 6) & 0x3f);
-    data[offset + 2] = 0x80 | (code_point & 0x3f);
-  } else {
-    data[offset] = 0xe0 | (code_point >> 18);
-    data[offset + 1] = 0x80 | ((code_point >> 12) & 0x3f);
-    data[offset + 2] = 0x80 | ((code_point >> 6) & 0x3f);
-    data[offset + 3] = 0x80 | (code_point & 0x3f);
-  }
-  data[offset + byte_count] = '\0';
+  write_utf8_code_unit(data, orig_length - 1, code_point);
+  data[orig_length + byte_count - 1] = '\0';
 }
 
 bool ut_object_is_mutable_string(UtObject *object) {

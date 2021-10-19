@@ -13,6 +13,9 @@ void ut_mutable_string_clear(UtObject *object);
 
 void ut_mutable_string_prepend(UtObject *object, const char *text);
 
+void ut_mutable_string_prepend_code_point(UtObject *object,
+                                          uint32_t code_point);
+
 void ut_mutable_string_append(UtObject *object, const char *text);
 
 void ut_mutable_string_append_code_point(UtObject *object, uint32_t code_point);
