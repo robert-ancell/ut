@@ -4,6 +4,7 @@
 #include "ut-constant-uint8-array.h"
 #include "ut-event-loop.h"
 #include "ut-file.h"
+#include "ut-float64.h"
 #include "ut-hash-map.h"
 #include "ut-input-stream.h"
 #include "ut-int64.h"

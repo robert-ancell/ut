@@ -48,6 +48,31 @@ int main(int argc, char **argv) {
   assert(ut_object_is_int64(one_k));
   assert(ut_int64_get_value(one_k) == 1024);
 
+  UtObject *one_point_one = ut_json_decode("1.1");
+  assert(one_point_one != NULL);
+  assert(ut_object_is_float64(one_point_one));
+  assert(ut_float64_get_value(one_point_one) == 1.1);
+
+  UtObject *minus_one_point_one = ut_json_decode("-1.1");
+  assert(minus_one_point_one != NULL);
+  assert(ut_object_is_float64(minus_one_point_one));
+  assert(ut_float64_get_value(minus_one_point_one) == -1.1);
+
+  UtObject *scientific_number = ut_json_decode("1.024e3");
+  assert(scientific_number != NULL);
+  assert(ut_object_is_float64(scientific_number));
+  assert(ut_float64_get_value(scientific_number) == 1024.0);
+
+  UtObject *one_M = ut_json_decode("1e6");
+  assert(one_M != NULL);
+  assert(ut_object_is_float64(one_M));
+  assert(ut_float64_get_value(one_M) == 1000000);
+
+  UtObject *one_u = ut_json_decode("1e-6");
+  assert(one_u != NULL);
+  assert(ut_object_is_float64(one_u));
+  assert(ut_float64_get_value(one_u) == 0.000001);
+
   UtObject *empty_string = ut_json_decode("\"\"");
   assert(empty_string != NULL);
   assert(ut_object_implements_string(empty_string));

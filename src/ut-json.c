@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "ut-boolean.h"
+#include "ut-float64.h"
 #include "ut-hash-map.h"
 #include "ut-int64.h"
 #include "ut-json.h"
@@ -183,40 +184,74 @@ static UtObject *decode_number(const char *text, size_t *offset) {
     }
   }
 
+  bool floating = false;
+  double fraction = 0.0;
   if (text[end] == '.') {
     end++;
-    int digit = decode_digit(text[end]);
-    if (digit < 0) {
+
+    floating = true;
+
+    double numerator = decode_digit(text[end]);
+    double denominator = 10;
+    if (numerator < 0) {
       // FIXME: Throw an error
       return NULL;
     }
     end++;
+    int digit;
     while ((digit = decode_digit(text[end])) >= 0) {
-      // FIXME
+      numerator = numerator * 10 + digit;
+      denominator *= 10;
       end++;
     }
+    fraction = numerator / denominator;
   }
 
+  int64_t exponent = 0;
   if (text[end] == 'e' || text[end] == 'E') {
     end++;
+
+    int64_t exponent_sign = 1;
     if (text[end] == '+' || text[end] == '-') {
+      exponent_sign = -1;
       end++;
     }
 
-    int digit = decode_digit(text[end]);
-    if (digit < 0) {
+    exponent = decode_digit(text[end]);
+    if (exponent < 0) {
       // FIXME: Throw an error
       return NULL;
     }
     end++;
+    int digit;
     while ((digit = decode_digit(text[end])) >= 0) {
-      // FIXME
+      exponent = exponent * 10 + digit;
       end++;
     }
+
+    exponent *= exponent_sign;
+  }
+  if (exponent != 0) {
+    floating = true;
   }
 
   *offset = end;
-  return ut_int64_new(sign * value);
+  if (floating) {
+    double v = sign * (value + fraction);
+    for (int64_t i = 0; i < exponent; i++) {
+      v *= 10;
+    }
+    double divisor = 1;
+    for (int64_t i = exponent; i < 0; i++) {
+      divisor *= 10;
+    }
+    return ut_float64_new(v / divisor);
+  } else {
+    for (int64_t i = 0; i < exponent; i++) {
+      value *= 10;
+    }
+    return ut_int64_new(sign * value);
+  }
 }
 
 static UtObject *decode_object(const char *text, size_t *offset) {
