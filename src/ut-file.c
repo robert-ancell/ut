@@ -93,7 +93,7 @@ static UtOutputStreamFunctions output_stream_functions = {
     .write = ut_file_write, .write_all = ut_file_write_all};
 
 static UtObjectFunctions object_functions = {
-    .type_name = "File",
+    .type_name = "UtFile",
     .init = ut_file_init,
     .cleanup = ut_file_cleanup,
     .interfaces = {{&ut_input_stream_id, &input_stream_functions},

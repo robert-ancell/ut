@@ -50,7 +50,7 @@ static void ut_mutable_string_cleanup(UtObject *object) {
 }
 
 static UtObjectFunctions object_functions = {
-    .type_name = "MutableString",
+    .type_name = "UtMutableString",
     .init = ut_mutable_string_init,
     .to_string = ut_string_to_string,
     .equal = ut_string_equal,

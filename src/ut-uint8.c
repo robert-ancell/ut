@@ -31,7 +31,7 @@ static int ut_uint8_hash(UtObject *object) {
   return self->value;
 }
 
-static UtObjectFunctions object_functions = {.type_name = "Uint8",
+static UtObjectFunctions object_functions = {.type_name = "UtUint8",
                                              .to_string = ut_uint8_to_string,
                                              .equal = ut_uint8_equal,
                                              .hash = ut_uint8_hash};

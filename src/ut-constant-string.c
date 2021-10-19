@@ -38,7 +38,7 @@ static UtListFunctions list_functions = {
     .get_length = ut_constant_string_get_data_length};
 
 static UtObjectFunctions object_functions = {
-    .type_name = "ConstantString",
+    .type_name = "UtConstantString",
     .to_string = ut_string_to_string,
     .equal = ut_string_equal,
     .hash = ut_string_hash,

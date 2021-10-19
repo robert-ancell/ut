@@ -83,7 +83,7 @@ static void ut_uint32_array_cleanup(UtObject *object) {
 }
 
 static UtObjectFunctions object_functions = {
-    .type_name = "Uint32Array",
+    .type_name = "UtUint32Array",
     .init = ut_uint32_array_init,
     .to_string = ut_list_to_string,
     .cleanup = ut_uint32_array_cleanup,

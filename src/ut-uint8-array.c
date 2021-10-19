@@ -83,7 +83,7 @@ static void ut_uint8_array_cleanup(UtObject *object) {
 }
 
 static UtObjectFunctions object_functions = {
-    .type_name = "Uint8Array",
+    .type_name = "UtUint8Array",
     .init = ut_uint8_array_init,
     .to_string = ut_list_to_string,
     .cleanup = ut_uint8_array_cleanup,

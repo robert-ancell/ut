@@ -43,7 +43,7 @@ static void ut_constant_uint8_array_init(UtObject *object) {
 }
 
 static UtObjectFunctions object_functions = {
-    .type_name = "ConstantUint8Array",
+    .type_name = "UtConstantUint8Array",
     .init = ut_constant_uint8_array_init,
     .to_string = ut_list_to_string,
     .interfaces = {{&ut_uint8_list_id, &uint8_list_functions},

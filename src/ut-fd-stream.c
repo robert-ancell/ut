@@ -267,7 +267,7 @@ static UtOutputStreamFunctions output_stream_functions = {
     .write = ut_fd_stream_write, .write_all = ut_fd_stream_write_all};
 
 static UtObjectFunctions object_functions = {
-    .type_name = "FdStream",
+    .type_name = "UtFdStream",
     .init = ut_fd_stream_init,
     .cleanup = ut_fd_stream_cleanup,
     .interfaces = {{&ut_input_stream_id, &input_stream_functions},

@@ -11,7 +11,7 @@ static void ut_cancel_init(UtObject *object) {
   self->is_active = false;
 }
 
-static UtObjectFunctions object_functions = {.type_name = "Cancel",
+static UtObjectFunctions object_functions = {.type_name = "UtCancel",
                                              .init = ut_cancel_init};
 
 UtObject *ut_cancel_new() {

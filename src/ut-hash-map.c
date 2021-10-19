@@ -54,7 +54,7 @@ static void ut_hash_map_item_cleanup(UtObject *object) {
 }
 
 static UtObjectFunctions item_object_functions = {
-    .type_name = "HashMapItem",
+    .type_name = "UtHashMapItem",
     .init = ut_hash_map_item_init,
     .cleanup = ut_hash_map_item_cleanup,
     .interfaces = {{&ut_map_item_id, &map_item_functions}, {NULL, NULL}}};
@@ -188,7 +188,7 @@ static void ut_hash_map_cleanup(UtObject *object) {
 }
 
 static UtObjectFunctions object_functions = {
-    .type_name = "HashMap",
+    .type_name = "UtHashMap",
     .init = ut_hash_map_init,
     .to_string = ut_map_to_string,
     .cleanup = ut_hash_map_cleanup,

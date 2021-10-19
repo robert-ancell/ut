@@ -96,7 +96,7 @@ static void ut_object_array_cleanup(UtObject *object) {
 }
 
 static UtObjectFunctions object_functions = {
-    .type_name = "ObjectArray",
+    .type_name = "UtObjectArray",
     .init = ut_object_array_init,
     .to_string = ut_list_to_string,
     .cleanup = ut_object_array_cleanup,

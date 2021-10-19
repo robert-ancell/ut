@@ -31,7 +31,7 @@ static int ut_uint16_hash(UtObject *object) {
   return self->value;
 }
 
-static UtObjectFunctions object_functions = {.type_name = "Uint16",
+static UtObjectFunctions object_functions = {.type_name = "UtUint16",
                                              .to_string = ut_uint16_to_string,
                                              .equal = ut_uint16_equal,
                                              .hash = ut_uint16_hash};

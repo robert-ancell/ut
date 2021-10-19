@@ -182,7 +182,7 @@ static UtOutputStreamFunctions output_stream_functions = {
     .write = ut_tcp_client_write, .write_all = ut_tcp_client_write_all};
 
 static UtObjectFunctions object_functions = {
-    .type_name = "TcpClient",
+    .type_name = "UtTcpClient",
     .init = ut_tcp_client_init,
     .cleanup = ut_tcp_client_cleanup,
     .interfaces = {{&ut_input_stream_id, &input_stream_functions},
