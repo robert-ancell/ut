@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "ut-boolean.h"
@@ -8,13 +9,221 @@
 #include "ut-hash-map.h"
 #include "ut-int64.h"
 #include "ut-json.h"
+#include "ut-list.h"
+#include "ut-map-item.h"
 #include "ut-map.h"
 #include "ut-mutable-list.h"
 #include "ut-mutable-string.h"
 #include "ut-null.h"
 #include "ut-object-array.h"
+#include "ut-string.h"
+
+static bool encode_value(UtObject *buffer, UtObject *value);
 
 static UtObject *decode_value(const char *text, size_t *offset);
+
+static bool get_utf8_code_point(const char *text, size_t *offset,
+                                uint32_t *code_point) {
+  uint8_t byte1 = text[*offset];
+  if ((byte1 & 0x80) == 0) {
+    *code_point = byte1;
+    (*offset)++;
+    return true;
+  } else if ((byte1 & 0xe0) == 0xc0) {
+    uint8_t byte2;
+    if ((byte2 = text[*offset + 1]) == '\0') {
+      return false;
+    }
+    if ((byte2 & 0xc0) != 0x80) {
+      // FIXME: Throw an error (invalid utf-8)
+      return false;
+    }
+    *code_point = (byte1 & 0x1f) << 6 | (byte2 & 0x3f);
+    (*offset) += 2;
+    return true;
+  } else if ((byte1 & 0xf0) == 0xe0) {
+    uint8_t byte2, byte3;
+    if ((byte2 = text[*offset + 1]) == '\0' ||
+        (byte3 = text[*offset + 2]) == '\0') {
+      return false;
+    }
+    if ((byte2 & 0xc0) != 0x80 || (byte3 & 0xc0) != 0x80) {
+      // FIXME: Throw an error (invalid utf-8)
+      return false;
+    }
+    *code_point = (byte1 & 0x0f) << 12 | (byte2 & 0x3f) << 6 | (byte3 & 0x3f);
+    (*offset) += 3;
+    return true;
+  } else if ((byte1 & 0xf8) == 0xf0) {
+    uint8_t byte2, byte3, byte4;
+    if ((byte2 = text[*offset + 1]) == '\0' ||
+        (byte3 = text[*offset + 2]) == '\0' ||
+        (byte4 = text[*offset + 3]) == '\0') {
+      return false;
+    }
+    if ((byte2 & 0xc0) != 0x80 || (byte3 & 0xc0) != 0x80 ||
+        (byte4 & 0xc0) != 0x80) {
+      // FIXME: Throw an error (invalid utf-8)
+      return false;
+    }
+    *code_point = (byte1 & 0x07) << 18 | (byte2 & 0x3f) << 12 |
+                  (byte3 & 0x3f) << 6 | (byte4 & 0x3f);
+    (*offset) += 4;
+    return true;
+  } else {
+    // FIXME: Throw an error (invalid utf-8)
+    return false;
+  }
+}
+
+static bool encode_string(UtObject *buffer, const char *value) {
+  ut_mutable_string_append(buffer, "\"");
+  size_t offset = 0;
+  while (true) {
+    uint32_t code_point;
+    if (!get_utf8_code_point(value, &offset, &code_point)) {
+      return false;
+    }
+    if (code_point == '\0') {
+      ut_mutable_string_append(buffer, "\"");
+      return true;
+    }
+    if (code_point <= 0x1f || code_point == 0x7f) {
+      switch (code_point) {
+      case '\b':
+        ut_mutable_string_append(buffer, "\\b");
+        break;
+      case '\f':
+        ut_mutable_string_append(buffer, "\\f");
+        break;
+      case '\n':
+        ut_mutable_string_append(buffer, "\\n");
+        break;
+      case '\r':
+        ut_mutable_string_append(buffer, "\\r");
+        break;
+      case '\t':
+        ut_mutable_string_append(buffer, "\\t");
+        break;
+      default:
+        char escape_sequence[7];
+        snprintf(escape_sequence, 7, "\\u%04x", code_point);
+        ut_mutable_string_append(buffer, escape_sequence);
+        break;
+      }
+    } else if (code_point == '\"') {
+      ut_mutable_string_append(buffer, "\\\"");
+    } else if (code_point == '\\') {
+      ut_mutable_string_append(buffer, "\\\\");
+    } else {
+      ut_mutable_string_append_code_point(buffer, code_point);
+    }
+  }
+}
+
+static bool encode_integer_number(UtObject *buffer, int64_t value) {
+  char text[1024];
+  snprintf(text, 1024, "%li", value);
+  ut_mutable_string_append(buffer, text);
+  return true;
+}
+
+static bool encode_float_number(UtObject *buffer, double value) {
+  char text[1024];
+  snprintf(text, 1024, "%f", value);
+  ut_mutable_string_append(buffer, text);
+  return true;
+}
+
+static bool encode_object(UtObject *buffer, UtObject *value) {
+  ut_mutable_string_append(buffer, "{");
+  UtObject *items = ut_map_get_items(value);
+  size_t length = ut_list_get_length(items);
+  for (size_t i = 0; i < length; i++) {
+    UtObject *item = ut_list_get_element(items, i);
+    if (i != 0) {
+      ut_mutable_string_append(buffer, ",");
+    }
+
+    UtObject *key = ut_map_item_get_key(item);
+    if (!ut_object_implements_string(key)) {
+      ut_object_unref(key);
+      ut_object_unref(items);
+      ut_object_unref(item);
+      // FIXME: Throw exception
+      return false;
+    }
+    bool result = encode_string(buffer, ut_string_get_text(key));
+    ut_object_unref(key);
+    if (!result) {
+      ut_object_unref(items);
+      ut_object_unref(item);
+      return false;
+    }
+
+    ut_mutable_string_append(buffer, ":");
+
+    UtObject *value = ut_map_item_get_value(item);
+    result = encode_value(buffer, value);
+    ut_object_unref(value);
+    if (!result) {
+      ut_object_unref(items);
+      ut_object_unref(item);
+      return false;
+    }
+  }
+  ut_mutable_string_append(buffer, "}");
+  return true;
+}
+
+static bool encode_array(UtObject *buffer, UtObject *value) {
+  ut_mutable_string_append(buffer, "[");
+  size_t length = ut_list_get_length(value);
+  for (size_t i = 0; i < length; i++) {
+    UtObject *child = ut_list_get_element(value, i);
+    if (i != 0) {
+      ut_mutable_string_append(buffer, ",");
+    }
+    bool result = encode_value(buffer, child);
+    ut_object_unref(child);
+    if (!result) {
+      return false;
+    }
+  }
+  ut_mutable_string_append(buffer, "]");
+  return true;
+}
+
+static bool encode_boolean(UtObject *buffer, bool value) {
+  ut_mutable_string_append(buffer, value ? "true" : "false");
+  return true;
+}
+
+static bool encode_null(UtObject *buffer) {
+  ut_mutable_string_append(buffer, "null");
+  return true;
+}
+
+static bool encode_value(UtObject *buffer, UtObject *value) {
+  if (ut_object_implements_string(value)) {
+    return encode_string(buffer, ut_string_get_text(value));
+  } else if (ut_object_is_int64(value)) {
+    return encode_integer_number(buffer, ut_int64_get_value(value));
+  } else if (ut_object_is_float64(value)) {
+    return encode_float_number(buffer, ut_float64_get_value(value));
+  } else if (ut_object_implements_map(value)) {
+    return encode_object(buffer, value);
+  } else if (ut_object_implements_list(value)) {
+    return encode_array(buffer, value);
+  } else if (ut_object_is_boolean(value)) {
+    return encode_boolean(buffer, ut_boolean_get_value(value));
+  } else if (ut_object_is_null(value)) {
+    return encode_null(buffer);
+  } else {
+    // FIXME: Throw error
+    return false;
+  }
+}
 
 static int decode_digit(char c) {
   if (c >= '0' && c <= '9') {
@@ -112,48 +321,15 @@ static UtObject *decode_string(const char *text, size_t *offset) {
       }
       end += 2;
     } else {
-      uint8_t byte1 = text[end];
-      if (byte1 <= 0x1f || byte1 == 0x7f) {
+      if (!get_utf8_code_point(text, &end, &code_point)) {
+        ut_object_unref(value);
+        return NULL;
+      }
+
+      if (code_point <= 0x1f || code_point == 0x7f) {
         // FIXME: Throw an error (control characters not allowed)
         ut_object_unref(value);
         return NULL;
-      } else if ((byte1 & 0x80) == 0) {
-        code_point = byte1;
-        end++;
-      } else if ((byte1 & 0xe0) == 0xc0) {
-        if (text[end + 1] == '\0') {
-          return NULL;
-        }
-        uint8_t byte2 = text[end + 1];
-        if ((byte1 & 0xc0) != 0x80) {
-          // FIXME: Throw an error (invalid utf-8)
-          return NULL;
-        }
-        code_point = (byte1 & 0x1f) << 6 | (byte2 & 0x3f);
-        end += 2;
-      } else if ((byte1 & 0xf0) == 0xe0) {
-        if (text[end + 1] == '\0' || text[end + 2] == '\0') {
-          return NULL;
-        }
-        uint8_t byte2 = text[end + 1];
-        uint8_t byte3 = text[end + 2];
-        code_point =
-            (byte1 & 0x0f) << 12 | (byte2 & 0x3f) << 6 | (byte3 & 0x3f);
-        end += 3;
-      } else if ((byte1 & 0xf8) == 0xf0) {
-        if (text[end + 1] == '\0' || text[end + 2] == '\0' ||
-            text[end + 3] == '\0') {
-          return NULL;
-        }
-        uint8_t byte2 = text[end + 1];
-        uint8_t byte3 = text[end + 2];
-        uint8_t byte4 = text[end + 3];
-        code_point = (byte1 & 0x07) << 18 | (byte2 & 0x3f) << 12 |
-                     (byte3 & 0x3f) << 6 | (byte4 & 0x3f);
-        end += 4;
-      } else {
-        // FIXME: Throw an error (invalid utf-8)
-        ut_object_unref(value);
       }
     }
 
@@ -425,7 +601,11 @@ static UtObject *decode_value(const char *text, size_t *offset) {
   return value;
 }
 
-char *ut_json_encode(UtObject *object) { return strdup(""); }
+char *ut_json_encode(UtObject *object) {
+  UtObject *buffer = ut_mutable_string_new("");
+  encode_value(buffer, object);
+  return strdup(ut_string_get_text(buffer));
+}
 
 UtObject *ut_json_decode(const char *text) {
   size_t offset = 0;

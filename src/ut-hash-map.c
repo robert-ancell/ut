@@ -26,12 +26,12 @@ struct _UtHashMapItem {
 
 static UtObject *ut_hash_map_item_get_key(UtObject *object) {
   UtHashMapItem *self = (UtHashMapItem *)object;
-  return self->key;
+  return ut_object_ref(self->key);
 }
 
 static UtObject *ut_hash_map_item_get_value(UtObject *object) {
   UtHashMapItem *self = (UtHashMapItem *)object;
-  return self->value;
+  return ut_object_ref(self->value);
 }
 
 static UtMapItemFunctions map_item_functions = {

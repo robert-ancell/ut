@@ -12,6 +12,8 @@ typedef struct {
 
 extern int ut_list_id;
 
+UtObject *ut_list_new();
+
 size_t ut_list_get_length(UtObject *object);
 
 // Returns a reference.

@@ -4,10 +4,13 @@
 
 #include "ut-list.h"
 #include "ut-mutable-string.h"
+#include "ut-object-array.h"
 #include "ut-object-private.h"
 #include "ut-string.h"
 
 int ut_list_id = 0;
+
+UtObject *ut_list_new() { return ut_object_array_new(); }
 
 size_t ut_list_get_length(UtObject *object) {
   UtListFunctions *list_functions =
