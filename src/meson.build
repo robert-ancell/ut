@@ -39,7 +39,9 @@ ut_sources = [
   'ut-uint32-array.c',
   'ut-uint64.c',
   'ut-utf8-decoder.c',
-  'ut-utf8-encoder.c'
+  'ut-utf8-encoder.c',
+  'ut-xml-document.c',
+  'ut-xml-element.c'
 ]
 
 executable('ut-constant-string-test',
@@ -80,4 +82,8 @@ executable('ut-utf8-decoder-test',
 
 executable('ut-utf8-encoder-test',
            'ut-utf8-encoder-test.c',
+           ut_sources)
+
+executable('ut-xml-document-test',
+           'ut-xml-document-test.c',
            ut_sources)

@@ -13,6 +13,8 @@ typedef struct {
 
 extern int ut_mutable_list_id;
 
+UtObject *ut_mutable_list_new();
+
 void ut_mutable_list_append(UtObject *object, UtObject *item);
 
 void ut_mutable_list_append_take(UtObject *object, UtObject *item);

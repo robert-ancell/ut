@@ -2,9 +2,12 @@
 
 #include "ut-list.h"
 #include "ut-mutable-list.h"
+#include "ut-object-array.h"
 #include "ut-object-private.h"
 
 int ut_mutable_list_id = 0;
+
+UtObject *ut_mutable_list_new() { return ut_object_array_new(); }
 
 void ut_mutable_list_append(UtObject *object, UtObject *item) {
   size_t length = ut_list_get_length(object);

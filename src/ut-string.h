@@ -13,6 +13,8 @@ extern int ut_string_id;
 
 UtObject *ut_string_new(const char *text);
 
+UtObject *ut_string_new_sized(const char *text, size_t length);
+
 const char *ut_string_get_text(UtObject *object);
 
 char *ut_string_take_text(UtObject *object);

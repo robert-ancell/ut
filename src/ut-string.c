@@ -14,6 +14,10 @@ UtObject *ut_string_new(const char *text) {
   return ut_mutable_string_new(text);
 }
 
+UtObject *ut_string_new_sized(const char *text, size_t length) {
+  return ut_mutable_string_new_sized(text, length);
+}
+
 const char *ut_string_get_text(UtObject *object) {
   UtStringInterface *string_interface =
       ut_object_get_interface(object, &ut_string_id);
