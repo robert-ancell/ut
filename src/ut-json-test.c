@@ -6,70 +6,70 @@
 #include "ut.h"
 
 static void test_encode() {
-  UtObject *null = ut_null_new();
+  UtObjectRef null = ut_null_new();
   char *null_text = ut_json_encode(null);
   assert(strcmp(null_text, "null") == 0);
   free(null_text);
 
-  UtObject *boolean_true = ut_boolean_new(true);
+  UtObjectRef boolean_true = ut_boolean_new(true);
   char *boolean_true_text = ut_json_encode(boolean_true);
   assert(strcmp(boolean_true_text, "true") == 0);
   free(boolean_true_text);
 
-  UtObject *boolean_false = ut_boolean_new(false);
+  UtObjectRef boolean_false = ut_boolean_new(false);
   char *boolean_false_text = ut_json_encode(boolean_false);
   assert(strcmp(boolean_false_text, "false") == 0);
   free(boolean_false_text);
 
-  UtObject *zero = ut_int64_new(0);
+  UtObjectRef zero = ut_int64_new(0);
   char *zero_text = ut_json_encode(zero);
   assert(strcmp(zero_text, "0") == 0);
   free(zero_text);
 
-  UtObject *one = ut_int64_new(1);
+  UtObjectRef one = ut_int64_new(1);
   char *one_text = ut_json_encode(one);
   assert(strcmp(one_text, "1") == 0);
   free(one_text);
 
-  UtObject *minus_one = ut_int64_new(-1);
+  UtObjectRef minus_one = ut_int64_new(-1);
   char *minus_one_text = ut_json_encode(minus_one);
   assert(strcmp(minus_one_text, "-1") == 0);
   free(minus_one_text);
 
-  UtObject *one_k = ut_int64_new(1024);
+  UtObjectRef one_k = ut_int64_new(1024);
   char *one_k_text = ut_json_encode(one_k);
   assert(strcmp(one_k_text, "1024") == 0);
   free(one_k_text);
 
   // FIXME: float
 
-  UtObject *empty_string = ut_string_new("");
+  UtObjectRef empty_string = ut_string_new("");
   char *empty_string_text = ut_json_encode(empty_string);
   assert(strcmp(empty_string_text, "\"\"") == 0);
   free(empty_string_text);
 
-  UtObject *string = ut_string_new("Hello World!");
+  UtObjectRef string = ut_string_new("Hello World!");
   char *string_text = ut_json_encode(string);
   assert(strcmp(string_text, "\"Hello World!\"") == 0);
   free(string_text);
 
-  UtObject *escaped_string = ut_string_new("\"\\/\b\f\n\r\t\x12");
+  UtObjectRef escaped_string = ut_string_new("\"\\/\b\f\n\r\t\x12");
   char *escaped_string_text = ut_json_encode(escaped_string);
   assert(strcmp(escaped_string_text, "\"\\\"\\\\/\\b\\f\\n\\r\\t\\u0012\"") ==
          0);
   free(escaped_string_text);
 
-  UtObject *emoji_string = ut_string_new("😀");
+  UtObjectRef emoji_string = ut_string_new("😀");
   char *emoji_string_text = ut_json_encode(emoji_string);
   assert(strcmp(emoji_string_text, "\"😀\"") == 0);
   free(emoji_string_text);
 
-  UtObject *empty_array = ut_list_new();
+  UtObjectRef empty_array = ut_list_new();
   char *empty_array_text = ut_json_encode(empty_array);
   assert(strcmp(empty_array_text, "[]") == 0);
   free(empty_array_text);
 
-  UtObject *empty_object = ut_map_new();
+  UtObjectRef empty_object = ut_map_new();
   char *empty_object_text = ut_json_encode(empty_object);
   assert(strcmp(empty_object_text, "{}") == 0);
   free(empty_object_text);
