@@ -33,6 +33,9 @@ void ut_map_insert_string_take(UtObject *object, const char *key,
 // Returns a reference.
 UtObject *ut_map_lookup(UtObject *object, UtObject *key);
 
+// Returns a reference.
+UtObject *ut_map_lookup_string(UtObject *object, const char *key);
+
 void ut_map_remove(UtObject *object, UtObject *key);
 
 // Returns a reference.

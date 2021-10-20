@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ut-constant-string.h"
 #include "ut-hash-table.h"
 #include "ut-list.h"
 #include "ut-map-item.h"
@@ -46,6 +47,11 @@ UtObject *ut_map_lookup(UtObject *object, UtObject *key) {
   UtMapFunctions *map_functions = ut_object_get_interface(object, &ut_map_id);
   assert(map_functions != NULL);
   return map_functions->lookup(object, key);
+}
+
+UtObject *ut_map_lookup_string(UtObject *object, const char *key) {
+  UtObjectRef string_key = ut_constant_string_new(key);
+  return ut_map_lookup(object, string_key);
 }
 
 void ut_map_remove(UtObject *object, UtObject *key) {
