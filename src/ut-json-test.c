@@ -69,10 +69,34 @@ static void test_encode() {
   assert(strcmp(empty_array_text, "[]") == 0);
   free(empty_array_text);
 
+  UtObjectRef number_array = ut_list_new();
+  ut_mutable_list_append_take(number_array, ut_int64_new(1));
+  ut_mutable_list_append_take(number_array, ut_int64_new(2));
+  ut_mutable_list_append_take(number_array, ut_int64_new(3));
+  char *number_array_text = ut_json_encode(number_array);
+  assert(strcmp(number_array_text, "[1,2,3]") == 0);
+  free(number_array_text);
+
+  UtObjectRef mixed_array = ut_list_new();
+  ut_mutable_list_append_take(mixed_array, ut_boolean_new(false));
+  ut_mutable_list_append_take(mixed_array, ut_string_new("two"));
+  ut_mutable_list_append_take(mixed_array, ut_float64_new(3.1));
+  char *mixed_array_text = ut_json_encode(mixed_array);
+  assert(strcmp(mixed_array_text, "[false,\"two\",3.1]") == 0);
+  free(mixed_array_text);
+
   UtObjectRef empty_object = ut_map_new();
   char *empty_object_text = ut_json_encode(empty_object);
   assert(strcmp(empty_object_text, "{}") == 0);
   free(empty_object_text);
+
+  UtObjectRef number_object = ut_map_new();
+  ut_map_insert_take(number_object, ut_string_new("one"), ut_int64_new(1));
+  ut_map_insert_take(number_object, ut_string_new("two"), ut_int64_new(2));
+  ut_map_insert_take(number_object, ut_string_new("three"), ut_int64_new(3));
+  char *number_object_text = ut_json_encode(number_object);
+  assert(strcmp(number_object_text, "{\"one\":1,\"two\":2,\"three\":3}") == 0);
+  free(number_object_text);
 }
 
 static void test_decode() {
