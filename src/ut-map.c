@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ut-hash-map.h"
+#include "ut-hash-table.h"
 #include "ut-list.h"
 #include "ut-map-item.h"
 #include "ut-map.h"
@@ -12,7 +12,7 @@
 
 int ut_map_id = 0;
 
-UtObject *ut_map_new() { return ut_hash_map_new(); }
+UtObject *ut_map_new() { return ut_hash_table_new(); }
 
 size_t ut_map_get_length(UtObject *object) {
   UtMapFunctions *map_functions = ut_object_get_interface(object, &ut_map_id);

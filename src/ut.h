@@ -5,7 +5,7 @@
 #include "ut-event-loop.h"
 #include "ut-file.h"
 #include "ut-float64.h"
-#include "ut-hash-map.h"
+#include "ut-hash-table.h"
 #include "ut-input-stream.h"
 #include "ut-int64.h"
 #include "ut-json.h"

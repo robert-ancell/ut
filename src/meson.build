@@ -7,7 +7,7 @@ ut_sources = [
   'ut-fd-stream.c',
   'ut-file.c',
   'ut-float64.c',
-  'ut-hash-map.c',
+  'ut-hash-table.c',
   'ut-input-stream.c',
   'ut-int64.c',
   'ut-json.c',

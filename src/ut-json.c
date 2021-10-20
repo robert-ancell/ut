@@ -6,7 +6,7 @@
 
 #include "ut-boolean.h"
 #include "ut-float64.h"
-#include "ut-hash-map.h"
+#include "ut-hash-table.h"
 #include "ut-int64.h"
 #include "ut-json.h"
 #include "ut-list.h"
@@ -439,7 +439,7 @@ static UtObject *decode_object(const char *text, size_t *offset) {
 
   decode_whitespace(text, &end);
 
-  UtObjectRef object = ut_hash_map_new();
+  UtObjectRef object = ut_hash_table_new();
   if (text[end] == '}') {
     *offset = end + 1;
     return ut_object_ref(object);
