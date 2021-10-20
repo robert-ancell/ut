@@ -35,7 +35,7 @@ static void stdin_cb(void *user_data) {
 }
 
 int main(int argc, char **argv) {
-  UtObject *timer_cancel = ut_cancel_new();
+  UtObjectRef timer_cancel = ut_cancel_new();
   ut_event_loop_add_delay(2, delay2_cb, NULL, NULL);
   ut_event_loop_add_delay(5, delay5_cb, timer_cancel, NULL);
   ut_event_loop_add_delay(3, delay3_cb, NULL, NULL);
@@ -47,8 +47,6 @@ int main(int argc, char **argv) {
   ut_event_loop_add_read_watch(0, stdin_cb, NULL, NULL);
 
   ut_event_loop_run();
-
-  ut_object_unref(timer_cancel);
 
   return 0;
 }

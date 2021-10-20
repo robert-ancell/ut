@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stddef.h>
 
 #pragma once
 
@@ -15,3 +16,12 @@ int ut_object_get_hash(UtObject *object);
 UtObject *ut_object_ref(UtObject *object);
 
 void ut_object_unref(UtObject *object);
+
+static inline void ut_object_clear(UtObject **object) {
+  if (*object != NULL) {
+    ut_object_unref(*object);
+    *object = NULL;
+  }
+}
+
+#define UtObjectRef UtObject *__attribute__((__cleanup__(ut_object_clear)))

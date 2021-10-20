@@ -19,12 +19,10 @@ static void http_connect_cb(void *user_data) {
 }
 
 int main(int argc, char **argv) {
-  UtObject *tcp_client = ut_tcp_client_new("example.com", 80);
+  UtObjectRef tcp_client = ut_tcp_client_new("example.com", 80);
   ut_tcp_client_connect(tcp_client, http_connect_cb, tcp_client, NULL);
 
   ut_event_loop_run();
-
-  ut_object_unref(tcp_client);
 
   return 0;
 }

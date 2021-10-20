@@ -33,13 +33,11 @@ char *ut_object_to_string(UtObject *object) {
     return object->functions->to_string(object);
   }
 
-  UtObject *string = ut_mutable_string_new("<");
+  UtObjectRef string = ut_mutable_string_new("<");
   ut_mutable_string_append(string, ut_object_get_type_name(object));
   ut_mutable_string_append(string, ">");
 
-  char *result = strdup(ut_string_get_text(string));
-  ut_object_unref(string);
-  return result;
+  return strdup(ut_string_get_text(string));
 }
 
 bool ut_object_equal(UtObject *object, UtObject *other) {

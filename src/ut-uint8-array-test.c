@@ -4,7 +4,7 @@
 #include "ut.h"
 
 int main(int argc, char **argv) {
-  UtObject *list = ut_uint8_array_new();
+  UtObjectRef list = ut_uint8_array_new();
   ut_uint8_array_append(list, 0x01);
   ut_uint8_array_append(list, 0x02);
   ut_uint8_array_append(list, 0x03);
@@ -14,7 +14,6 @@ int main(int argc, char **argv) {
   char *list_string = ut_object_to_string(list);
   printf("list: %s\n", list_string);
   free(list_string);
-  ut_object_unref(list);
 
   return 0;
 }

@@ -137,38 +137,29 @@ static bool encode_float_number(UtObject *buffer, double value) {
 
 static bool encode_object(UtObject *buffer, UtObject *value) {
   ut_mutable_string_append(buffer, "{");
-  UtObject *items = ut_map_get_items(value);
+  UtObjectRef items = ut_map_get_items(value);
   size_t length = ut_list_get_length(items);
   for (size_t i = 0; i < length; i++) {
-    UtObject *item = ut_list_get_element(items, i);
+    UtObjectRef item = ut_list_get_element(items, i);
     if (i != 0) {
       ut_mutable_string_append(buffer, ",");
     }
 
-    UtObject *key = ut_map_item_get_key(item);
+    UtObjectRef key = ut_map_item_get_key(item);
     if (!ut_object_implements_string(key)) {
-      ut_object_unref(key);
-      ut_object_unref(items);
-      ut_object_unref(item);
       // FIXME: Throw exception
       return false;
     }
     bool result = encode_string(buffer, ut_string_get_text(key));
-    ut_object_unref(key);
     if (!result) {
-      ut_object_unref(items);
-      ut_object_unref(item);
       return false;
     }
 
     ut_mutable_string_append(buffer, ":");
 
-    UtObject *value = ut_map_item_get_value(item);
+    UtObjectRef value = ut_map_item_get_value(item);
     result = encode_value(buffer, value);
-    ut_object_unref(value);
     if (!result) {
-      ut_object_unref(items);
-      ut_object_unref(item);
       return false;
     }
   }
@@ -180,12 +171,11 @@ static bool encode_array(UtObject *buffer, UtObject *value) {
   ut_mutable_string_append(buffer, "[");
   size_t length = ut_list_get_length(value);
   for (size_t i = 0; i < length; i++) {
-    UtObject *child = ut_list_get_element(value, i);
+    UtObjectRef child = ut_list_get_element(value, i);
     if (i != 0) {
       ut_mutable_string_append(buffer, ",");
     }
     bool result = encode_value(buffer, child);
-    ut_object_unref(child);
     if (!result) {
       return false;
     }
@@ -262,11 +252,11 @@ static UtObject *decode_string(const char *text, size_t *offset) {
   }
   end++;
 
-  UtObject *value = ut_mutable_string_new("");
+  UtObjectRef value = ut_mutable_string_new("");
   while (true) {
     if (text[end] == '\"') {
       *offset = end + 1;
-      return value;
+      return ut_object_ref(value);
     }
 
     uint32_t code_point;
@@ -316,19 +306,16 @@ static UtObject *decode_string(const char *text, size_t *offset) {
         return NULL;
       default:
         // FIXME: Throw an error (unknown escape sequence)
-        ut_object_unref(value);
         return NULL;
       }
       end += 2;
     } else {
       if (!get_utf8_code_point(text, &end, &code_point)) {
-        ut_object_unref(value);
         return NULL;
       }
 
       if (code_point <= 0x1f || code_point == 0x7f) {
         // FIXME: Throw an error (control characters not allowed)
-        ut_object_unref(value);
         return NULL;
       }
     }
@@ -439,47 +426,41 @@ static UtObject *decode_object(const char *text, size_t *offset) {
 
   decode_whitespace(text, &end);
 
-  UtObject *object = ut_hash_map_new();
+  UtObjectRef object = ut_hash_map_new();
   if (text[end] == '}') {
     *offset = end + 1;
-    return object;
+    return ut_object_ref(object);
   }
 
   while (true) {
     decode_whitespace(text, &end);
-    UtObject *key = decode_string(text, &end);
+    UtObjectRef key = decode_string(text, &end);
     if (key == NULL) {
       // FIXME: Throw an error (invalid key in object)
-      ut_object_unref(object);
       return NULL;
     }
 
     decode_whitespace(text, &end);
     if (text[end] != ':') {
-      ut_object_unref(key);
-      ut_object_unref(object);
       // FIXME: Throw an error (invalid object)
       return NULL;
     }
     end++;
 
-    UtObject *value = decode_value(text, &end);
+    UtObjectRef value = decode_value(text, &end);
     if (value == NULL) {
-      ut_object_unref(key);
-      ut_object_unref(object);
       // FIXME: Throw an error (invalid value in object)
       return NULL;
     }
 
-    ut_map_insert_take(object, key, value);
+    ut_map_insert(object, key, value);
 
     if (text[end] == '}') {
       *offset = end + 1;
-      return object;
+      return ut_object_ref(object);
     }
 
     if (text[end] != ',') {
-      ut_object_unref(object);
       // FIXME: Throw an error (invalid character beween objects)
       return NULL;
     }
@@ -494,16 +475,15 @@ static UtObject *decode_array(const char *text, size_t *offset) {
 
   decode_whitespace(text, &end);
 
-  UtObject *array = ut_object_array_new();
+  UtObjectRef array = ut_object_array_new();
   if (text[end] == ']') {
     *offset = end + 1;
-    return array;
+    return ut_object_ref(array);
   }
 
   while (true) {
     UtObject *value = decode_value(text, &end);
     if (value == NULL) {
-      ut_object_unref(array);
       // FIXME: Throw an error (invalid value in array)
       return NULL;
     }
@@ -512,11 +492,10 @@ static UtObject *decode_array(const char *text, size_t *offset) {
 
     if (text[end] == ']') {
       *offset = end + 1;
-      return array;
+      return ut_object_ref(array);
     }
 
     if (text[end] != ',') {
-      ut_object_unref(array);
       // FIXME: Throw an error
       return NULL;
     }

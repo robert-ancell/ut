@@ -33,9 +33,8 @@ void ut_map_insert_take(UtObject *object, UtObject *key, UtObject *value) {
 }
 
 void ut_map_insert_string(UtObject *object, const char *key, UtObject *value) {
-  UtObject *key_ = ut_string_new(key);
-  ut_map_insert(object, key_, value);
-  ut_object_unref(key_);
+  UtObjectRef key_object = ut_string_new(key);
+  ut_map_insert(object, key_object, value);
 }
 
 void ut_map_insert_string_take(UtObject *object, const char *key,
@@ -74,10 +73,10 @@ UtObject *ut_map_get_values(UtObject *object) {
 }
 
 char *ut_map_to_string(UtObject *object) {
-  UtObject *string = ut_mutable_string_new("{");
-  UtObject *items = ut_map_get_items(object);
+  UtObjectRef string = ut_mutable_string_new("{");
+  UtObjectRef items = ut_map_get_items(object);
   for (size_t i = 0; i < ut_list_get_length(items); i++) {
-    UtObject *item = ut_list_get_element(items, i);
+    UtObjectRef item = ut_list_get_element(items, i);
 
     if (i != 0) {
       ut_mutable_string_append(string, ", ");
@@ -92,15 +91,10 @@ char *ut_map_to_string(UtObject *object) {
     char *value_string = ut_object_to_string(ut_map_item_get_value(item));
     ut_mutable_string_append(string, value_string);
     free(value_string);
-
-    ut_object_unref(item);
   }
-  ut_object_unref(items);
   ut_mutable_string_append(string, "}");
 
-  char *result = strdup(ut_string_get_text(string));
-  ut_object_unref(string);
-  return result;
+  return strdup(ut_string_get_text(string));
 }
 
 bool ut_object_implements_map(UtObject *object) {

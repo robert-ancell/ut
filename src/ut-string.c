@@ -78,7 +78,7 @@ UtObject *ut_string_get_code_points(UtObject *object) {
 }
 
 char *ut_string_to_string(UtObject *object) {
-  UtObject *string = ut_mutable_string_new("\"");
+  UtObjectRef string = ut_mutable_string_new("\"");
   for (const char *c = ut_string_get_text(object); *c != '\0'; c++) {
     if (*c == 0x7) {
       ut_mutable_string_append(string, "\\a");
@@ -111,9 +111,7 @@ char *ut_string_to_string(UtObject *object) {
   }
   ut_mutable_string_append(string, "\"");
 
-  char *result = strdup(ut_string_get_text(string));
-  ut_object_unref(string);
-  return result;
+  return strdup(ut_string_get_text(string));
 }
 
 int ut_string_equal(UtObject *object, UtObject *other) {
