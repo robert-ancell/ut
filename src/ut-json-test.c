@@ -97,6 +97,17 @@ static void test_encode() {
   char *number_object_text = ut_json_encode(number_object);
   assert(strcmp(number_object_text, "{\"one\":1,\"two\":2,\"three\":3}") == 0);
   free(number_object_text);
+
+  UtObjectRef mixed_object = ut_map_new();
+  ut_map_insert_take(mixed_object, ut_string_new("boolean"),
+                     ut_boolean_new(true));
+  ut_map_insert_take(mixed_object, ut_string_new("number"), ut_int64_new(42));
+  ut_map_insert_take(mixed_object, ut_string_new("string"),
+                     ut_string_new("foo"));
+  char *mixed_object_text = ut_json_encode(mixed_object);
+  assert(strcmp(mixed_object_text,
+                "{\"boolean\":true,\"number\":42,\"string\":\"foo\"}") == 0);
+  free(mixed_object_text);
 }
 
 static void test_decode() {
@@ -198,6 +209,16 @@ static void test_decode() {
   assert(ut_object_implements_list(empty_array));
   assert(ut_list_get_length(empty_array) == 0);
 
+  UtObjectRef number_array = ut_json_decode("[1,2,3]");
+  assert(number_array != NULL);
+  assert(ut_object_implements_list(number_array));
+  assert(ut_list_get_length(number_array) == 3);
+
+  UtObjectRef mixed_array = ut_json_decode("[false,\"two\",3.1]");
+  assert(mixed_array != NULL);
+  assert(ut_object_implements_list(mixed_array));
+  assert(ut_list_get_length(mixed_array) == 3);
+
   UtObjectRef unterminated_object = ut_json_decode("{");
   assert(unterminated_object == NULL);
 
@@ -205,6 +226,42 @@ static void test_decode() {
   assert(empty_object != NULL);
   assert(ut_object_implements_map(empty_object));
   assert(ut_map_get_length(empty_object) == 0);
+
+  UtObjectRef number_object =
+      ut_json_decode("{\"one\":1,\"two\":2,\"three\":3}");
+  assert(number_object != NULL);
+  assert(ut_object_implements_map(number_object));
+  assert(ut_map_get_length(number_object) == 3);
+  UtObjectRef number_value1 = ut_map_lookup_string(number_object, "one");
+  assert(number_value1 != NULL);
+  assert(ut_object_is_int64(number_value1));
+  assert(ut_int64_get_value(number_value1) == 1);
+  UtObjectRef number_value2 = ut_map_lookup_string(number_object, "two");
+  assert(number_value2 != NULL);
+  assert(ut_object_is_int64(number_value2));
+  assert(ut_int64_get_value(number_value2) == 2);
+  UtObjectRef number_value3 = ut_map_lookup_string(number_object, "three");
+  assert(number_value3 != NULL);
+  assert(ut_object_is_int64(number_value3));
+  assert(ut_int64_get_value(number_value3) == 3);
+
+  UtObjectRef mixed_object =
+      ut_json_decode("{\"boolean\":true,\"number\":42,\"string\":\"foo\"}");
+  assert(mixed_object != NULL);
+  assert(ut_object_implements_map(mixed_object));
+  assert(ut_map_get_length(mixed_object) == 3);
+  UtObjectRef mixed_value1 = ut_map_lookup_string(mixed_object, "boolean");
+  assert(mixed_value1 != NULL);
+  assert(ut_object_is_boolean(mixed_value1));
+  assert(ut_boolean_get_value(mixed_value1) == true);
+  UtObjectRef mixed_value2 = ut_map_lookup_string(mixed_object, "number");
+  assert(mixed_value2 != NULL);
+  assert(ut_object_is_int64(mixed_value2));
+  assert(ut_int64_get_value(mixed_value2) == 42);
+  UtObjectRef mixed_value3 = ut_map_lookup_string(mixed_object, "string");
+  assert(mixed_value3 != NULL);
+  assert(ut_object_implements_string(mixed_value3));
+  assert(strcmp(ut_string_get_text(mixed_value3), "foo") == 0);
 }
 
 int main(int argc, char **argv) {
