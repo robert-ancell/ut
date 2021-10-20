@@ -131,6 +131,19 @@ static bool encode_integer_number(UtObject *buffer, int64_t value) {
 static bool encode_float_number(UtObject *buffer, double value) {
   char text[1024];
   snprintf(text, 1024, "%f", value);
+
+  // Strip trailing zeros.
+  for (size_t i = strlen(text) - 1; i > 0; i--) {
+    if (text[i] == '0') {
+      text[i] = '\0';
+    } else if (text[i] == '.') {
+      text[i] = '\0';
+      break;
+    } else {
+      break;
+    }
+  }
+
   ut_mutable_string_append(buffer, text);
   return true;
 }
