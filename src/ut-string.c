@@ -125,7 +125,7 @@ char *ut_string_to_string(UtObject *object) {
   return ut_string_take_text(string);
 }
 
-int ut_string_equal(UtObject *object, UtObject *other) {
+bool ut_string_equal(UtObject *object, UtObject *other) {
   if (!ut_object_implements_string(other)) {
     return false;
   }

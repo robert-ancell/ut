@@ -9,7 +9,7 @@ typedef struct {
 
 static char *ut_null_to_string(UtObject *object) { return strdup("null"); }
 
-static int ut_null_equal(UtObject *object, UtObject *other) {
+static bool ut_null_equal(UtObject *object, UtObject *other) {
   return ut_object_is_null(other);
 }
 

@@ -17,13 +17,13 @@ static char *ut_int64_to_string(UtObject *object) {
   return strdup(string);
 }
 
-static int ut_int64_equal(UtObject *object, UtObject *other) {
+static bool ut_int64_equal(UtObject *object, UtObject *other) {
   UtInt64 *self = (UtInt64 *)object;
   if (!ut_object_is_int64(other)) {
     return false;
   }
   UtInt64 *other_self = (UtInt64 *)other;
-  return self->value = other_self->value;
+  return self->value == other_self->value;
 }
 
 static int ut_int64_hash(UtObject *object) {

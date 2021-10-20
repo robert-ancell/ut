@@ -9,7 +9,7 @@ typedef struct {
   const char *type_name;
   void (*init)(UtObject *object);
   char *(*to_string)(UtObject *object);
-  int (*equal)(UtObject *object, UtObject *other);
+  bool (*equal)(UtObject *object, UtObject *other);
   int (*hash)(UtObject *object);
   void (*cleanup)(UtObject *object);
 

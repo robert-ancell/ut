@@ -17,13 +17,13 @@ static char *ut_uint8_to_string(UtObject *object) {
   return strdup(string);
 }
 
-static int ut_uint8_equal(UtObject *object, UtObject *other) {
+static bool ut_uint8_equal(UtObject *object, UtObject *other) {
   UtUint8 *self = (UtUint8 *)object;
   if (!ut_object_is_uint8(other)) {
     return false;
   }
   UtUint8 *other_self = (UtUint8 *)other;
-  return self->value = other_self->value;
+  return self->value == other_self->value;
 }
 
 static int ut_uint8_hash(UtObject *object) {

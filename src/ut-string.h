@@ -21,7 +21,7 @@ UtObject *ut_string_get_code_points(UtObject *object);
 
 char *ut_string_to_string(UtObject *object);
 
-int ut_string_equal(UtObject *object, UtObject *other);
+bool ut_string_equal(UtObject *object, UtObject *other);
 
 int ut_string_hash(UtObject *object);
 

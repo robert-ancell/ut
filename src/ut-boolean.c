@@ -15,7 +15,7 @@ static char *ut_boolean_to_string(UtObject *object) {
   return strdup(self->value ? "true" : "false");
 }
 
-static int ut_boolean_equal(UtObject *object, UtObject *other) {
+static bool ut_boolean_equal(UtObject *object, UtObject *other) {
   UtBoolean *self = (UtBoolean *)object;
   if (!ut_object_is_boolean(other)) {
     return false;

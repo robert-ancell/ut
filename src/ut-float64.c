@@ -17,13 +17,13 @@ static char *ut_doubleo_string(UtObject *object) {
   return strdup(string);
 }
 
-static int ut_float64_equal(UtObject *object, UtObject *other) {
+static bool ut_float64_equal(UtObject *object, UtObject *other) {
   UtFloat64 *self = (UtFloat64 *)object;
   if (!ut_object_is_float64(other)) {
     return false;
   }
   UtFloat64 *other_self = (UtFloat64 *)other;
-  return self->value = other_self->value;
+  return self->value == other_self->value;
 }
 
 static int ut_float64_hash(UtObject *object) {
