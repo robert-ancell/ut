@@ -41,7 +41,30 @@ static void test_encode() {
   assert(strcmp(one_k_text, "1024") == 0);
   free(one_k_text);
 
-  // FIXME: float
+  UtObjectRef one_point_one = ut_float64_new(1.1);
+  char *one_point_one_text = ut_json_encode(one_point_one);
+  assert(strcmp(one_point_one_text, "1.100000e+00") == 0);
+  free(one_point_one_text);
+
+  UtObjectRef minus_one_point_one = ut_float64_new(-1.1);
+  char *minus_one_point_one_text = ut_json_encode(minus_one_point_one);
+  assert(strcmp(minus_one_point_one_text, "-1.100000e+00") == 0);
+  free(minus_one_point_one_text);
+
+  UtObjectRef scientific_number = ut_float64_new(1024);
+  char *scientific_number_text = ut_json_encode(scientific_number);
+  assert(strcmp(scientific_number_text, "1.024000e+03") == 0);
+  free(scientific_number_text);
+
+  UtObjectRef one_M = ut_float64_new(1000000);
+  char *one_M_text = ut_json_encode(one_M);
+  assert(strcmp(one_M_text, "1.000000e+06") == 0);
+  free(one_M_text);
+
+  UtObjectRef one_u = ut_float64_new(0.000001);
+  char *one_u_text = ut_json_encode(one_u);
+  assert(strcmp(one_u_text, "1.000000e-06") == 0);
+  free(one_u_text);
 
   UtObjectRef empty_string = ut_string_new("");
   char *empty_string_text = ut_json_encode(empty_string);
@@ -82,7 +105,7 @@ static void test_encode() {
   ut_mutable_list_append_take(mixed_array, ut_string_new("two"));
   ut_mutable_list_append_take(mixed_array, ut_float64_new(3.1));
   char *mixed_array_text = ut_json_encode(mixed_array);
-  assert(strcmp(mixed_array_text, "[false,\"two\",3.1]") == 0);
+  assert(strcmp(mixed_array_text, "[false,\"two\",3.100000e+00]") == 0);
   free(mixed_array_text);
 
   UtObjectRef empty_object = ut_map_new();
