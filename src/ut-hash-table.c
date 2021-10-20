@@ -14,7 +14,6 @@ typedef struct _UtHashTableItem UtHashTableItem;
 typedef struct {
   UtObject object;
   UtHashTableItem *items;
-  size_t length;
 } UtHashTable;
 
 struct _UtHashTableItem {
@@ -85,7 +84,11 @@ static UtHashTableItem *lookup(UtHashTable *self, UtObject *key,
 
 size_t ut_hash_table_get_length(UtObject *object) {
   UtHashTable *self = (UtHashTable *)object;
-  return self->length;
+  size_t length = 0;
+  for (UtHashTableItem *item = self->items; item != NULL; item = item->next) {
+    length++;
+  }
+  return length;
 }
 
 static void ut_hash_table_insert(UtObject *object, UtObject *key,
@@ -173,7 +176,6 @@ static UtMapFunctions map_functions = {.get_length = ut_hash_table_get_length,
 static void ut_hash_table_init(UtObject *object) {
   UtHashTable *self = (UtHashTable *)object;
   self->items = NULL;
-  self->length = 0;
 }
 
 static void ut_hash_table_cleanup(UtObject *object) {
