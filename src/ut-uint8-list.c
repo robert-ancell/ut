@@ -3,9 +3,12 @@
 #include <string.h>
 
 #include "ut-object-private.h"
+#include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
 
 int ut_uint8_list_id = 0;
+
+UtObject *ut_uint8_list_new() { return ut_uint8_array_new(); }
 
 const uint8_t *ut_uint8_list_get_data(UtObject *object) {
   UtUint8ListFunctions *uint8_list_functions =

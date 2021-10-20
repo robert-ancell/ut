@@ -13,6 +13,8 @@ typedef struct {
 
 extern int ut_uint8_list_id;
 
+UtObject *ut_uint8_list_new();
+
 const uint8_t *ut_uint8_list_get_data(UtObject *object);
 
 uint8_t *ut_uint8_list_take_data(UtObject *object);
