@@ -477,6 +477,7 @@ static UtObject *decode_object(const char *text, size_t *offset) {
       // FIXME: Throw an error (invalid character beween objects)
       return NULL;
     }
+    end++;
   }
 }
 static UtObject *decode_array(const char *text, size_t *offset) {
@@ -495,13 +496,13 @@ static UtObject *decode_array(const char *text, size_t *offset) {
   }
 
   while (true) {
-    UtObject *value = decode_value(text, &end);
+    UtObjectRef value = decode_value(text, &end);
     if (value == NULL) {
       // FIXME: Throw an error (invalid value in array)
       return NULL;
     }
 
-    ut_mutable_list_append_take(array, value);
+    ut_mutable_list_append(array, value);
 
     if (text[end] == ']') {
       *offset = end + 1;
@@ -512,6 +513,7 @@ static UtObject *decode_array(const char *text, size_t *offset) {
       // FIXME: Throw an error
       return NULL;
     }
+    end++;
   }
 }
 
