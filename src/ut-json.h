@@ -1,5 +1,3 @@
-#include <stdbool.h>
-
 #include "ut-object.h"
 
 #pragma once
