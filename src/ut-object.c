@@ -37,7 +37,7 @@ char *ut_object_to_string(UtObject *object) {
   ut_mutable_string_append(string, ut_object_get_type_name(object));
   ut_mutable_string_append(string, ">");
 
-  return strdup(ut_string_get_text(string));
+  return ut_string_take_text(string);
 }
 
 bool ut_object_equal(UtObject *object, UtObject *other) {

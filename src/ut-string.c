@@ -21,6 +21,17 @@ const char *ut_string_get_text(UtObject *object) {
   return string_functions->get_text(object);
 }
 
+char *ut_string_take_text(UtObject *object) {
+  UtStringFunctions *string_functions =
+      ut_object_get_interface(object, &ut_string_id);
+  assert(string_functions != NULL);
+  if (string_functions->take_text != NULL) {
+    return string_functions->take_text(object);
+  }
+
+  return strdup(ut_string_get_text(object));
+}
+
 UtObject *ut_string_get_code_points(UtObject *object) {
   const char *text = ut_string_get_text(object);
   size_t text_length = strlen(text);
@@ -111,7 +122,7 @@ char *ut_string_to_string(UtObject *object) {
   }
   ut_mutable_string_append(string, "\"");
 
-  return strdup(ut_string_get_text(string));
+  return ut_string_take_text(string);
 }
 
 int ut_string_equal(UtObject *object, UtObject *other) {

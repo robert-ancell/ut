@@ -43,7 +43,7 @@ char *ut_list_to_string(UtObject *object) {
   }
   ut_mutable_string_append(string, "]");
 
-  char *result = strdup(ut_string_get_text(string));
+  char *result = ut_string_take_text(string);
   ut_object_unref(string);
   return result;
 }

@@ -583,7 +583,7 @@ static UtObject *decode_value(const char *text, size_t *offset) {
 char *ut_json_encode(UtObject *object) {
   UtObject *buffer = ut_mutable_string_new("");
   encode_value(buffer, object);
-  return strdup(ut_string_get_text(buffer));
+  return ut_string_take_text(buffer);
 }
 
 UtObject *ut_json_decode(const char *text) {

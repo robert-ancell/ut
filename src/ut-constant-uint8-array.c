@@ -18,9 +18,6 @@ const uint8_t *ut_constant_uint8_array_get_data(UtObject *object) {
   return self->data;
 }
 
-static UtUint8ListFunctions uint8_list_functions = {
-    .get_data = ut_constant_uint8_array_get_data};
-
 static size_t ut_constant_uint8_array_get_length(UtObject *object) {
   UtConstantUint8Array *self = (UtConstantUint8Array *)object;
   return self->data_length;
@@ -31,6 +28,10 @@ static UtObject *ut_constant_uint8_array_get_element(UtObject *object,
   UtConstantUint8Array *self = (UtConstantUint8Array *)object;
   return ut_uint8_new(self->data[index]);
 }
+
+static UtUint8ListFunctions uint8_list_functions = {
+    .get_data = ut_constant_uint8_array_get_data,
+    .get_length = ut_constant_uint8_array_get_length};
 
 static UtListFunctions list_functions = {
     .get_length = ut_constant_uint8_array_get_length,

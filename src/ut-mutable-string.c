@@ -55,21 +55,28 @@ static const char *ut_mutable_string_get_text(UtObject *object) {
   return (const char *)ut_uint8_list_get_data(self->data);
 }
 
-static UtStringFunctions string_functions = {.get_text =
-                                                 ut_mutable_string_get_text};
+static char *ut_mutable_string_take_text(UtObject *object) {
+  UtMutableString *self = (UtMutableString *)object;
+  return (char *)ut_uint8_list_take_data(self->data);
+}
+
+static UtStringFunctions string_functions = {
+    .get_text = ut_mutable_string_get_text,
+    .take_text = ut_mutable_string_take_text};
 
 static const uint8_t *ut_mutable_string_get_data(UtObject *object) {
   UtMutableString *self = (UtMutableString *)object;
   return ut_uint8_list_get_data(self->data);
 }
 
-static UtUint8ListFunctions uint8_list_functions = {
-    .get_data = ut_mutable_string_get_data};
-
 static size_t ut_mutable_string_get_length(UtObject *object) {
   UtMutableString *self = (UtMutableString *)object;
   return ut_list_get_length(self->data);
 }
+
+static UtUint8ListFunctions uint8_list_functions = {
+    .get_data = ut_mutable_string_get_data,
+    .get_length = ut_mutable_string_get_length};
 
 static UtListFunctions list_functions = {.get_length =
                                              ut_mutable_string_get_length};

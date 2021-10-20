@@ -94,7 +94,7 @@ char *ut_map_to_string(UtObject *object) {
   }
   ut_mutable_string_append(string, "}");
 
-  return strdup(ut_string_get_text(string));
+  return ut_string_take_text(string);
 }
 
 bool ut_object_implements_map(UtObject *object) {

@@ -18,21 +18,22 @@ static const char *ut_constant_string_get_text(UtObject *object) {
   return self->text;
 }
 
-static UtStringFunctions string_functions = {.get_text =
-                                                 ut_constant_string_get_text};
-
 static const uint8_t *ut_constant_string_get_data(UtObject *object) {
   UtConstantString *self = (UtConstantString *)object;
   return (const uint8_t *)self->text;
 }
 
-static UtUint8ListFunctions uint8_list_functions = {
-    .get_data = ut_constant_string_get_data};
-
 static size_t ut_constant_string_get_data_length(UtObject *object) {
   UtConstantString *self = (UtConstantString *)object;
   return strlen(self->text);
 }
+
+static UtStringFunctions string_functions = {.get_text =
+                                                 ut_constant_string_get_text};
+
+static UtUint8ListFunctions uint8_list_functions = {
+    .get_data = ut_constant_string_get_data,
+    .get_length = ut_constant_string_get_data_length};
 
 static UtListFunctions list_functions = {
     .get_length = ut_constant_string_get_data_length};
