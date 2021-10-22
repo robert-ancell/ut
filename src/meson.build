@@ -24,6 +24,7 @@ ut_sources = [
   'ut-string.c',
   'ut-string-array.c',
   'ut-tcp-client.c',
+  'ut-utf8-decoder.c',
   'ut-uint8.c',
   'ut-uint8-array.c',
   'ut-uint8-list.c',
@@ -66,4 +67,8 @@ executable('ut-tcp-client-test',
 
 executable('ut-uint8-array-test',
            'ut-uint8-array-test.c',
+           ut_sources)
+
+executable('ut-utf8-decoder-test',
+           'ut-utf8-decoder-test.c',
            ut_sources)

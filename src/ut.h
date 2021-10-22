@@ -31,3 +31,4 @@
 #include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
 #include "ut-uint8.h"
+#include "ut-utf8-decoder.h"
