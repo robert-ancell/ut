@@ -105,7 +105,6 @@ static void read_cb(void *user_data) {
       done = self->read_buffer_length == 0;
     } else if (!data->read_all) {
       report_read_data(data);
-      done = true;
     }
   } else {
     done = true;
