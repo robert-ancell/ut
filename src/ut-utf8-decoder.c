@@ -114,6 +114,7 @@ static void ut_utf8_decoder_read(UtObject *object, size_t block_size,
                                  void *user_data, UtObject *cancel) {
   UtUtf8Decoder *self = (UtUtf8Decoder *)object;
   assert(callback != NULL);
+  assert(self->callback == NULL);
   self->callback = callback;
   self->user_data = user_data;
   self->read_all = false;
@@ -125,6 +126,7 @@ static void ut_utf8_decoder_read_all(UtObject *object, size_t block_size,
                                      void *user_data, UtObject *cancel) {
   UtUtf8Decoder *self = (UtUtf8Decoder *)object;
   assert(callback != NULL);
+  assert(self->callback == NULL);
   self->callback = callback;
   self->user_data = user_data;
   self->read_all = true;

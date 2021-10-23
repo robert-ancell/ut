@@ -24,7 +24,6 @@ ut_sources = [
   'ut-string.c',
   'ut-string-array.c',
   'ut-tcp-client.c',
-  'ut-utf8-decoder.c',
   'ut-uint8.c',
   'ut-uint8-array.c',
   'ut-uint8-list.c',
@@ -35,6 +34,8 @@ ut_sources = [
   'ut-uint32-list.c',
   'ut-uint32-array.c',
   'ut-uint64.c',
+  'ut-utf8-decoder.c',
+  'ut-utf8-encoder.c'
 ]
 
 executable('ut-constant-string-test',
@@ -71,4 +72,8 @@ executable('ut-uint8-array-test',
 
 executable('ut-utf8-decoder-test',
            'ut-utf8-decoder-test.c',
+           ut_sources)
+
+executable('ut-utf8-encoder-test',
+           'ut-utf8-encoder-test.c',
            ut_sources)

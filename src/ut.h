@@ -32,3 +32,4 @@
 #include "ut-uint8-list.h"
 #include "ut-uint8.h"
 #include "ut-utf8-decoder.h"
+#include "ut-utf8-encoder.h"
