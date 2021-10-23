@@ -7,6 +7,7 @@ static size_t read_cb(void *user_data, UtObject *data) {
   char *code_points = ut_object_to_string(data);
   printf("%s\n", code_points);
   free(code_points);
+  ut_event_loop_return(NULL);
   return ut_list_get_length(data);
 }
 

@@ -27,4 +27,6 @@ void ut_event_loop_run_in_thread(UtThreadCallback thread_callback,
                                  UtThreadResultCallback result_callback,
                                  void *user_data, UtObject *cancel);
 
-void ut_event_loop_run();
+void ut_event_loop_return(UtObject *object);
+
+UtObject *ut_event_loop_run();

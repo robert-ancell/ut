@@ -49,6 +49,8 @@ typedef struct {
   FdWatch *read_watches;
   FdWatch *write_watches;
   WorkerThread *worker_threads;
+  bool complete;
+  UtObject *return_value;
 } EventLoop;
 
 static EventLoop *loop = NULL;
@@ -196,6 +198,8 @@ static EventLoop *get_loop() {
     loop->read_watches = NULL;
     loop->write_watches = NULL;
     loop->worker_threads = NULL;
+    loop->complete = false;
+    loop->return_value = NULL;
   }
   return loop;
 }
@@ -255,9 +259,16 @@ void ut_event_loop_run_in_thread(UtThreadCallback thread_callback,
   assert(pthread_create(&thread->thread_id, NULL, thread_cb, thread) == 0);
 }
 
-void ut_event_loop_run() {
+void ut_event_loop_return(UtObject *object) {
   EventLoop *loop = get_loop();
-  while (true) {
+  assert(!loop->complete);
+  loop->return_value = object != NULL ? ut_object_ref(object) : NULL;
+  loop->complete = true;
+}
+
+UtObject *ut_event_loop_run() {
+  EventLoop *loop = get_loop();
+  while (!loop->complete) {
     // Do callbacks for any timers that have expired and work out time to next
     // timer.
     const struct timespec *timeout = NULL;
@@ -375,4 +386,6 @@ void ut_event_loop_run() {
     loop->read_watches = remove_cancelled_watches(loop->read_watches);
     loop->write_watches = remove_cancelled_watches(loop->write_watches);
   }
+
+  return loop->return_value;
 }
