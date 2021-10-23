@@ -8,7 +8,7 @@
 
 typedef struct {
   UtObject *(*get_element)(UtObject *object, size_t index);
-} UtObjectListFunctions;
+} UtObjectListInterface;
 
 extern int ut_object_list_id;
 

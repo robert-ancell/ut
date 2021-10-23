@@ -11,25 +11,25 @@ int ut_uint8_list_id = 0;
 UtObject *ut_uint8_list_new() { return ut_uint8_array_new(); }
 
 const uint8_t *ut_uint8_list_get_data(UtObject *object) {
-  UtUint8ListFunctions *uint8_list_functions =
+  UtUint8ListInterface *uint8_list_interface =
       ut_object_get_interface(object, &ut_uint8_list_id);
-  assert(uint8_list_functions != NULL);
-  return uint8_list_functions->get_data(object);
+  assert(uint8_list_interface != NULL);
+  return uint8_list_interface->get_data(object);
 }
 
 size_t ut_uint8_list_get_length(UtObject *object) {
-  UtUint8ListFunctions *uint8_list_functions =
+  UtUint8ListInterface *uint8_list_interface =
       ut_object_get_interface(object, &ut_uint8_list_id);
-  assert(uint8_list_functions != NULL);
-  return uint8_list_functions->get_length(object);
+  assert(uint8_list_interface != NULL);
+  return uint8_list_interface->get_length(object);
 }
 
 uint8_t *ut_uint8_list_take_data(UtObject *object) {
-  UtUint8ListFunctions *uint8_list_functions =
+  UtUint8ListInterface *uint8_list_interface =
       ut_object_get_interface(object, &ut_uint8_list_id);
-  assert(uint8_list_functions != NULL);
-  if (uint8_list_functions->take_data != NULL) {
-    return uint8_list_functions->take_data(object);
+  assert(uint8_list_interface != NULL);
+  if (uint8_list_interface->take_data != NULL) {
+    return uint8_list_interface->take_data(object);
   }
 
   const uint8_t *data = ut_uint8_list_get_data(object);

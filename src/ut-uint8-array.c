@@ -95,36 +95,36 @@ static void ut_uint8_array_cleanup(UtObject *object) {
   free(self->data);
 }
 
-static UtUint8ListFunctions uint8_list_functions = {
+static UtUint8ListInterface uint8_list_interface = {
     .get_data = ut_uint8_array_get_const_data,
     .get_length = ut_uint8_array_get_length,
     .take_data = ut_uint8_array_take_data};
 
-static UtMutableListFunctions mutable_list_functions = {
+static UtMutableListInterface mutable_list_interface = {
     .insert = ut_uint8_array_insert_object,
     .remove = ut_uint8_array_remove,
     .resize = ut_uint8_array_resize};
 
-static UtListFunctions list_functions = {
+static UtListInterface list_interface = {
     .get_length = ut_uint8_array_get_length,
     .get_element = ut_uint8_array_get_element};
 
-static UtInputStreamFunctions input_stream_functions = {
+static UtInputStreamInterface input_stream_interface = {
     .read = ut_uint8_array_read, .read_all = ut_uint8_array_read};
 
-static UtObjectFunctions object_functions = {
+static UtObjectInterface object_interface = {
     .type_name = "UtUint8Array",
     .init = ut_uint8_array_init,
     .to_string = ut_list_to_string,
     .cleanup = ut_uint8_array_cleanup,
-    .interfaces = {{&ut_uint8_list_id, &uint8_list_functions},
-                   {&ut_mutable_list_id, &mutable_list_functions},
-                   {&ut_list_id, &list_functions},
-                   {&ut_input_stream_id, &input_stream_functions},
+    .interfaces = {{&ut_uint8_list_id, &uint8_list_interface},
+                   {&ut_mutable_list_id, &mutable_list_interface},
+                   {&ut_list_id, &list_interface},
+                   {&ut_input_stream_id, &input_stream_interface},
                    {NULL, NULL}}};
 
 UtObject *ut_uint8_array_new() {
-  return ut_object_new(sizeof(UtUint8Array), &object_functions);
+  return ut_object_new(sizeof(UtUint8Array), &object_interface);
 }
 
 void ut_uint8_array_append(UtObject *object, uint8_t data) {
@@ -170,5 +170,5 @@ uint8_t *ut_uint8_array_get_data(UtObject *object) {
 }
 
 bool ut_object_is_uint8_array(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
+  return ut_object_is_type(object, &object_interface);
 }

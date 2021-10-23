@@ -29,11 +29,11 @@ static UtObject *ut_constant_uint8_array_get_element(UtObject *object,
   return ut_uint8_new(self->data[index]);
 }
 
-static UtUint8ListFunctions uint8_list_functions = {
+static UtUint8ListInterface uint8_list_interface = {
     .get_data = ut_constant_uint8_array_get_data,
     .get_length = ut_constant_uint8_array_get_length};
 
-static UtListFunctions list_functions = {
+static UtListInterface list_interface = {
     .get_length = ut_constant_uint8_array_get_length,
     .get_element = ut_constant_uint8_array_get_element};
 
@@ -43,17 +43,17 @@ static void ut_constant_uint8_array_init(UtObject *object) {
   self->data_length = 0;
 }
 
-static UtObjectFunctions object_functions = {
+static UtObjectInterface object_interface = {
     .type_name = "UtConstantUint8Array",
     .init = ut_constant_uint8_array_init,
     .to_string = ut_list_to_string,
-    .interfaces = {{&ut_uint8_list_id, &uint8_list_functions},
-                   {&ut_list_id, &list_functions},
+    .interfaces = {{&ut_uint8_list_id, &uint8_list_interface},
+                   {&ut_list_id, &list_interface},
                    {NULL, NULL}}};
 
 UtObject *ut_constant_uint8_array_new(const uint8_t *data, size_t data_length) {
   UtObject *object =
-      ut_object_new(sizeof(UtConstantUint8Array), &object_functions);
+      ut_object_new(sizeof(UtConstantUint8Array), &object_interface);
   UtConstantUint8Array *self = (UtConstantUint8Array *)object;
   self->data = data;
   self->data_length = data_length;
@@ -61,5 +61,5 @@ UtObject *ut_constant_uint8_array_new(const uint8_t *data, size_t data_length) {
 }
 
 bool ut_object_is_constant_uint8_array(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
+  return ut_object_is_type(object, &object_interface);
 }

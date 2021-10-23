@@ -29,13 +29,13 @@ static int ut_boolean_hash(UtObject *object) {
   return self->value;
 }
 
-static UtObjectFunctions object_functions = {.type_name = "UtBoolean",
+static UtObjectInterface object_interface = {.type_name = "UtBoolean",
                                              .to_string = ut_boolean_to_string,
                                              .equal = ut_boolean_equal,
                                              .hash = ut_boolean_hash};
 
 UtObject *ut_boolean_new(bool value) {
-  UtObject *object = ut_object_new(sizeof(UtBoolean), &object_functions);
+  UtObject *object = ut_object_new(sizeof(UtBoolean), &object_interface);
   UtBoolean *self = (UtBoolean *)object;
   self->value = value;
   return object;
@@ -48,5 +48,5 @@ bool ut_boolean_get_value(UtObject *object) {
 }
 
 bool ut_object_is_boolean(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
+  return ut_object_is_type(object, &object_interface);
 }

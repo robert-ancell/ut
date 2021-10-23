@@ -11,10 +11,10 @@ UtObject *ut_error_new(const char *description) {
 }
 
 char *ut_error_get_description(UtObject *object) {
-  UtErrorFunctions *error_functions =
+  UtErrorInterface *error_interface =
       ut_object_get_interface(object, &ut_error_id);
-  assert(error_functions != NULL);
-  return error_functions->get_description(object);
+  assert(error_interface != NULL);
+  return error_interface->get_description(object);
 }
 
 bool ut_object_implements_error(UtObject *object) {

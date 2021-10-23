@@ -26,10 +26,10 @@ void ut_mutable_list_prepend_take(UtObject *object, UtObject *item) {
 }
 
 void ut_mutable_list_insert(UtObject *object, size_t index, UtObject *item) {
-  UtMutableListFunctions *mutable_list_functions =
+  UtMutableListInterface *mutable_list_interface =
       ut_object_get_interface(object, &ut_mutable_list_id);
-  assert(mutable_list_functions != NULL);
-  mutable_list_functions->insert(object, index, item);
+  assert(mutable_list_interface != NULL);
+  mutable_list_interface->insert(object, index, item);
 }
 
 void ut_mutable_list_insert_take(UtObject *object, size_t index,
@@ -39,10 +39,10 @@ void ut_mutable_list_insert_take(UtObject *object, size_t index,
 }
 
 void ut_mutable_list_remove(UtObject *object, size_t index, size_t count) {
-  UtMutableListFunctions *mutable_list_functions =
+  UtMutableListInterface *mutable_list_interface =
       ut_object_get_interface(object, &ut_mutable_list_id);
-  assert(mutable_list_functions != NULL);
-  mutable_list_functions->remove(object, index, count);
+  assert(mutable_list_interface != NULL);
+  mutable_list_interface->remove(object, index, count);
 }
 
 void ut_mutable_list_clear(UtObject *object) {
@@ -50,10 +50,10 @@ void ut_mutable_list_clear(UtObject *object) {
 }
 
 void ut_mutable_list_resize(UtObject *object, size_t length) {
-  UtMutableListFunctions *mutable_list_functions =
+  UtMutableListInterface *mutable_list_interface =
       ut_object_get_interface(object, &ut_mutable_list_id);
-  assert(mutable_list_functions != NULL);
-  mutable_list_functions->resize(object, length);
+  assert(mutable_list_interface != NULL);
+  mutable_list_interface->resize(object, length);
 }
 
 bool ut_object_implements_mutable_list(UtObject *object) {

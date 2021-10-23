@@ -7,7 +7,7 @@
 typedef struct {
   const char *(*get_text)(UtObject *object);
   char *(*take_text)(UtObject *object);
-} UtStringFunctions;
+} UtStringInterface;
 
 extern int ut_string_id;
 

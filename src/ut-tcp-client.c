@@ -157,7 +157,7 @@ static void ut_tcp_client_read_all(UtObject *object, size_t block_size,
                            cancel);
 }
 
-static UtInputStreamFunctions input_stream_functions = {
+static UtInputStreamInterface input_stream_interface = {
     .read = ut_tcp_client_read, .read_all = ut_tcp_client_read_all};
 
 static void ut_tcp_client_write(UtObject *object, UtObject *data,
@@ -178,19 +178,19 @@ static void ut_tcp_client_write_all(UtObject *object, UtObject *data,
   ut_output_stream_write_all(self->stream, data, callback, user_data, cancel);
 }
 
-static UtOutputStreamFunctions output_stream_functions = {
+static UtOutputStreamInterface output_stream_interface = {
     .write = ut_tcp_client_write, .write_all = ut_tcp_client_write_all};
 
-static UtObjectFunctions object_functions = {
+static UtObjectInterface object_interface = {
     .type_name = "UtTcpClient",
     .init = ut_tcp_client_init,
     .cleanup = ut_tcp_client_cleanup,
-    .interfaces = {{&ut_input_stream_id, &input_stream_functions},
-                   {&ut_output_stream_id, &output_stream_functions},
+    .interfaces = {{&ut_input_stream_id, &input_stream_interface},
+                   {&ut_output_stream_id, &output_stream_interface},
                    {NULL, NULL}}};
 
 UtObject *ut_tcp_client_new(const char *address, uint16_t port) {
-  UtObject *object = ut_object_new(sizeof(UtTcpClient), &object_functions);
+  UtObject *object = ut_object_new(sizeof(UtTcpClient), &object_interface);
   UtTcpClient *self = (UtTcpClient *)object;
   self->address = strdup(address);
   self->port = port;
@@ -220,5 +220,5 @@ void ut_tcp_client_disconnect(UtObject *object) {
 }
 
 bool ut_object_is_tcp_client(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
+  return ut_object_is_type(object, &object_interface);
 }

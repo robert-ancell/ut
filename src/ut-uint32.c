@@ -31,13 +31,13 @@ static int ut_uint32_hash(UtObject *object) {
   return self->value;
 }
 
-static UtObjectFunctions object_functions = {.type_name = "UtUint32",
+static UtObjectInterface object_interface = {.type_name = "UtUint32",
                                              .to_string = ut_uint32_to_string,
                                              .equal = ut_uint32_equal,
                                              .hash = ut_uint32_hash};
 
 UtObject *ut_uint32_new(uint32_t value) {
-  UtObject *object = ut_object_new(sizeof(UtUint32), &object_functions);
+  UtObject *object = ut_object_new(sizeof(UtUint32), &object_interface);
   UtUint32 *self = (UtUint32 *)object;
   self->value = value;
   return object;
@@ -50,5 +50,5 @@ uint32_t ut_uint32_get_value(UtObject *object) {
 }
 
 bool ut_object_is_uint32(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
+  return ut_object_is_type(object, &object_interface);
 }

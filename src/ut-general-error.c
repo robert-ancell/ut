@@ -26,17 +26,17 @@ static char *ut_general_error_dup_description(UtObject *object) {
   return strdup(self->description);
 }
 
-static UtErrorFunctions error_functions = {
+static UtErrorInterface error_interface = {
     .get_description = ut_general_error_dup_description};
 
-static UtObjectFunctions object_functions = {
+static UtObjectInterface object_interface = {
     .type_name = "UtGeneralError",
     .init = ut_general_error_init,
     .cleanup = ut_general_error_cleanup,
-    .interfaces = {{&ut_error_id, &error_functions}, {NULL, NULL}}};
+    .interfaces = {{&ut_error_id, &error_interface}, {NULL, NULL}}};
 
 UtObject *ut_general_error_new(const char *description) {
-  UtObject *object = ut_object_new(sizeof(UtGeneralError), &object_functions);
+  UtObject *object = ut_object_new(sizeof(UtGeneralError), &object_interface);
   UtGeneralError *self = (UtGeneralError *)object;
   self->description = strdup(description);
   return object;
@@ -49,5 +49,5 @@ const char *ut_general_error_get_description(UtObject *object) {
 }
 
 bool ut_object_is_general_error(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
+  return ut_object_is_type(object, &object_interface);
 }

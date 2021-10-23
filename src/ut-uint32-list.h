@@ -7,7 +7,7 @@
 
 typedef struct {
   const uint32_t *(*get_data)(UtObject *object);
-} UtUint32ListFunctions;
+} UtUint32ListInterface;
 
 extern int ut_uint32_list_id;
 

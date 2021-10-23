@@ -13,7 +13,7 @@ typedef struct {
   void (*write_all)(UtObject *object, UtObject *data,
                     UtOutputStreamCallback callback, void *user_data,
                     UtObject *cancel);
-} UtOutputStreamFunctions;
+} UtOutputStreamInterface;
 
 extern int ut_output_stream_id;
 

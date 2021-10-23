@@ -20,14 +20,14 @@ static void ut_end_of_stream_cleanup(UtObject *object) {
   }
 }
 
-static UtObjectFunctions object_functions = {.type_name = "UtEndOfStream",
+static UtObjectInterface object_interface = {.type_name = "UtEndOfStream",
                                              .init = ut_end_of_stream_init,
                                              .cleanup =
                                                  ut_end_of_stream_cleanup,
                                              .interfaces = {{NULL, NULL}}};
 
 UtObject *ut_end_of_stream_new(UtObject *unused_data) {
-  UtObject *object = ut_object_new(sizeof(UtEndOfStream), &object_functions);
+  UtObject *object = ut_object_new(sizeof(UtEndOfStream), &object_interface);
   UtEndOfStream *self = (UtEndOfStream *)object;
   self->unused_data = unused_data != NULL ? ut_object_ref(unused_data) : NULL;
   return object;
@@ -40,5 +40,5 @@ UtObject *ut_end_of_stream_get_unused_data(UtObject *object) {
 }
 
 bool ut_object_is_end_of_stream(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
+  return ut_object_is_type(object, &object_interface);
 }

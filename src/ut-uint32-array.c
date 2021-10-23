@@ -87,34 +87,34 @@ static void ut_uint32_array_cleanup(UtObject *object) {
   free(self->data);
 }
 
-static UtUint32ListFunctions uint32_list_functions = {
+static UtUint32ListInterface uint32_list_interface = {
     .get_data = ut_uint32_array_get_list_data};
 
-static UtMutableListFunctions mutable_list_functions = {
+static UtMutableListInterface mutable_list_interface = {
     .insert = ut_uint32_array_insert_object,
     .remove = ut_uint32_array_remove,
     .resize = ut_uint32_array_resize};
 
-static UtListFunctions list_functions = {
+static UtListInterface list_interface = {
     .get_length = ut_uint32_array_get_length,
     .get_element = ut_uint32_array_get_element};
 
-static UtInputStreamFunctions input_stream_functions = {
+static UtInputStreamInterface input_stream_interface = {
     .read = ut_uint32_array_read, .read_all = ut_uint32_array_read};
 
-static UtObjectFunctions object_functions = {
+static UtObjectInterface object_interface = {
     .type_name = "UtUint32Array",
     .init = ut_uint32_array_init,
     .to_string = ut_list_to_string,
     .cleanup = ut_uint32_array_cleanup,
-    .interfaces = {{&ut_uint32_list_id, &uint32_list_functions},
-                   {&ut_mutable_list_id, &mutable_list_functions},
-                   {&ut_list_id, &list_functions},
-                   {&ut_input_stream_id, &input_stream_functions},
+    .interfaces = {{&ut_uint32_list_id, &uint32_list_interface},
+                   {&ut_mutable_list_id, &mutable_list_interface},
+                   {&ut_list_id, &list_interface},
+                   {&ut_input_stream_id, &input_stream_interface},
                    {NULL, NULL}}};
 
 UtObject *ut_uint32_array_new() {
-  return ut_object_new(sizeof(UtUint32Array), &object_functions);
+  return ut_object_new(sizeof(UtUint32Array), &object_interface);
 }
 
 void ut_uint32_array_append(UtObject *object, uint32_t data) {
@@ -160,5 +160,5 @@ uint32_t *ut_uint32_array_get_data(UtObject *object) {
 }
 
 bool ut_object_is_uint32_array(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
+  return ut_object_is_type(object, &object_interface);
 }

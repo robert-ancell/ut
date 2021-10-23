@@ -96,30 +96,30 @@ static void ut_string_array_cleanup(UtObject *object) {
   free(self->data);
 }
 
-static UtMutableListFunctions mutable_list_functions = {
+static UtMutableListInterface mutable_list_interface = {
     .insert = ut_string_array_insert_object,
     .remove = ut_string_array_remove,
     .resize = ut_string_array_resize};
 
-static UtListFunctions list_functions = {
+static UtListInterface list_interface = {
     .get_length = ut_string_array_get_length,
     .get_element = ut_string_array_get_element};
 
-static UtInputStreamFunctions input_stream_functions = {
+static UtInputStreamInterface input_stream_interface = {
     .read = ut_string_array_read, .read_all = ut_string_array_read};
 
-static UtObjectFunctions object_functions = {
+static UtObjectInterface object_interface = {
     .type_name = "UtStringArray",
     .init = ut_string_array_init,
     .to_string = ut_list_to_string,
     .cleanup = ut_string_array_cleanup,
-    .interfaces = {{&ut_mutable_list_id, &mutable_list_functions},
-                   {&ut_list_id, &list_functions},
-                   {&ut_input_stream_id, &input_stream_functions},
+    .interfaces = {{&ut_mutable_list_id, &mutable_list_interface},
+                   {&ut_list_id, &list_interface},
+                   {&ut_input_stream_id, &input_stream_interface},
                    {NULL, NULL}}};
 
 UtObject *ut_string_array_new() {
-  return ut_object_new(sizeof(UtStringArray), &object_functions);
+  return ut_object_new(sizeof(UtStringArray), &object_interface);
 }
 
 void ut_string_array_prepend(UtObject *object, const char *value) {
@@ -141,5 +141,5 @@ void ut_string_array_insert(UtObject *object, size_t index, const char *value) {
 }
 
 bool ut_object_is_string_array(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
+  return ut_object_is_type(object, &object_interface);
 }

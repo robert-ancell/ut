@@ -15,7 +15,7 @@ typedef struct {
   void (*read_all)(UtObject *object, size_t block_size,
                    UtInputStreamCallback callback, void *user_data,
                    UtObject *cancel);
-} UtInputStreamFunctions;
+} UtInputStreamInterface;
 
 extern int ut_input_stream_id;
 

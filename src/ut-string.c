@@ -15,18 +15,18 @@ UtObject *ut_string_new(const char *text) {
 }
 
 const char *ut_string_get_text(UtObject *object) {
-  UtStringFunctions *string_functions =
+  UtStringInterface *string_interface =
       ut_object_get_interface(object, &ut_string_id);
-  assert(string_functions != NULL);
-  return string_functions->get_text(object);
+  assert(string_interface != NULL);
+  return string_interface->get_text(object);
 }
 
 char *ut_string_take_text(UtObject *object) {
-  UtStringFunctions *string_functions =
+  UtStringInterface *string_interface =
       ut_object_get_interface(object, &ut_string_id);
-  assert(string_functions != NULL);
-  if (string_functions->take_text != NULL) {
-    return string_functions->take_text(object);
+  assert(string_interface != NULL);
+  if (string_interface->take_text != NULL) {
+    return string_interface->take_text(object);
   }
 
   return strdup(ut_string_get_text(object));

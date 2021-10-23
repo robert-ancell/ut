@@ -9,7 +9,7 @@ typedef struct {
   void (*insert)(UtObject *object, size_t index, UtObject *item);
   void (*remove)(UtObject *object, size_t index, size_t count);
   void (*resize)(UtObject *object, size_t length);
-} UtMutableListFunctions;
+} UtMutableListInterface;
 
 extern int ut_mutable_list_id;
 

@@ -13,17 +13,17 @@ int ut_list_id = 0;
 UtObject *ut_list_new() { return ut_object_array_new(); }
 
 size_t ut_list_get_length(UtObject *object) {
-  UtListFunctions *list_functions =
+  UtListInterface *list_interface =
       ut_object_get_interface(object, &ut_list_id);
-  assert(list_functions != NULL);
-  return list_functions->get_length(object);
+  assert(list_interface != NULL);
+  return list_interface->get_length(object);
 }
 
 UtObject *ut_list_get_element(UtObject *object, size_t index) {
-  UtListFunctions *list_functions =
+  UtListInterface *list_interface =
       ut_object_get_interface(object, &ut_list_id);
-  assert(list_functions != NULL);
-  return list_functions->get_element(object, index);
+  assert(list_interface != NULL);
+  return list_interface->get_element(object, index);
 }
 
 char *ut_list_to_string(UtObject *object) {

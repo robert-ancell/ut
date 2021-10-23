@@ -7,7 +7,7 @@
 typedef struct {
   UtObject *(*get_key)(UtObject *object);
   UtObject *(*get_value)(UtObject *object);
-} UtMapItemFunctions;
+} UtMapItemInterface;
 
 extern int ut_map_item_id;
 

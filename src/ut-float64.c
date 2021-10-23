@@ -31,13 +31,13 @@ static int ut_float64_hash(UtObject *object) {
   return self->value;
 }
 
-static UtObjectFunctions object_functions = {.type_name = "UtFloat64",
+static UtObjectInterface object_interface = {.type_name = "UtFloat64",
                                              .to_string = ut_doubleo_string,
                                              .equal = ut_float64_equal,
                                              .hash = ut_float64_hash};
 
 UtObject *ut_float64_new(double value) {
-  UtObject *object = ut_object_new(sizeof(UtFloat64), &object_functions);
+  UtObject *object = ut_object_new(sizeof(UtFloat64), &object_interface);
   UtFloat64 *self = (UtFloat64 *)object;
   self->value = value;
   return object;
@@ -50,5 +50,5 @@ double ut_float64_get_value(UtObject *object) {
 }
 
 bool ut_object_is_float64(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
+  return ut_object_is_type(object, &object_interface);
 }

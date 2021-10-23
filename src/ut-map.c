@@ -16,15 +16,15 @@ int ut_map_id = 0;
 UtObject *ut_map_new() { return ut_hash_table_new(); }
 
 size_t ut_map_get_length(UtObject *object) {
-  UtMapFunctions *map_functions = ut_object_get_interface(object, &ut_map_id);
-  assert(map_functions != NULL);
-  return map_functions->get_length(object);
+  UtMapInterface *map_interface = ut_object_get_interface(object, &ut_map_id);
+  assert(map_interface != NULL);
+  return map_interface->get_length(object);
 }
 
 void ut_map_insert(UtObject *object, UtObject *key, UtObject *value) {
-  UtMapFunctions *map_functions = ut_object_get_interface(object, &ut_map_id);
-  assert(map_functions != NULL);
-  return map_functions->insert(object, key, value);
+  UtMapInterface *map_interface = ut_object_get_interface(object, &ut_map_id);
+  assert(map_interface != NULL);
+  return map_interface->insert(object, key, value);
 }
 
 void ut_map_insert_take(UtObject *object, UtObject *key, UtObject *value) {
@@ -44,9 +44,9 @@ void ut_map_insert_string_take(UtObject *object, const char *key,
 }
 
 UtObject *ut_map_lookup(UtObject *object, UtObject *key) {
-  UtMapFunctions *map_functions = ut_object_get_interface(object, &ut_map_id);
-  assert(map_functions != NULL);
-  return map_functions->lookup(object, key);
+  UtMapInterface *map_interface = ut_object_get_interface(object, &ut_map_id);
+  assert(map_interface != NULL);
+  return map_interface->lookup(object, key);
 }
 
 UtObject *ut_map_lookup_string(UtObject *object, const char *key) {
@@ -55,27 +55,27 @@ UtObject *ut_map_lookup_string(UtObject *object, const char *key) {
 }
 
 void ut_map_remove(UtObject *object, UtObject *key) {
-  UtMapFunctions *map_functions = ut_object_get_interface(object, &ut_map_id);
-  assert(map_functions != NULL);
-  map_functions->remove(object, key);
+  UtMapInterface *map_interface = ut_object_get_interface(object, &ut_map_id);
+  assert(map_interface != NULL);
+  map_interface->remove(object, key);
 }
 
 UtObject *ut_map_get_items(UtObject *object) {
-  UtMapFunctions *map_functions = ut_object_get_interface(object, &ut_map_id);
-  assert(map_functions != NULL);
-  return map_functions->get_items(object);
+  UtMapInterface *map_interface = ut_object_get_interface(object, &ut_map_id);
+  assert(map_interface != NULL);
+  return map_interface->get_items(object);
 }
 
 UtObject *ut_map_get_keys(UtObject *object) {
-  UtMapFunctions *map_functions = ut_object_get_interface(object, &ut_map_id);
-  assert(map_functions != NULL);
-  return map_functions->get_keys(object);
+  UtMapInterface *map_interface = ut_object_get_interface(object, &ut_map_id);
+  assert(map_interface != NULL);
+  return map_interface->get_keys(object);
 }
 
 UtObject *ut_map_get_values(UtObject *object) {
-  UtMapFunctions *map_functions = ut_object_get_interface(object, &ut_map_id);
-  assert(map_functions != NULL);
-  return map_functions->get_values(object);
+  UtMapInterface *map_interface = ut_object_get_interface(object, &ut_map_id);
+  assert(map_interface != NULL);
+  return map_interface->get_values(object);
 }
 
 char *ut_map_to_string(UtObject *object) {

@@ -28,33 +28,33 @@ static size_t ut_constant_string_get_data_length(UtObject *object) {
   return strlen(self->text);
 }
 
-static UtStringFunctions string_functions = {.get_text =
+static UtStringInterface string_interface = {.get_text =
                                                  ut_constant_string_get_text};
 
-static UtUint8ListFunctions uint8_list_functions = {
+static UtUint8ListInterface uint8_list_interface = {
     .get_data = ut_constant_string_get_data,
     .get_length = ut_constant_string_get_data_length};
 
-static UtListFunctions list_functions = {
+static UtListInterface list_interface = {
     .get_length = ut_constant_string_get_data_length};
 
-static UtObjectFunctions object_functions = {
+static UtObjectInterface object_interface = {
     .type_name = "UtConstantString",
     .to_string = ut_string_to_string,
     .equal = ut_string_equal,
     .hash = ut_string_hash,
-    .interfaces = {{&ut_string_id, &string_functions},
-                   {&ut_uint8_list_id, &uint8_list_functions},
-                   {&ut_list_id, &list_functions},
+    .interfaces = {{&ut_string_id, &string_interface},
+                   {&ut_uint8_list_id, &uint8_list_interface},
+                   {&ut_list_id, &list_interface},
                    {NULL, NULL}}};
 
 UtObject *ut_constant_string_new(const char *text) {
-  UtObject *object = ut_object_new(sizeof(UtConstantString), &object_functions);
+  UtObject *object = ut_object_new(sizeof(UtConstantString), &object_interface);
   UtConstantString *self = (UtConstantString *)object;
   self->text = text;
   return object;
 }
 
 bool ut_object_is_constant_string(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
+  return ut_object_is_type(object, &object_interface);
 }

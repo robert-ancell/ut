@@ -101,36 +101,36 @@ static void ut_object_array_cleanup(UtObject *object) {
   self->data_length = 0;
 }
 
-static UtObjectListFunctions object_list_functions = {
+static UtObjectListInterface object_list_interface = {
     .get_element = ut_object_array_get_element};
 
-static UtMutableListFunctions mutable_list_functions = {
+static UtMutableListInterface mutable_list_interface = {
     .insert = ut_object_array_insert,
     .remove = ut_object_array_remove,
     .resize = ut_object_array_resize};
 
-static UtListFunctions list_functions = {
+static UtListInterface list_interface = {
     .get_length = ut_object_array_get_length,
     .get_element = ut_object_array_get_element_ref};
 
-static UtInputStreamFunctions input_stream_functions = {
+static UtInputStreamInterface input_stream_interface = {
     .read = ut_object_array_read, .read_all = ut_object_array_read};
 
-static UtObjectFunctions object_functions = {
+static UtObjectInterface object_interface = {
     .type_name = "UtObjectArray",
     .init = ut_object_array_init,
     .to_string = ut_list_to_string,
     .cleanup = ut_object_array_cleanup,
-    .interfaces = {{&ut_object_list_id, &object_list_functions},
-                   {&ut_mutable_list_id, &mutable_list_functions},
-                   {&ut_list_id, &list_functions},
-                   {&ut_input_stream_id, &input_stream_functions},
+    .interfaces = {{&ut_object_list_id, &object_list_interface},
+                   {&ut_mutable_list_id, &mutable_list_interface},
+                   {&ut_list_id, &list_interface},
+                   {&ut_input_stream_id, &input_stream_interface},
                    {NULL, NULL}}};
 
 UtObject *ut_object_array_new() {
-  return ut_object_new(sizeof(UtObjectArray), &object_functions);
+  return ut_object_new(sizeof(UtObjectArray), &object_interface);
 }
 
 bool ut_object_is_object_array(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
+  return ut_object_is_type(object, &object_interface);
 }

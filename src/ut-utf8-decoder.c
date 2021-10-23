@@ -137,24 +137,24 @@ static void ut_utf8_decoder_read_all(UtObject *object, size_t block_size,
   ut_input_stream_read(self->input, block_size, read_cb, self, cancel);
 }
 
-static UtInputStreamFunctions input_stream_functions = {
+static UtInputStreamInterface input_stream_interface = {
     .read = ut_utf8_decoder_read, .read_all = ut_utf8_decoder_read_all};
 
-static UtObjectFunctions object_functions = {
+static UtObjectInterface object_interface = {
     .type_name = "UtUtf8Decoder",
     .init = ut_utf8_decoder_init,
     .cleanup = ut_utf8_decoder_cleanup,
-    .interfaces = {{&ut_input_stream_id, &input_stream_functions},
+    .interfaces = {{&ut_input_stream_id, &input_stream_interface},
                    {NULL, NULL}}};
 
 UtObject *ut_utf8_decoder_new(UtObject *input) {
   assert(ut_object_implements_input_stream(input));
-  UtObject *object = ut_object_new(sizeof(UtUtf8Decoder), &object_functions);
+  UtObject *object = ut_object_new(sizeof(UtUtf8Decoder), &object_interface);
   UtUtf8Decoder *self = (UtUtf8Decoder *)object;
   self->input = ut_object_ref(input);
   return object;
 }
 
 bool ut_object_is_utf8_decoder(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
+  return ut_object_is_type(object, &object_interface);
 }

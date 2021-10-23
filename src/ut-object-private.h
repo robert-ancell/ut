@@ -15,17 +15,17 @@ typedef struct {
 
   struct {
     void *interface_id;
-    void *functions;
+    void *interface;
   } interfaces[];
-} UtObjectFunctions;
+} UtObjectInterface;
 
 struct _UtObject {
-  UtObjectFunctions *functions;
+  UtObjectInterface *interface;
   int ref_count;
 };
 
-UtObject *ut_object_new(size_t object_size, UtObjectFunctions *functions);
+UtObject *ut_object_new(size_t object_size, UtObjectInterface *functions);
 
-bool ut_object_is_type(UtObject *object, UtObjectFunctions *functions);
+bool ut_object_is_type(UtObject *object, UtObjectInterface *functions);
 
 void *ut_object_get_interface(UtObject *object, void *interface_id);

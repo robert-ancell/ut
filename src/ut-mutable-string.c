@@ -60,7 +60,7 @@ static char *ut_mutable_string_take_text(UtObject *object) {
   return (char *)ut_uint8_list_take_data(self->data);
 }
 
-static UtStringFunctions string_functions = {
+static UtStringInterface string_interface = {
     .get_text = ut_mutable_string_get_text,
     .take_text = ut_mutable_string_take_text};
 
@@ -74,11 +74,11 @@ static size_t ut_mutable_string_get_length(UtObject *object) {
   return ut_list_get_length(self->data);
 }
 
-static UtUint8ListFunctions uint8_list_functions = {
+static UtUint8ListInterface uint8_list_interface = {
     .get_data = ut_mutable_string_get_data,
     .get_length = ut_mutable_string_get_length};
 
-static UtListFunctions list_functions = {.get_length =
+static UtListInterface list_interface = {.get_length =
                                              ut_mutable_string_get_length};
 
 static void ut_mutable_string_init(UtObject *object) {
@@ -91,16 +91,16 @@ static void ut_mutable_string_cleanup(UtObject *object) {
   ut_object_unref(self->data);
 }
 
-static UtObjectFunctions object_functions = {
+static UtObjectInterface object_interface = {
     .type_name = "UtMutableString",
     .init = ut_mutable_string_init,
     .to_string = ut_string_to_string,
     .equal = ut_string_equal,
     .hash = ut_string_hash,
     .cleanup = ut_mutable_string_cleanup,
-    .interfaces = {{&ut_string_id, &string_functions},
-                   {&ut_uint8_list_id, &uint8_list_functions},
-                   {&ut_list_id, &list_functions},
+    .interfaces = {{&ut_string_id, &string_interface},
+                   {&ut_uint8_list_id, &uint8_list_interface},
+                   {&ut_list_id, &list_interface},
                    {NULL, NULL}}};
 
 UtObject *ut_mutable_string_new(const char *text) {
@@ -108,7 +108,7 @@ UtObject *ut_mutable_string_new(const char *text) {
 }
 
 UtObject *ut_mutable_string_new_sized(const char *text, size_t length) {
-  UtObject *object = ut_object_new(sizeof(UtMutableString), &object_functions);
+  UtObject *object = ut_object_new(sizeof(UtMutableString), &object_interface);
   UtMutableString *self = (UtMutableString *)object;
   ut_mutable_list_resize(self->data, length + 1);
   uint8_t *buffer = ut_uint8_array_get_data(self->data);
@@ -179,5 +179,5 @@ void ut_mutable_string_append_code_point(UtObject *object,
 }
 
 bool ut_object_is_mutable_string(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
+  return ut_object_is_type(object, &object_interface);
 }

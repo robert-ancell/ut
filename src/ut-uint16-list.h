@@ -7,7 +7,7 @@
 
 typedef struct {
   const uint16_t *(*get_data)(UtObject *object);
-} UtUint16ListFunctions;
+} UtUint16ListInterface;
 
 extern int ut_uint16_list_id;
 

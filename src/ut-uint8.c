@@ -31,13 +31,13 @@ static int ut_uint8_hash(UtObject *object) {
   return self->value;
 }
 
-static UtObjectFunctions object_functions = {.type_name = "UtUint8",
+static UtObjectInterface object_interface = {.type_name = "UtUint8",
                                              .to_string = ut_uint8_to_string,
                                              .equal = ut_uint8_equal,
                                              .hash = ut_uint8_hash};
 
 UtObject *ut_uint8_new(uint8_t value) {
-  UtObject *object = ut_object_new(sizeof(UtUint8), &object_functions);
+  UtObject *object = ut_object_new(sizeof(UtUint8), &object_interface);
   UtUint8 *self = (UtUint8 *)object;
   self->value = value;
   return object;
@@ -50,5 +50,5 @@ uint8_t ut_uint8_get_value(UtObject *object) {
 }
 
 bool ut_object_is_uint8(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
+  return ut_object_is_type(object, &object_interface);
 }

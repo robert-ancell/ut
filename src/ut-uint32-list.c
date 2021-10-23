@@ -6,8 +6,8 @@
 int ut_uint32_list_id = 0;
 
 const uint32_t *ut_uint32_list_get_data(UtObject *object) {
-  UtUint32ListFunctions *uint32_list_functions =
+  UtUint32ListInterface *uint32_list_interface =
       ut_object_get_interface(object, &ut_uint32_list_id);
-  assert(uint32_list_functions != NULL);
-  return uint32_list_functions->get_data(object);
+  assert(uint32_list_interface != NULL);
+  return uint32_list_interface->get_data(object);
 }

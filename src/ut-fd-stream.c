@@ -238,7 +238,7 @@ static void ut_fd_stream_read_all(UtObject *object, size_t block_size,
   start_read(self, block_size, true, callback, user_data, cancel);
 }
 
-static UtInputStreamFunctions input_stream_functions = {
+static UtInputStreamInterface input_stream_interface = {
     .read = ut_fd_stream_read, .read_all = ut_fd_stream_read_all};
 
 static void ut_fd_stream_write(UtObject *object, UtObject *data,
@@ -265,24 +265,24 @@ static void ut_fd_stream_write_all(UtObject *object, UtObject *data,
                                 callback_data->watch_cancel);
 }
 
-static UtOutputStreamFunctions output_stream_functions = {
+static UtOutputStreamInterface output_stream_interface = {
     .write = ut_fd_stream_write, .write_all = ut_fd_stream_write_all};
 
-static UtObjectFunctions object_functions = {
+static UtObjectInterface object_interface = {
     .type_name = "UtFdStream",
     .init = ut_fd_stream_init,
     .cleanup = ut_fd_stream_cleanup,
-    .interfaces = {{&ut_input_stream_id, &input_stream_functions},
-                   {&ut_output_stream_id, &output_stream_functions},
+    .interfaces = {{&ut_input_stream_id, &input_stream_interface},
+                   {&ut_output_stream_id, &output_stream_interface},
                    {NULL, NULL}}};
 
 UtObject *ut_fd_stream_new(int fd) {
-  UtObject *object = ut_object_new(sizeof(UtFdStream), &object_functions);
+  UtObject *object = ut_object_new(sizeof(UtFdStream), &object_interface);
   UtFdStream *self = (UtFdStream *)object;
   self->fd = fd;
   return object;
 }
 
 bool ut_object_is_fd_stream(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
+  return ut_object_is_type(object, &object_interface);
 }

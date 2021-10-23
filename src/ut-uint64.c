@@ -31,13 +31,13 @@ static int ut_uint64_hash(UtObject *object) {
   return self->value;
 }
 
-static UtObjectFunctions object_functions = {.type_name = "UtUint64",
+static UtObjectInterface object_interface = {.type_name = "UtUint64",
                                              .to_string = ut_uint64_to_string,
                                              .equal = ut_uint64_equal,
                                              .hash = ut_uint64_hash};
 
 UtObject *ut_uint64_new(uint64_t value) {
-  UtObject *object = ut_object_new(sizeof(UtUint64), &object_functions);
+  UtObject *object = ut_object_new(sizeof(UtUint64), &object_interface);
   UtUint64 *self = (UtUint64 *)object;
   self->value = value;
   return object;
@@ -50,5 +50,5 @@ uint64_t ut_uint64_get_value(UtObject *object) {
 }
 
 bool ut_object_is_uint64(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
+  return ut_object_is_type(object, &object_interface);
 }

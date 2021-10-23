@@ -11,11 +11,11 @@ static void ut_cancel_init(UtObject *object) {
   self->is_active = false;
 }
 
-static UtObjectFunctions object_functions = {.type_name = "UtCancel",
+static UtObjectInterface object_interface = {.type_name = "UtCancel",
                                              .init = ut_cancel_init};
 
 UtObject *ut_cancel_new() {
-  return ut_object_new(sizeof(UtCancel), &object_functions);
+  return ut_object_new(sizeof(UtCancel), &object_interface);
 }
 
 void ut_cancel_activate(UtObject *object) {
@@ -29,5 +29,5 @@ bool ut_cancel_is_active(UtObject *object) {
 }
 
 bool ut_object_is_cancel(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
+  return ut_object_is_type(object, &object_interface);
 }

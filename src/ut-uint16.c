@@ -31,13 +31,13 @@ static int ut_uint16_hash(UtObject *object) {
   return self->value;
 }
 
-static UtObjectFunctions object_functions = {.type_name = "UtUint16",
+static UtObjectInterface object_interface = {.type_name = "UtUint16",
                                              .to_string = ut_uint16_to_string,
                                              .equal = ut_uint16_equal,
                                              .hash = ut_uint16_hash};
 
 UtObject *ut_uint16_new(uint16_t value) {
-  UtObject *object = ut_object_new(sizeof(UtUint16), &object_functions);
+  UtObject *object = ut_object_new(sizeof(UtUint16), &object_interface);
   UtUint16 *self = (UtUint16 *)object;
   self->value = value;
   return object;
@@ -50,5 +50,5 @@ uint16_t ut_uint16_get_value(UtObject *object) {
 }
 
 bool ut_object_is_uint16(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
+  return ut_object_is_type(object, &object_interface);
 }

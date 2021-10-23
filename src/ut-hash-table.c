@@ -33,7 +33,7 @@ static UtObject *ut_hash_table_item_get_value(UtObject *object) {
   return ut_object_ref(self->value);
 }
 
-static UtMapItemFunctions map_item_functions = {
+static UtMapItemInterface map_item_interface = {
     .get_key = ut_hash_table_item_get_key,
     .get_value = ut_hash_table_item_get_value};
 
@@ -52,15 +52,15 @@ static void ut_hash_table_item_cleanup(UtObject *object) {
   self->next = NULL;
 }
 
-static UtObjectFunctions item_object_functions = {
+static UtObjectInterface item_object_interface = {
     .type_name = "UtHashTableItem",
     .init = ut_hash_table_item_init,
     .cleanup = ut_hash_table_item_cleanup,
-    .interfaces = {{&ut_map_item_id, &map_item_functions}, {NULL, NULL}}};
+    .interfaces = {{&ut_map_item_id, &map_item_interface}, {NULL, NULL}}};
 
 static UtHashTableItem *item_new(UtObject *key, UtObject *value) {
   UtHashTableItem *item = (UtHashTableItem *)ut_object_new(
-      sizeof(UtHashTableItem), &item_object_functions);
+      sizeof(UtHashTableItem), &item_object_interface);
   item->key = ut_object_ref(key);
   item->value = ut_object_ref(value);
   return item;
@@ -165,7 +165,7 @@ static UtObject *ut_hash_table_get_values(UtObject *object) {
   return values;
 }
 
-static UtMapFunctions map_functions = {.get_length = ut_hash_table_get_length,
+static UtMapInterface map_interface = {.get_length = ut_hash_table_get_length,
                                        .insert = ut_hash_table_insert,
                                        .lookup = ut_hash_table_lookup,
                                        .remove = ut_hash_table_remove,
@@ -189,17 +189,17 @@ static void ut_hash_table_cleanup(UtObject *object) {
   self->items = NULL;
 }
 
-static UtObjectFunctions object_functions = {
+static UtObjectInterface object_interface = {
     .type_name = "UtHashTable",
     .init = ut_hash_table_init,
     .to_string = ut_map_to_string,
     .cleanup = ut_hash_table_cleanup,
-    .interfaces = {{&ut_map_id, &map_functions}, {NULL, NULL}}};
+    .interfaces = {{&ut_map_id, &map_interface}, {NULL, NULL}}};
 
 UtObject *ut_hash_table_new() {
-  return ut_object_new(sizeof(UtHashTable), &object_functions);
+  return ut_object_new(sizeof(UtHashTable), &object_interface);
 }
 
 bool ut_object_is_hash_table_string(UtObject *object) {
-  return ut_object_is_type(object, &object_functions);
+  return ut_object_is_type(object, &object_interface);
 }

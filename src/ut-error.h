@@ -6,7 +6,7 @@
 
 typedef struct {
   char *(*get_description)(UtObject *object);
-} UtErrorFunctions;
+} UtErrorInterface;
 
 extern int ut_error_id;
 

@@ -13,7 +13,7 @@ typedef struct {
   UtObject *(*get_items)(UtObject *object);
   UtObject *(*get_keys)(UtObject *object);
   UtObject *(*get_values)(UtObject *object);
-} UtMapFunctions;
+} UtMapInterface;
 
 extern int ut_map_id;
 
