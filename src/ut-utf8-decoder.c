@@ -41,14 +41,12 @@ static size_t read_cb(void *user_data, UtObject *data) {
     if (self->read_all) {
       self->callback(self->user_data, self->buffer);
     } else {
-      UtObjectRef unused_data = NULL;
-      if (ut_list_get_length(self->buffer) > 0) {
-        unused_data = self->buffer;
-        self->buffer = ut_uint32_array_new();
-      }
-      UtObjectRef eos = ut_end_of_stream_new(unused_data);
+      UtObjectRef eos = ut_end_of_stream_new(
+          ut_list_get_length(self->buffer) > 0 ? self->buffer : NULL);
       self->callback(self->user_data, self->buffer);
     }
+    self->callback = NULL;
+    self->user_data = NULL;
     return 0;
   }
 

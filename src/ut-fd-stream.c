@@ -99,14 +99,8 @@ static void read_cb(void *user_data) {
       if (data->read_all) {
         report_read_data(data);
       } else {
-        UtObjectRef unused_data = 0;
-        if (self->read_buffer_length > 0) {
-          unused_data = self->read_buffer;
-          ut_mutable_list_resize(unused_data, self->read_buffer_length);
-          self->read_buffer = ut_uint8_array_new();
-          self->read_buffer_length = 0;
-        }
-        UtObjectRef end_of_stream = ut_end_of_stream_new(unused_data);
+        UtObjectRef end_of_stream = ut_end_of_stream_new(
+            self->read_buffer_length > 0 ? self->read_buffer : NULL);
         data->callback(data->user_data, end_of_stream);
       }
       done = true;
