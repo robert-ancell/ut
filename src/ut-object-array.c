@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-mutable-list.h"
 #include "ut-object-array.h"
@@ -17,9 +18,6 @@ static UtObject *ut_object_array_get_element(UtObject *object, size_t index) {
   UtObjectArray *self = (UtObjectArray *)object;
   return self->data[index];
 }
-
-static UtObjectListFunctions object_list_functions = {
-    .get_element = ut_object_array_get_element};
 
 static void ut_object_array_insert(UtObject *object, size_t index,
                                    UtObject *item) {
@@ -60,11 +58,6 @@ static void ut_object_array_resize(UtObject *object, size_t length) {
   self->data_length = length;
 }
 
-static UtMutableListFunctions mutable_list_functions = {
-    .insert = ut_object_array_insert,
-    .remove = ut_object_array_remove,
-    .resize = ut_object_array_resize};
-
 static size_t ut_object_array_get_length(UtObject *object) {
   UtObjectArray *self = (UtObjectArray *)object;
   return self->data_length;
@@ -76,9 +69,13 @@ static UtObject *ut_object_array_get_element_ref(UtObject *object,
   return ut_object_ref(self->data[index]);
 }
 
-static UtListFunctions list_functions = {
-    .get_length = ut_object_array_get_length,
-    .get_element = ut_object_array_get_element_ref};
+static void ut_object_array_read(UtObject *object, size_t block_size,
+                                 UtInputStreamCallback callback,
+                                 void *user_data, UtObject *cancel) {
+  callback(user_data, object);
+  UtObjectRef eos = ut_object_array_new();
+  callback(user_data, eos);
+}
 
 static void ut_object_array_init(UtObject *object) {
   UtObjectArray *self = (UtObjectArray *)object;
@@ -95,6 +92,21 @@ static void ut_object_array_cleanup(UtObject *object) {
   self->data_length = 0;
 }
 
+static UtObjectListFunctions object_list_functions = {
+    .get_element = ut_object_array_get_element};
+
+static UtMutableListFunctions mutable_list_functions = {
+    .insert = ut_object_array_insert,
+    .remove = ut_object_array_remove,
+    .resize = ut_object_array_resize};
+
+static UtListFunctions list_functions = {
+    .get_length = ut_object_array_get_length,
+    .get_element = ut_object_array_get_element_ref};
+
+static UtInputStreamFunctions input_stream_functions = {
+    .read = ut_object_array_read, .read_all = ut_object_array_read};
+
 static UtObjectFunctions object_functions = {
     .type_name = "UtObjectArray",
     .init = ut_object_array_init,
@@ -103,6 +115,7 @@ static UtObjectFunctions object_functions = {
     .interfaces = {{&ut_object_list_id, &object_list_functions},
                    {&ut_mutable_list_id, &mutable_list_functions},
                    {&ut_list_id, &list_functions},
+                   {&ut_input_stream_id, &input_stream_functions},
                    {NULL, NULL}}};
 
 UtObject *ut_object_array_new() {

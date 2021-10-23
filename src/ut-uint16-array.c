@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-mutable-list.h"
 #include "ut-object-private.h"
@@ -27,9 +28,6 @@ static const uint16_t *ut_uint16_array_get_list_data(UtObject *object) {
   return self->data;
 }
 
-static UtUint16ListFunctions uint16_list_functions = {
-    .get_data = ut_uint16_array_get_list_data};
-
 static void ut_uint16_array_insert_object(UtObject *object, size_t index,
                                           UtObject *item) {
   assert(ut_object_is_uint16(item));
@@ -52,11 +50,6 @@ static void ut_uint16_array_resize(UtObject *object, size_t length) {
   resize_list(self, length);
 }
 
-static UtMutableListFunctions mutable_list_functions = {
-    .insert = ut_uint16_array_insert_object,
-    .remove = ut_uint16_array_remove,
-    .resize = ut_uint16_array_resize};
-
 static size_t ut_uint16_array_get_length(UtObject *object) {
   UtUint16Array *self = (UtUint16Array *)object;
   return self->data_length;
@@ -67,9 +60,13 @@ static UtObject *ut_uint16_array_get_element(UtObject *object, size_t index) {
   return ut_uint16_new(self->data[index]);
 }
 
-static UtListFunctions list_functions = {
-    .get_length = ut_uint16_array_get_length,
-    .get_element = ut_uint16_array_get_element};
+static void ut_uint16_array_read(UtObject *object, size_t block_size,
+                                 UtInputStreamCallback callback,
+                                 void *user_data, UtObject *cancel) {
+  callback(user_data, object);
+  UtObjectRef eos = ut_uint16_array_new();
+  callback(user_data, eos);
+}
 
 static void ut_uint16_array_init(UtObject *object) {
   UtUint16Array *self = (UtUint16Array *)object;
@@ -82,6 +79,21 @@ static void ut_uint16_array_cleanup(UtObject *object) {
   free(self->data);
 }
 
+static UtUint16ListFunctions uint16_list_functions = {
+    .get_data = ut_uint16_array_get_list_data};
+
+static UtMutableListFunctions mutable_list_functions = {
+    .insert = ut_uint16_array_insert_object,
+    .remove = ut_uint16_array_remove,
+    .resize = ut_uint16_array_resize};
+
+static UtListFunctions list_functions = {
+    .get_length = ut_uint16_array_get_length,
+    .get_element = ut_uint16_array_get_element};
+
+static UtInputStreamFunctions input_stream_functions = {
+    .read = ut_uint16_array_read, .read_all = ut_uint16_array_read};
+
 static UtObjectFunctions object_functions = {
     .type_name = "UtUint16Array",
     .init = ut_uint16_array_init,
@@ -90,6 +102,7 @@ static UtObjectFunctions object_functions = {
     .interfaces = {{&ut_uint16_list_id, &uint16_list_functions},
                    {&ut_mutable_list_id, &mutable_list_functions},
                    {&ut_list_id, &list_functions},
+                   {&ut_input_stream_id, &input_stream_functions},
                    {NULL, NULL}}};
 
 UtObject *ut_uint16_array_new() {

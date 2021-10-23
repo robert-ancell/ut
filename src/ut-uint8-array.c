@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-mutable-list.h"
 #include "ut-object-private.h"
@@ -67,6 +68,25 @@ static UtObject *ut_uint8_array_get_element(UtObject *object, size_t index) {
   return ut_uint8_new(self->data[index]);
 }
 
+static void ut_uint8_array_read(UtObject *object, size_t block_size,
+                                UtInputStreamCallback callback, void *user_data,
+                                UtObject *cancel) {
+  callback(user_data, object);
+  UtObjectRef eos = ut_uint8_array_new();
+  callback(user_data, eos);
+}
+
+static void ut_uint8_array_init(UtObject *object) {
+  UtUint8Array *self = (UtUint8Array *)object;
+  self->data = NULL;
+  self->data_length = 0;
+}
+
+static void ut_uint8_array_cleanup(UtObject *object) {
+  UtUint8Array *self = (UtUint8Array *)object;
+  free(self->data);
+}
+
 static UtUint8ListFunctions uint8_list_functions = {
     .get_data = ut_uint8_array_get_const_data,
     .get_length = ut_uint8_array_get_length,
@@ -81,16 +101,8 @@ static UtListFunctions list_functions = {
     .get_length = ut_uint8_array_get_length,
     .get_element = ut_uint8_array_get_element};
 
-static void ut_uint8_array_init(UtObject *object) {
-  UtUint8Array *self = (UtUint8Array *)object;
-  self->data = NULL;
-  self->data_length = 0;
-}
-
-static void ut_uint8_array_cleanup(UtObject *object) {
-  UtUint8Array *self = (UtUint8Array *)object;
-  free(self->data);
-}
+static UtInputStreamFunctions input_stream_functions = {
+    .read = ut_uint8_array_read, .read_all = ut_uint8_array_read};
 
 static UtObjectFunctions object_functions = {
     .type_name = "UtUint8Array",
@@ -100,6 +112,7 @@ static UtObjectFunctions object_functions = {
     .interfaces = {{&ut_uint8_list_id, &uint8_list_functions},
                    {&ut_mutable_list_id, &mutable_list_functions},
                    {&ut_list_id, &list_functions},
+                   {&ut_input_stream_id, &input_stream_functions},
                    {NULL, NULL}}};
 
 UtObject *ut_uint8_array_new() {

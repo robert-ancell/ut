@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-mutable-list.h"
 #include "ut-object-private.h"
@@ -57,11 +58,6 @@ static void ut_string_array_resize(UtObject *object, size_t length) {
   resize(self, length);
 }
 
-static UtMutableListFunctions mutable_list_functions = {
-    .insert = ut_string_array_insert_object,
-    .remove = ut_string_array_remove,
-    .resize = ut_string_array_resize};
-
 static size_t ut_string_array_get_length(UtObject *object) {
   UtStringArray *self = (UtStringArray *)object;
   return self->data_length;
@@ -72,9 +68,13 @@ static UtObject *ut_string_array_get_element(UtObject *object, size_t index) {
   return ut_string_new(self->data[index]);
 }
 
-static UtListFunctions list_functions = {
-    .get_length = ut_string_array_get_length,
-    .get_element = ut_string_array_get_element};
+static void ut_string_array_read(UtObject *object, size_t block_size,
+                                 UtInputStreamCallback callback,
+                                 void *user_data, UtObject *cancel) {
+  callback(user_data, object);
+  UtObjectRef eos = ut_string_array_new();
+  callback(user_data, eos);
+}
 
 static void ut_string_array_init(UtObject *object) {
   UtStringArray *self = (UtStringArray *)object;
@@ -87,6 +87,18 @@ static void ut_string_array_cleanup(UtObject *object) {
   free(self->data);
 }
 
+static UtMutableListFunctions mutable_list_functions = {
+    .insert = ut_string_array_insert_object,
+    .remove = ut_string_array_remove,
+    .resize = ut_string_array_resize};
+
+static UtListFunctions list_functions = {
+    .get_length = ut_string_array_get_length,
+    .get_element = ut_string_array_get_element};
+
+static UtInputStreamFunctions input_stream_functions = {
+    .read = ut_string_array_read, .read_all = ut_string_array_read};
+
 static UtObjectFunctions object_functions = {
     .type_name = "UtStringArray",
     .init = ut_string_array_init,
@@ -94,6 +106,7 @@ static UtObjectFunctions object_functions = {
     .cleanup = ut_string_array_cleanup,
     .interfaces = {{&ut_mutable_list_id, &mutable_list_functions},
                    {&ut_list_id, &list_functions},
+                   {&ut_input_stream_id, &input_stream_functions},
                    {NULL, NULL}}};
 
 UtObject *ut_string_array_new() {
