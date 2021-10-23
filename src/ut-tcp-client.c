@@ -209,8 +209,8 @@ void ut_tcp_client_connect(UtObject *object,
   // FIXME: Cancel thread if this UtTcpClient is deleted.
   ConnectData *data = connect_data_new(self, self->address, self->port,
                                        callback, user_data, cancel);
-  ut_event_loop_run_in_thread(lookup_thread_cb, data, NULL, lookup_result_cb,
-                              data, NULL);
+  ut_event_loop_add_worker_thread(lookup_thread_cb, data, NULL,
+                                  lookup_result_cb, data, NULL);
 }
 
 void ut_tcp_client_disconnect(UtObject *object) {

@@ -21,11 +21,11 @@ void ut_event_loop_add_read_watch(int fd, UtEventLoopCallback callback,
 void ut_event_loop_add_write_watch(int fd, UtEventLoopCallback callback,
                                    void *user_data, UtObject *cancel);
 
-void ut_event_loop_run_in_thread(UtThreadCallback thread_callback,
-                                 void *thread_data,
-                                 UtEventLoopCallback thread_data_cleanup,
-                                 UtThreadResultCallback result_callback,
-                                 void *user_data, UtObject *cancel);
+void ut_event_loop_add_worker_thread(UtThreadCallback thread_callback,
+                                     void *thread_data,
+                                     UtEventLoopCallback thread_data_cleanup,
+                                     UtThreadResultCallback result_callback,
+                                     void *user_data, UtObject *cancel);
 
 void ut_event_loop_return(UtObject *object);
 

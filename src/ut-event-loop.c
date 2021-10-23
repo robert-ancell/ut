@@ -244,11 +244,11 @@ static void *thread_cb(void *data) {
   return result;
 }
 
-void ut_event_loop_run_in_thread(UtThreadCallback thread_callback,
-                                 void *thread_data,
-                                 UtEventLoopCallback thread_data_cleanup,
-                                 UtThreadResultCallback result_callback,
-                                 void *user_data, UtObject *cancel) {
+void ut_event_loop_add_worker_thread(UtThreadCallback thread_callback,
+                                     void *thread_data,
+                                     UtEventLoopCallback thread_data_cleanup,
+                                     UtThreadResultCallback result_callback,
+                                     void *user_data, UtObject *cancel) {
   EventLoop *loop = get_loop();
   WorkerThread *thread =
       worker_thread_new(thread_callback, thread_data, thread_data_cleanup,
