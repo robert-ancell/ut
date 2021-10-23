@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "ut-end-of-stream.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-mutable-list.h"
@@ -63,8 +64,15 @@ static UtObject *ut_uint32_array_get_element(UtObject *object, size_t index) {
 static void ut_uint32_array_read(UtObject *object, size_t block_size,
                                  UtInputStreamCallback callback,
                                  void *user_data, UtObject *cancel) {
-  callback(user_data, object);
-  UtObjectRef eos = ut_uint32_array_new();
+  UtUint32Array *self = (UtUint32Array *)object;
+  size_t n_used = callback(user_data, object);
+  UtObjectRef unused_data = NULL;
+  if (n_used != self->data_length) {
+    unused_data = ut_uint32_array_new();
+    ut_uint32_array_append_block(unused_data, self->data + n_used,
+                                 self->data_length - n_used);
+  }
+  UtObjectRef eos = ut_end_of_stream_new(unused_data);
   callback(user_data, eos);
 }
 

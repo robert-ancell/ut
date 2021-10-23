@@ -3,6 +3,7 @@ ut_sources = [
   'ut-cancel.c',
   'ut-constant-string.c',
   'ut-constant-uint8-array.c',
+  'ut-end-of-stream.c',
   'ut-event-loop.c',
   'ut-fd-stream.c',
   'ut-file.c',

@@ -1,5 +1,6 @@
 #include <assert.h>
 
+#include "ut-end-of-stream.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-mutable-list.h"
@@ -33,23 +34,38 @@ static void ut_utf8_decoder_cleanup(UtObject *object) {
   ut_object_unref(self->buffer);
 }
 
-static size_t read_cb(void *user_data, UtObject *buffer) {
+static size_t read_cb(void *user_data, UtObject *data) {
   UtUtf8Decoder *self = user_data;
 
-  const uint8_t *data = ut_uint8_list_get_data(buffer);
-  size_t data_length = ut_list_get_length(buffer);
+  if (ut_object_is_end_of_stream(data)) {
+    if (self->read_all) {
+      self->callback(self->user_data, self->buffer);
+    } else {
+      UtObjectRef unused_data = NULL;
+      if (ut_list_get_length(self->buffer) > 0) {
+        unused_data = self->buffer;
+        self->buffer = ut_uint32_array_new();
+      }
+      UtObjectRef eos = ut_end_of_stream_new(unused_data);
+      self->callback(self->user_data, self->buffer);
+    }
+    return 0;
+  }
+
+  const uint8_t *utf8_data = ut_uint8_list_get_data(data);
+  size_t utf8_data_length = ut_list_get_length(data);
   size_t offset = 0;
-  while (offset < data_length) {
+  while (offset < utf8_data_length) {
     uint32_t code_point;
-    uint8_t byte1 = data[offset];
+    uint8_t byte1 = utf8_data[offset];
     if ((byte1 & 0x80) == 0) {
       code_point = byte1;
       offset++;
     } else if ((byte1 & 0xe0) == 0xc0) {
-      if (offset + 2 > data_length) {
+      if (offset + 2 > utf8_data_length) {
         break;
       }
-      uint8_t byte2 = data[offset + 1];
+      uint8_t byte2 = utf8_data[offset + 1];
       if ((byte2 & 0xc0) != 0x80) {
         code_point = 0xfffd;
       }
@@ -57,10 +73,10 @@ static size_t read_cb(void *user_data, UtObject *buffer) {
       offset += 2;
       return true;
     } else if ((byte1 & 0xf0) == 0xe0) {
-      if (offset + 3 > data_length) {
+      if (offset + 3 > utf8_data_length) {
         break;
       }
-      uint8_t byte2 = data[offset + 1], byte3 = data[offset + 2];
+      uint8_t byte2 = utf8_data[offset + 1], byte3 = utf8_data[offset + 2];
       if ((byte2 & 0xc0) != 0x80 || (byte3 & 0xc0) != 0x80) {
         code_point = 0xfffd;
       } else {
@@ -70,11 +86,11 @@ static size_t read_cb(void *user_data, UtObject *buffer) {
       offset += 3;
       return true;
     } else if ((byte1 & 0xf8) == 0xf0) {
-      if (offset + 4 > data_length) {
+      if (offset + 4 > utf8_data_length) {
         break;
       }
-      uint8_t byte2 = data[offset + 1], byte3 = data[offset + 2],
-              byte4 = data[offset + 3];
+      uint8_t byte2 = utf8_data[offset + 1], byte3 = utf8_data[offset + 2],
+              byte4 = utf8_data[offset + 3];
       if ((byte2 & 0xc0) != 0x80 || (byte3 & 0xc0) != 0x80 ||
           (byte4 & 0xc0) != 0x80) {
         code_point = 0xfffd;
@@ -91,19 +107,9 @@ static size_t read_cb(void *user_data, UtObject *buffer) {
     ut_uint32_array_append(self->buffer, code_point);
   }
 
-  // FIXME: Need better way to know if this is EOS, as we will always try and
-  // reprocess the final data.
-  bool is_eos = ut_list_get_length(buffer) == 0;
-  if (!self->read_all || is_eos) {
-    if (ut_list_get_length(self->buffer) > 0) {
-      size_t n_used = self->callback(self->user_data, self->buffer);
-      ut_mutable_list_remove(self->buffer, 0, n_used);
-    }
-
-    if (is_eos) {
-      assert(ut_list_get_length(self->buffer) == 0);
-      self->callback(self->user_data, self->buffer);
-    }
+  if (!self->read_all) {
+    size_t n_used = self->callback(self->user_data, self->buffer);
+    ut_mutable_list_remove(self->buffer, 0, n_used);
   }
 
   return offset;

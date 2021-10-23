@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "ut-end-of-stream.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-mutable-list.h"
@@ -72,8 +73,16 @@ static UtObject *ut_object_array_get_element_ref(UtObject *object,
 static void ut_object_array_read(UtObject *object, size_t block_size,
                                  UtInputStreamCallback callback,
                                  void *user_data, UtObject *cancel) {
-  callback(user_data, object);
-  UtObjectRef eos = ut_object_array_new();
+  UtObjectArray *self = (UtObjectArray *)object;
+  size_t n_used = callback(user_data, object);
+  UtObjectRef unused_data = NULL;
+  if (n_used != self->data_length) {
+    unused_data = ut_object_array_new();
+    for (size_t i = n_used; i < self->data_length; i++) {
+      ut_mutable_list_append(unused_data, self->data[i]);
+    }
+  }
+  UtObjectRef eos = ut_end_of_stream_new(unused_data);
   callback(user_data, eos);
 }
 
@@ -120,15 +129,6 @@ static UtObjectFunctions object_functions = {
 
 UtObject *ut_object_array_new() {
   return ut_object_new(sizeof(UtObjectArray), &object_functions);
-}
-
-void ut_object_array_append(UtObject *object, UtObject *element) {
-  assert(ut_object_is_object_array(object));
-  UtObjectArray *self = (UtObjectArray *)object;
-
-  self->data_length++;
-  self->data = realloc(self->data, sizeof(UtObject *) * self->data_length);
-  self->data[self->data_length - 1] = ut_object_ref(element);
 }
 
 bool ut_object_is_object_array(UtObject *object) {

@@ -1,5 +1,6 @@
 #include <assert.h>
 
+#include "ut-end-of-stream.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-mutable-list.h"
@@ -33,11 +34,26 @@ static void ut_utf8_encoder_cleanup(UtObject *object) {
   ut_object_unref(self->buffer);
 }
 
-static size_t read_cb(void *user_data, UtObject *buffer) {
+static size_t read_cb(void *user_data, UtObject *data) {
   UtUtf8Encoder *self = user_data;
 
-  const uint32_t *code_points = ut_uint32_list_get_data(buffer);
-  size_t code_points_length = ut_list_get_length(buffer);
+  if (ut_object_is_end_of_stream(data)) {
+    if (self->read_all) {
+      self->callback(self->user_data, self->buffer);
+    } else {
+      UtObjectRef unused_data = NULL;
+      if (ut_list_get_length(self->buffer) > 0) {
+        unused_data = self->buffer;
+        self->buffer = ut_uint8_array_new();
+      }
+      UtObjectRef eos = ut_end_of_stream_new(unused_data);
+      self->callback(self->user_data, self->buffer);
+    }
+    return 0;
+  }
+
+  const uint32_t *code_points = ut_uint32_list_get_data(data);
+  size_t code_points_length = ut_list_get_length(data);
   for (size_t i = 0; i < code_points_length; i++) {
     uint32_t code_point = code_points[i];
     if (code_point <= 0x7f) {
@@ -59,17 +75,9 @@ static size_t read_cb(void *user_data, UtObject *buffer) {
     }
   }
 
-  bool is_eos = ut_list_get_length(buffer) == 0;
-  if (!self->read_all || is_eos) {
-    if (ut_list_get_length(self->buffer) > 0) {
-      size_t n_used = self->callback(self->user_data, self->buffer);
-      ut_mutable_list_remove(self->buffer, 0, n_used);
-    }
-
-    if (is_eos) {
-      assert(ut_list_get_length(self->buffer) == 0);
-      self->callback(self->user_data, self->buffer);
-    }
+  if (!self->read_all) {
+    size_t n_used = self->callback(self->user_data, self->buffer);
+    ut_mutable_list_remove(self->buffer, 0, n_used);
   }
 
   return code_points_length;

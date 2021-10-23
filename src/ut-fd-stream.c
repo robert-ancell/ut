@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include "ut-cancel.h"
+#include "ut-end-of-stream.h"
 #include "ut-event-loop.h"
 #include "ut-fd-stream.h"
 #include "ut-input-stream.h"
@@ -71,13 +72,7 @@ static void report_read_data(ReadData *data) {
   // FIXME: Can report more data than requested in a single read - trim buffer
   // in this case.
   ut_mutable_list_resize(self->read_buffer, self->read_buffer_length);
-  size_t n_used;
-  if (data->callback != NULL) {
-    n_used = data->callback(data->user_data, self->read_buffer);
-  } else {
-    n_used = self->read_buffer_length;
-  }
-
+  size_t n_used = data->callback(data->user_data, self->read_buffer);
   ut_mutable_list_remove(self->read_buffer, 0, n_used);
   self->read_buffer_length -= n_used;
 }
@@ -101,8 +96,20 @@ static void read_cb(void *user_data) {
     self->read_buffer_length += n_read;
 
     if (n_read == 0) {
-      report_read_data(data);
-      done = self->read_buffer_length == 0;
+      if (data->read_all) {
+        report_read_data(data);
+      } else {
+        UtObjectRef unused_data = 0;
+        if (self->read_buffer_length > 0) {
+          unused_data = self->read_buffer;
+          ut_mutable_list_resize(unused_data, self->read_buffer_length);
+          self->read_buffer = ut_uint8_array_new();
+          self->read_buffer_length = 0;
+        }
+        UtObjectRef end_of_stream = ut_end_of_stream_new(unused_data);
+        data->callback(data->user_data, end_of_stream);
+      }
+      done = true;
     } else if (!data->read_all) {
       report_read_data(data);
     }
@@ -222,6 +229,7 @@ static void ut_fd_stream_read(UtObject *object, size_t block_size,
                               UtObject *cancel) {
   UtFdStream *self = (UtFdStream *)object;
   assert(self->fd >= 0);
+  assert(callback != NULL);
 
   start_read(self, block_size, false, callback, user_data, cancel);
 }
@@ -231,6 +239,7 @@ static void ut_fd_stream_read_all(UtObject *object, size_t block_size,
                                   void *user_data, UtObject *cancel) {
   UtFdStream *self = (UtFdStream *)object;
   assert(self->fd >= 0);
+  assert(callback != NULL);
 
   start_read(self, block_size, true, callback, user_data, cancel);
 }
