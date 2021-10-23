@@ -15,6 +15,7 @@ ut_sources = [
   'ut-int64.c',
   'ut-json.c',
   'ut-list.c',
+  'ut-local-file.c',
   'ut-map.c',
   'ut-map-item.c',
   'ut-mutable-list.c',
@@ -49,12 +50,12 @@ executable('ut-event-loop-test',
            'ut-event-loop-test.c',
            ut_sources)
 
-executable('ut-file-test',
-           'ut-file-test.c',
-           ut_sources)
-
 executable('ut-json-test',
            'ut-json-test.c',
+           ut_sources)
+
+executable('ut-local-file-test',
+           'ut-local-file-test.c',
            ut_sources)
 
 executable('ut-map-test',

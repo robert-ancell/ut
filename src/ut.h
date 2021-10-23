@@ -12,6 +12,7 @@
 #include "ut-int64.h"
 #include "ut-json.h"
 #include "ut-list.h"
+#include "ut-local-file.h"
 #include "ut-map-item.h"
 #include "ut-map.h"
 #include "ut-mutable-list.h"
