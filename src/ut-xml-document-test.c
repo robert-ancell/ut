@@ -8,9 +8,9 @@
 static void test_encode() {
   UtObjectRef empty_element_root = ut_xml_element_new("tag", NULL, NULL);
   UtObjectRef empty_element_document = ut_xml_document_new(empty_element_root);
-  char *empty_element_text = ut_xml_document_to_text(empty_element_document);
+  ut_cstring empty_element_text =
+      ut_xml_document_to_text(empty_element_document);
   assert(strcmp(empty_element_text, "<tag/>") == 0);
-  free(empty_element_text);
 
   UtObjectRef attribute_attributes = ut_map_new();
   ut_map_insert_string_take(attribute_attributes, "name",
@@ -18,9 +18,8 @@ static void test_encode() {
   UtObjectRef attribute_root =
       ut_xml_element_new("tag", attribute_attributes, NULL);
   UtObjectRef attribute_document = ut_xml_document_new(attribute_root);
-  char *attribute_text = ut_xml_document_to_text(attribute_document);
+  ut_cstring attribute_text = ut_xml_document_to_text(attribute_document);
   assert(strcmp(attribute_text, "<tag name=\"value\"/>") == 0);
-  free(attribute_text);
 
   UtObjectRef multiple_attribute_attributes = ut_map_new();
   ut_map_insert_string_take(multiple_attribute_attributes, "name1",
@@ -31,19 +30,17 @@ static void test_encode() {
       ut_xml_element_new("tag", multiple_attribute_attributes, NULL);
   UtObjectRef multiple_attribute_document =
       ut_xml_document_new(multiple_attribute_root);
-  char *multiple_attribute_text =
+  ut_cstring multiple_attribute_text =
       ut_xml_document_to_text(multiple_attribute_document);
   assert(strcmp(multiple_attribute_text,
                 "<tag name1=\"value1\" name2=\"value2\"/>") == 0);
-  free(multiple_attribute_text);
 
   UtObjectRef content_content = ut_list_new();
   ut_mutable_list_append_take(content_content, ut_string_new("Hello World!"));
   UtObjectRef content_root = ut_xml_element_new("tag", NULL, content_content);
   UtObjectRef content_document = ut_xml_document_new(content_root);
-  char *content_text = ut_xml_document_to_text(content_document);
+  ut_cstring content_text = ut_xml_document_to_text(content_document);
   assert(strcmp(content_text, "<tag>Hello World!</tag>") == 0);
-  free(content_text);
 }
 
 static void test_decode() {

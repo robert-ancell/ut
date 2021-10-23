@@ -2,6 +2,7 @@
 #include "ut-cancel.h"
 #include "ut-constant-string.h"
 #include "ut-constant-uint8-array.h"
+#include "ut-cstring.h"
 #include "ut-error.h"
 #include "ut-event-loop.h"
 #include "ut-file.h"

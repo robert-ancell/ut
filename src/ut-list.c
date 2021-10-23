@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ut-cstring.h"
 #include "ut-list.h"
 #include "ut-mutable-string.h"
 #include "ut-object-array.h"
@@ -35,9 +36,8 @@ char *ut_list_to_string(UtObject *object) {
       ut_mutable_string_append(string, ", ");
     }
 
-    char *value_string = ut_object_to_string(item);
+    ut_cstring value_string = ut_object_to_string(item);
     ut_mutable_string_append(string, value_string);
-    free(value_string);
 
     ut_object_unref(item);
   }

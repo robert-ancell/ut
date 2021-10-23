@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ut-cstring.h"
 #include "ut-list.h"
 #include "ut-map-item.h"
 #include "ut-map.h"
@@ -123,26 +124,24 @@ static char *decode_attribute_value(const char *text, size_t *offset) {
 static bool decode_attribute(const char *text, size_t *offset, char **name,
                              char **value) {
   size_t end = *offset;
-  char *name_ = decode_name(text, &end);
+  ut_cstring name_ = decode_name(text, &end);
   if (name_ == NULL) {
     return false;
   }
 
   decode_whitespace(text, &end);
   if (text[end] != '=') {
-    free(name_);
     return false;
   }
   end++;
   decode_whitespace(text, &end);
-  char *value_ = decode_attribute_value(text, &end);
+  ut_cstring value_ = decode_attribute_value(text, &end);
   if (value_ == NULL) {
-    free(name_);
     return false;
   }
 
-  *name = name_;
-  *value = value_;
+  *name = ut_cstring_take(&name_);
+  *value = ut_cstring_take(&value_);
   *offset = end;
   return true;
 }
@@ -155,7 +154,7 @@ static char *decode_start_tag(const char *text, size_t *offset,
   }
   end++;
 
-  char *tag_name = decode_name(text, &end);
+  ut_cstring tag_name = decode_name(text, &end);
   if (tag_name == NULL) {
     return NULL;
   }
@@ -164,12 +163,12 @@ static char *decode_start_tag(const char *text, size_t *offset,
   while (true) {
     decode_whitespace(text, &end);
 
-    char *name, *value;
+    ut_cstring name = NULL;
+    ut_cstring value = NULL;
     if (!decode_attribute(text, &end, &name, &value)) {
       break;
     }
     ut_map_insert_string_take(attributes_, name, ut_string_new(value));
-    free(value);
   }
 
   decode_whitespace(text, &end);
@@ -181,7 +180,6 @@ static char *decode_start_tag(const char *text, size_t *offset,
   }
 
   if (text[end] != '>') {
-    free(tag_name);
     return NULL;
   }
   end++;
@@ -190,7 +188,7 @@ static char *decode_start_tag(const char *text, size_t *offset,
 
   *attributes = ut_object_ref(attributes_);
   *is_empty = is_empty_;
-  return tag_name;
+  return ut_cstring_take(&tag_name);
 }
 
 static char *decode_end_tag(const char *text, size_t *offset) {
@@ -200,13 +198,12 @@ static char *decode_end_tag(const char *text, size_t *offset) {
   }
   end += 2;
 
-  char *name = decode_name(text, &end);
+  ut_cstring name = decode_name(text, &end);
   if (name == NULL) {
     return NULL;
   }
 
   if (text[end] != '>') {
-    free(name);
     return NULL;
   }
   end++;
@@ -220,28 +217,24 @@ static UtObject *decode_element(const char *text, size_t *offset) {
   size_t end = *offset;
   UtObjectRef attributes = NULL;
   bool is_empty = false;
-  char *name = decode_start_tag(text, &end, &attributes, &is_empty);
+  ut_cstring name = decode_start_tag(text, &end, &attributes, &is_empty);
   if (name == NULL) {
     return NULL;
   }
   UtObjectRef content = NULL;
   if (!is_empty) {
     content = decode_content(text, &end);
-    char *end_name = decode_end_tag(text, &end);
+    ut_cstring end_name = decode_end_tag(text, &end);
     if (!end_name) {
-      free(name);
       return NULL;
     }
     bool name_matches = strcmp(name, end_name) == 0;
-    free(end_name);
     if (!name_matches) {
-      free(name);
       return NULL;
     }
   }
 
   UtObject *element = ut_xml_element_new(name, attributes, content);
-  free(name);
   *offset = end;
   return element;
 }
