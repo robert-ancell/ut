@@ -49,10 +49,9 @@ static size_t read_cb(void *user_data, UtObject *data) {
     return 0;
   }
 
-  const uint32_t *code_points = ut_uint32_list_get_data(data);
   size_t code_points_length = ut_list_get_length(data);
   for (size_t i = 0; i < code_points_length; i++) {
-    uint32_t code_point = code_points[i];
+    uint32_t code_point = ut_uint32_list_get_element(data, i);
     if (code_point <= 0x7f) {
       ut_uint8_array_append(self->buffer, code_point);
     } else if (code_point <= 0x7ff) {

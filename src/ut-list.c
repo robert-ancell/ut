@@ -26,6 +26,13 @@ UtObject *ut_list_get_element(UtObject *object, size_t index) {
   return list_interface->get_element(object, index);
 }
 
+UtObject *ut_list_copy(UtObject *object) {
+  UtListInterface *list_interface =
+      ut_object_get_interface(object, &ut_list_id);
+  assert(list_interface != NULL);
+  return list_interface->copy(object);
+}
+
 bool ut_list_is_mutable(UtObject *object) {
   UtListInterface *list_interface =
       ut_object_get_interface(object, &ut_list_id);

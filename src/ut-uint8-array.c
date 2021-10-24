@@ -23,9 +23,9 @@ static void resize_list(UtUint8Array *self, size_t length) {
   self->data_length = length;
 }
 
-static const uint8_t *ut_uint8_array_get_const_data(UtObject *object) {
+static uint8_t ut_uint8_array_get_element(UtObject *object, size_t index) {
   UtUint8Array *self = (UtUint8Array *)object;
-  return self->data;
+  return self->data[index];
 }
 
 static uint8_t *ut_uint8_array_take_data(UtObject *object) {
@@ -63,7 +63,8 @@ static size_t ut_uint8_array_get_length(UtObject *object) {
   return self->data_length;
 }
 
-static UtObject *ut_uint8_array_get_element(UtObject *object, size_t index) {
+static UtObject *ut_uint8_array_get_element_object(UtObject *object,
+                                                   size_t index) {
   UtUint8Array *self = (UtUint8Array *)object;
   return ut_uint8_new(self->data[index]);
 }
@@ -102,14 +103,13 @@ static void ut_uint8_array_cleanup(UtObject *object) {
 }
 
 static UtUint8ListInterface uint8_list_interface = {
-    .get_data = ut_uint8_array_get_const_data,
-    .get_length = ut_uint8_array_get_length,
+    .get_element = ut_uint8_array_get_element,
     .take_data = ut_uint8_array_take_data};
 
 static UtListInterface list_interface = {
     .is_mutable = true,
     .get_length = ut_uint8_array_get_length,
-    .get_element = ut_uint8_array_get_element,
+    .get_element = ut_uint8_array_get_element_object,
     .copy = ut_uint8_array_copy,
     .insert = ut_uint8_array_insert_object,
     .remove = ut_uint8_array_remove,

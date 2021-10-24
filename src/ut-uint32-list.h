@@ -6,11 +6,11 @@
 #pragma once
 
 typedef struct {
-  const uint32_t *(*get_data)(UtObject *object);
+  uint32_t (*get_element)(UtObject *object, size_t index);
 } UtUint32ListInterface;
 
 extern int ut_uint32_list_id;
 
-const uint32_t *ut_uint32_list_get_data(UtObject *object);
+uint32_t ut_uint32_list_get_element(UtObject *object, size_t index);
 
 bool ut_object_implements_uint32_list(UtObject *object);

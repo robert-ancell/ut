@@ -51,7 +51,7 @@ static void write_utf8_code_unit(uint8_t *data, size_t offset,
 
 static const char *ut_utf8_string_get_text(UtObject *object) {
   UtUtf8String *self = (UtUtf8String *)object;
-  return (const char *)ut_uint8_list_get_data(self->data);
+  return (const char *)ut_uint8_array_get_data(self->data);
 }
 
 static char *ut_utf8_string_take_text(UtObject *object) {
@@ -126,7 +126,7 @@ static void ut_utf8_string_append_code_point(UtObject *object,
 
 static void ut_utf8_string_init(UtObject *object) {
   UtUtf8String *self = (UtUtf8String *)object;
-  self->data = ut_uint8_array_new();
+  self->data = NULL;
 }
 
 static void ut_utf8_string_cleanup(UtObject *object) {
@@ -161,10 +161,21 @@ UtObject *ut_utf8_string_new(const char *text) {
 UtObject *ut_utf8_string_new_sized(const char *text, size_t length) {
   UtObject *object = ut_object_new(sizeof(UtUtf8String), &object_interface);
   UtUtf8String *self = (UtUtf8String *)object;
+  self->data = ut_uint8_array_new();
   ut_list_resize(self->data, length + 1);
   uint8_t *buffer = ut_uint8_array_get_data(self->data);
   memcpy(buffer, text, length);
   buffer[length] = '\0';
+  return object;
+}
+
+UtObject *ut_utf8_string_new_from_data(UtObject *data) {
+  UtObject *object = ut_object_new(sizeof(UtUtf8String), &object_interface);
+  UtUtf8String *self = (UtUtf8String *)object;
+  // FIXME: This generates a UtUint8Array but should probably update API to
+  // ensure that as the code in this file relies on this being an array.
+  self->data = ut_list_copy(data);
+  assert(ut_object_is_uint8_array(self->data));
   return object;
 }
 

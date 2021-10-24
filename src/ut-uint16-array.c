@@ -23,9 +23,9 @@ static void resize_list(UtUint16Array *self, size_t length) {
   self->data_length = length;
 }
 
-static const uint16_t *ut_uint16_array_get_list_data(UtObject *object) {
+static uint16_t ut_uint16_array_get_element(UtObject *object, size_t index) {
   UtUint16Array *self = (UtUint16Array *)object;
-  return self->data;
+  return self->data[index];
 }
 
 static void ut_uint16_array_insert_object(UtObject *object, size_t index,
@@ -55,7 +55,8 @@ static size_t ut_uint16_array_get_length(UtObject *object) {
   return self->data_length;
 }
 
-static UtObject *ut_uint16_array_get_element(UtObject *object, size_t index) {
+static UtObject *ut_uint16_array_get_element_object(UtObject *object,
+                                                    size_t index) {
   UtUint16Array *self = (UtUint16Array *)object;
   return ut_uint16_new(self->data[index]);
 }
@@ -94,12 +95,12 @@ static void ut_uint16_array_cleanup(UtObject *object) {
 }
 
 static UtUint16ListInterface uint16_list_interface = {
-    .get_data = ut_uint16_array_get_list_data};
+    .get_element = ut_uint16_array_get_element};
 
 static UtListInterface list_interface = {
     .is_mutable = true,
     .get_length = ut_uint16_array_get_length,
-    .get_element = ut_uint16_array_get_element,
+    .get_element = ut_uint16_array_get_element_object,
     .copy = ut_uint16_array_copy,
     .insert = ut_uint16_array_insert_object,
     .remove = ut_uint16_array_remove,

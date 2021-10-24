@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include "ut-cancel.h"
+#include "ut-constant-uint8-array.h"
 #include "ut-end-of-stream.h"
 #include "ut-event-loop.h"
 #include "ut-fd-stream.h"
@@ -180,9 +181,24 @@ static void write_cb(void *user_data) {
   bool done = false;
   if (data->cancel == NULL || !ut_cancel_is_active(data->cancel)) {
     // Write remaining data.
-    ssize_t n_written =
-        write(self->fd, ut_uint8_list_get_data(data->data) + data->n_written,
-              ut_list_get_length(data->data) - data->n_written);
+    size_t n_to_write = ut_list_get_length(data->data) - data->n_written;
+    const uint8_t *buffer;
+    uint8_t *allocated_buffer = NULL;
+    if (ut_object_is_uint8_array(data->data)) {
+      buffer = ut_uint8_array_get_data(data->data) + data->n_written;
+    } else if (ut_object_is_constant_uint8_array(data->data)) {
+      buffer = ut_constant_uint8_array_get_data(data->data) + data->n_written;
+    } else {
+      allocated_buffer = malloc(sizeof(uint8_t) * n_to_write);
+      for (size_t i = 0; i < n_to_write; i++) {
+        allocated_buffer[i] =
+            ut_uint8_list_get_element(data->data, data->n_written + i);
+      }
+    }
+    ssize_t n_written = write(self->fd, buffer, n_to_write);
+    if (allocated_buffer != NULL) {
+      free(allocated_buffer);
+    }
     assert(n_written >= 0);
     data->n_written += n_written;
 

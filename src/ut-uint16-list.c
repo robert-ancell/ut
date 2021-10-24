@@ -5,9 +5,9 @@
 
 int ut_uint16_list_id = 0;
 
-const uint16_t *ut_uint16_list_get_data(UtObject *object) {
+uint16_t ut_uint16_list_get_element(UtObject *object, size_t index) {
   UtUint16ListInterface *uint16_list_interface =
       ut_object_get_interface(object, &ut_uint16_list_id);
   assert(uint16_list_interface != NULL);
-  return uint16_list_interface->get_data(object);
+  return uint16_list_interface->get_element(object, index);
 }

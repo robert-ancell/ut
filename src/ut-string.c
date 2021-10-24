@@ -22,6 +22,10 @@ UtObject *ut_string_new_sized(const char *text, size_t length) {
   return ut_utf8_string_new_sized(text, length);
 }
 
+UtObject *ut_string_new_from_utf8(UtObject *utf8) {
+  return ut_utf8_string_new_from_data(utf8);
+}
+
 const char *ut_string_get_text(UtObject *object) {
   UtStringInterface *string_interface =
       ut_object_get_interface(object, &ut_string_id);

@@ -14,9 +14,9 @@ typedef struct {
   size_t data_length;
 } UtConstantUint8Array;
 
-const uint8_t *ut_constant_uint8_array_get_data(UtObject *object) {
+uint8_t ut_constant_uint8_array_get_element(UtObject *object, size_t index) {
   UtConstantUint8Array *self = (UtConstantUint8Array *)object;
-  return self->data;
+  return self->data[index];
 }
 
 static size_t ut_constant_uint8_array_get_length(UtObject *object) {
@@ -24,8 +24,8 @@ static size_t ut_constant_uint8_array_get_length(UtObject *object) {
   return self->data_length;
 }
 
-static UtObject *ut_constant_uint8_array_get_element(UtObject *object,
-                                                     size_t index) {
+static UtObject *ut_constant_uint8_array_get_element_object(UtObject *object,
+                                                            size_t index) {
   UtConstantUint8Array *self = (UtConstantUint8Array *)object;
   return ut_uint8_new(self->data[index]);
 }
@@ -38,12 +38,11 @@ static UtObject *ut_constant_uint8_array_copy(UtObject *object) {
 }
 
 static UtUint8ListInterface uint8_list_interface = {
-    .get_data = ut_constant_uint8_array_get_data,
-    .get_length = ut_constant_uint8_array_get_length};
+    .get_element = ut_constant_uint8_array_get_element};
 
 static UtListInterface list_interface = {
     .get_length = ut_constant_uint8_array_get_length,
-    .get_element = ut_constant_uint8_array_get_element,
+    .get_element = ut_constant_uint8_array_get_element_object,
     .copy = ut_constant_uint8_array_copy};
 
 static void ut_constant_uint8_array_init(UtObject *object) {
@@ -67,6 +66,12 @@ UtObject *ut_constant_uint8_array_new(const uint8_t *data, size_t data_length) {
   self->data = data;
   self->data_length = data_length;
   return object;
+}
+
+const uint8_t *ut_constant_uint8_array_get_data(UtObject *object) {
+  assert(ut_object_is_constant_uint8_array(object));
+  UtConstantUint8Array *self = (UtConstantUint8Array *)object;
+  return self->data;
 }
 
 bool ut_object_is_constant_uint8_array(UtObject *object) {

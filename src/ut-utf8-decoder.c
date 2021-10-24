@@ -49,12 +49,11 @@ static size_t read_cb(void *user_data, UtObject *data) {
     return 0;
   }
 
-  const uint8_t *utf8_data = ut_uint8_list_get_data(data);
   size_t utf8_data_length = ut_list_get_length(data);
   size_t offset = 0;
   while (offset < utf8_data_length) {
     uint32_t code_point;
-    uint8_t byte1 = utf8_data[offset];
+    uint8_t byte1 = ut_uint8_list_get_element(data, offset);
     if ((byte1 & 0x80) == 0) {
       code_point = byte1;
       offset++;
@@ -62,7 +61,7 @@ static size_t read_cb(void *user_data, UtObject *data) {
       if (offset + 2 > utf8_data_length) {
         break;
       }
-      uint8_t byte2 = utf8_data[offset + 1];
+      uint8_t byte2 = ut_uint8_list_get_element(data, offset + 1);
       if ((byte2 & 0xc0) != 0x80) {
         code_point = 0xfffd;
       }
@@ -73,7 +72,8 @@ static size_t read_cb(void *user_data, UtObject *data) {
       if (offset + 3 > utf8_data_length) {
         break;
       }
-      uint8_t byte2 = utf8_data[offset + 1], byte3 = utf8_data[offset + 2];
+      uint8_t byte2 = ut_uint8_list_get_element(data, offset + 1);
+      uint8_t byte3 = ut_uint8_list_get_element(data, offset + 2);
       if ((byte2 & 0xc0) != 0x80 || (byte3 & 0xc0) != 0x80) {
         code_point = 0xfffd;
       } else {
@@ -86,8 +86,9 @@ static size_t read_cb(void *user_data, UtObject *data) {
       if (offset + 4 > utf8_data_length) {
         break;
       }
-      uint8_t byte2 = utf8_data[offset + 1], byte3 = utf8_data[offset + 2],
-              byte4 = utf8_data[offset + 3];
+      uint8_t byte2 = ut_uint8_list_get_element(data, offset + 1);
+      uint8_t byte3 = ut_uint8_list_get_element(data, offset + 2);
+      uint8_t byte4 = ut_uint8_list_get_element(data, offset + 3);
       if ((byte2 & 0xc0) != 0x80 || (byte3 & 0xc0) != 0x80 ||
           (byte4 & 0xc0) != 0x80) {
         code_point = 0xfffd;

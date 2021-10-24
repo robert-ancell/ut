@@ -24,7 +24,8 @@ size_t ut_list_get_length(UtObject *object);
 // Returns a reference.
 UtObject *ut_list_get_element(UtObject *object, size_t index);
 
-/// If was previously immutable, copy will be mutable
+// If was previously immutable, copy will be mutable
+// Returns a reference.
 UtObject *ut_list_copy(UtObject *object);
 
 bool ut_list_is_mutable(UtObject *object);

@@ -3,8 +3,8 @@
 #include "ut.h"
 
 static size_t read_cb(void *user_data, UtObject *data) {
-  printf("read - '%.*s'\n", (int)ut_list_get_length(data),
-         ut_uint8_list_get_data(data));
+  UtObjectRef text = ut_string_new_from_utf8(data);
+  printf("read - '%s'\n", ut_string_get_text(text));
   ut_event_loop_return(NULL);
   return ut_list_get_length(data);
 }
