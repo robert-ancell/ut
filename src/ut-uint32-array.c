@@ -4,7 +4,6 @@
 #include "ut-end-of-stream.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
-#include "ut-mutable-list.h"
 #include "ut-object-private.h"
 #include "ut-uint32-array.h"
 #include "ut-uint32-list.h"
@@ -90,14 +89,13 @@ static void ut_uint32_array_cleanup(UtObject *object) {
 static UtUint32ListInterface uint32_list_interface = {
     .get_data = ut_uint32_array_get_list_data};
 
-static UtMutableListInterface mutable_list_interface = {
+static UtListInterface list_interface = {
+    .is_mutable = true,
+    .get_length = ut_uint32_array_get_length,
+    .get_element = ut_uint32_array_get_element,
     .insert = ut_uint32_array_insert_object,
     .remove = ut_uint32_array_remove,
     .resize = ut_uint32_array_resize};
-
-static UtListInterface list_interface = {
-    .get_length = ut_uint32_array_get_length,
-    .get_element = ut_uint32_array_get_element};
 
 static UtInputStreamInterface input_stream_interface = {
     .read = ut_uint32_array_read, .read_all = ut_uint32_array_read};
@@ -108,7 +106,6 @@ static UtObjectInterface object_interface = {
     .to_string = ut_list_to_string,
     .cleanup = ut_uint32_array_cleanup,
     .interfaces = {{&ut_uint32_list_id, &uint32_list_interface},
-                   {&ut_mutable_list_id, &mutable_list_interface},
                    {&ut_list_id, &list_interface},
                    {&ut_input_stream_id, &input_stream_interface},
                    {NULL, NULL}}};

@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "ut-list.h"
-#include "ut-mutable-list.h"
 #include "ut-object-private.h"
 #include "ut-string.h"
 #include "ut-uint8-array.h"
@@ -68,7 +67,7 @@ static UtObject *ut_utf8_string_get_utf8(UtObject *object) {
 static void ut_utf8_string_clear(UtObject *object) {
   assert(ut_object_is_utf8_string(object));
   UtUtf8String *self = (UtUtf8String *)object;
-  ut_mutable_list_resize(self->data, 1);
+  ut_list_resize(self->data, 1);
   uint8_t *buffer = ut_uint8_array_get_data(self->data);
   buffer[0] = '\0';
 }
@@ -78,8 +77,7 @@ static void ut_utf8_string_prepend(UtObject *object, const char *text) {
   UtUtf8String *self = (UtUtf8String *)object;
   size_t text_length = strlen(text);
   size_t orig_length = ut_list_get_length(self->data);
-  ut_mutable_list_resize(self->data,
-                         ut_list_get_length(self->data) + text_length);
+  ut_list_resize(self->data, ut_list_get_length(self->data) + text_length);
   uint8_t *data = ut_uint8_array_get_data(self->data);
   size_t data_length = ut_list_get_length(self->data);
   for (size_t i = 0; i < orig_length; i++) {
@@ -95,7 +93,7 @@ static void ut_utf8_string_prepend_code_point(UtObject *object,
   size_t byte_count = get_utf8_code_unit_length(code_point);
   assert(byte_count > 0);
   size_t orig_length = ut_list_get_length(self->data);
-  ut_mutable_list_resize(self->data, orig_length + byte_count);
+  ut_list_resize(self->data, orig_length + byte_count);
   uint8_t *data = ut_uint8_array_get_data(self->data);
   for (size_t i = orig_length + byte_count - 1; i >= byte_count; i--) {
     data[i] = data[i - byte_count];
@@ -108,7 +106,7 @@ static void ut_utf8_string_append(UtObject *object, const char *text) {
   UtUtf8String *self = (UtUtf8String *)object;
   size_t text_length = strlen(text);
   size_t orig_length = ut_list_get_length(self->data);
-  ut_mutable_list_resize(self->data, orig_length + text_length);
+  ut_list_resize(self->data, orig_length + text_length);
   memcpy(ut_uint8_array_get_data(self->data) + orig_length - 1, text,
          text_length + 1);
 }
@@ -120,7 +118,7 @@ static void ut_utf8_string_append_code_point(UtObject *object,
   size_t byte_count = get_utf8_code_unit_length(code_point);
   assert(byte_count > 0);
   size_t orig_length = ut_list_get_length(self->data);
-  ut_mutable_list_resize(self->data, orig_length + byte_count);
+  ut_list_resize(self->data, orig_length + byte_count);
   uint8_t *data = ut_uint8_array_get_data(self->data);
   write_utf8_code_unit(data, orig_length - 1, code_point);
   data[orig_length + byte_count - 1] = '\0';
@@ -163,7 +161,7 @@ UtObject *ut_utf8_string_new(const char *text) {
 UtObject *ut_utf8_string_new_sized(const char *text, size_t length) {
   UtObject *object = ut_object_new(sizeof(UtUtf8String), &object_interface);
   UtUtf8String *self = (UtUtf8String *)object;
-  ut_mutable_list_resize(self->data, length + 1);
+  ut_list_resize(self->data, length + 1);
   uint8_t *buffer = ut_uint8_array_get_data(self->data);
   memcpy(buffer, text, length);
   buffer[length] = '\0';

@@ -11,7 +11,6 @@
 #include "ut-list.h"
 #include "ut-map-item.h"
 #include "ut-map.h"
-#include "ut-mutable-list.h"
 #include "ut-null.h"
 #include "ut-object-array.h"
 #include "ut-string.h"
@@ -487,7 +486,7 @@ static UtObject *decode_array(const char *text, size_t *offset) {
       return NULL;
     }
 
-    ut_mutable_list_append(array, value);
+    ut_list_append(array, value);
 
     if (text[end] == ']') {
       *offset = end + 1;

@@ -18,7 +18,6 @@ ut_sources = [
   'ut-local-file.c',
   'ut-map.c',
   'ut-map-item.c',
-  'ut-mutable-list.c',
   'ut-null.c',
   'ut-object.c',
   'ut-object-array.c',

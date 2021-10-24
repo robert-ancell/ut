@@ -76,16 +76,16 @@ static void test_encode() {
   assert(strcmp(empty_array_text, "[]") == 0);
 
   UtObjectRef number_array = ut_list_new();
-  ut_mutable_list_append_take(number_array, ut_int64_new(1));
-  ut_mutable_list_append_take(number_array, ut_int64_new(2));
-  ut_mutable_list_append_take(number_array, ut_int64_new(3));
+  ut_list_append_take(number_array, ut_int64_new(1));
+  ut_list_append_take(number_array, ut_int64_new(2));
+  ut_list_append_take(number_array, ut_int64_new(3));
   ut_cstring number_array_text = ut_json_encode(number_array);
   assert(strcmp(number_array_text, "[1,2,3]") == 0);
 
   UtObjectRef mixed_array = ut_list_new();
-  ut_mutable_list_append_take(mixed_array, ut_boolean_new(false));
-  ut_mutable_list_append_take(mixed_array, ut_string_new("two"));
-  ut_mutable_list_append_take(mixed_array, ut_float64_new(3.1));
+  ut_list_append_take(mixed_array, ut_boolean_new(false));
+  ut_list_append_take(mixed_array, ut_string_new("two"));
+  ut_list_append_take(mixed_array, ut_float64_new(3.1));
   ut_cstring mixed_array_text = ut_json_encode(mixed_array);
   assert(strcmp(mixed_array_text, "[false,\"two\",3.100000e+00]") == 0);
 

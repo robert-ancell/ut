@@ -3,9 +3,9 @@
 #include <string.h>
 
 #include "ut-hash-table.h"
+#include "ut-list.h"
 #include "ut-map-item.h"
 #include "ut-map.h"
-#include "ut-mutable-list.h"
 #include "ut-object-array.h"
 #include "ut-object-private.h"
 
@@ -142,7 +142,7 @@ static UtObject *ut_hash_table_get_items(UtObject *object) {
   UtHashTable *self = (UtHashTable *)object;
   UtObject *items = ut_object_array_new();
   for (UtHashTableItem *item = self->items; item != NULL; item = item->next) {
-    ut_mutable_list_prepend(items, (UtObject *)item);
+    ut_list_prepend(items, (UtObject *)item);
   }
   return items;
 }
@@ -151,7 +151,7 @@ static UtObject *ut_hash_table_get_keys(UtObject *object) {
   UtHashTable *self = (UtHashTable *)object;
   UtObject *keys = ut_object_array_new();
   for (UtHashTableItem *item = self->items; item != NULL; item = item->next) {
-    ut_mutable_list_prepend(keys, item->key);
+    ut_list_prepend(keys, item->key);
   }
   return keys;
 }
@@ -160,7 +160,7 @@ static UtObject *ut_hash_table_get_values(UtObject *object) {
   UtHashTable *self = (UtHashTable *)object;
   UtObject *values = ut_object_array_new();
   for (UtHashTableItem *item = self->items; item != NULL; item = item->next) {
-    ut_mutable_list_prepend(values, item->value);
+    ut_list_prepend(values, item->value);
   }
   return values;
 }

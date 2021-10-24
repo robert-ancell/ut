@@ -16,7 +16,6 @@
 #include "ut-local-file.h"
 #include "ut-map-item.h"
 #include "ut-map.h"
-#include "ut-mutable-list.h"
 #include "ut-null.h"
 #include "ut-object-array.h"
 #include "ut-object-list.h"

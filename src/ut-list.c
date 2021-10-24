@@ -26,6 +26,63 @@ UtObject *ut_list_get_element(UtObject *object, size_t index) {
   return list_interface->get_element(object, index);
 }
 
+bool ut_list_is_mutable(UtObject *object) {
+  UtListInterface *list_interface =
+      ut_object_get_interface(object, &ut_list_id);
+  assert(list_interface != NULL);
+  return list_interface->is_mutable;
+}
+
+void ut_list_append(UtObject *object, UtObject *item) {
+  size_t length = ut_list_get_length(object);
+  ut_list_insert(object, length, item);
+}
+
+void ut_list_append_take(UtObject *object, UtObject *item) {
+  ut_list_append(object, item);
+  ut_object_unref(item);
+}
+
+void ut_list_prepend(UtObject *object, UtObject *item) {
+  ut_list_insert(object, 0, item);
+}
+
+void ut_list_prepend_take(UtObject *object, UtObject *item) {
+  ut_list_prepend(object, item);
+  ut_object_unref(item);
+}
+
+void ut_list_insert(UtObject *object, size_t index, UtObject *item) {
+  UtListInterface *list_interface =
+      ut_object_get_interface(object, &ut_list_id);
+  assert(list_interface != NULL);
+  assert(list_interface->is_mutable);
+  list_interface->insert(object, index, item);
+}
+
+void ut_list_insert_take(UtObject *object, size_t index, UtObject *item) {
+  ut_list_insert(object, index, item);
+  ut_object_unref(item);
+}
+
+void ut_list_remove(UtObject *object, size_t index, size_t count) {
+  UtListInterface *list_interface =
+      ut_object_get_interface(object, &ut_list_id);
+  assert(list_interface != NULL);
+  assert(list_interface->is_mutable);
+  list_interface->remove(object, index, count);
+}
+
+void ut_list_clear(UtObject *object) { ut_list_resize(object, 0); }
+
+void ut_list_resize(UtObject *object, size_t length) {
+  UtListInterface *list_interface =
+      ut_object_get_interface(object, &ut_list_id);
+  assert(list_interface != NULL);
+  assert(list_interface->is_mutable);
+  list_interface->resize(object, length);
+}
+
 char *ut_list_to_string(UtObject *object) {
   UtObject *string = ut_string_new("[");
   for (size_t i = 0; i < ut_list_get_length(object); i++) {

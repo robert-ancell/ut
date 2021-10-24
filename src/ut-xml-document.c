@@ -6,7 +6,6 @@
 #include "ut-list.h"
 #include "ut-map-item.h"
 #include "ut-map.h"
-#include "ut-mutable-list.h"
 #include "ut-object-private.h"
 #include "ut-string.h"
 #include "ut-xml-document.h"
@@ -78,12 +77,12 @@ static UtObject *decode_character_data(const char *text, size_t *offset) {
 }
 
 static UtObject *decode_content(const char *text, size_t *offset) {
-  UtObjectRef content = ut_mutable_list_new();
+  UtObjectRef content = ut_list_new();
 
   size_t end = *offset;
   UtObjectRef leading_text = decode_character_data(text, &end);
   if (leading_text != NULL) {
-    ut_mutable_list_append(content, leading_text);
+    ut_list_append(content, leading_text);
   }
   while (true) {
     UtObjectRef element = decode_element(text, &end);
@@ -92,11 +91,11 @@ static UtObject *decode_content(const char *text, size_t *offset) {
       return ut_list_get_length(content) == 0 ? NULL : ut_object_ref(content);
     }
 
-    ut_mutable_list_append(content, element);
+    ut_list_append(content, element);
 
     UtObjectRef trailing_text = decode_character_data(text, &end);
     if (trailing_text != NULL) {
-      ut_mutable_list_append(content, trailing_text);
+      ut_list_append(content, trailing_text);
     }
   }
 }

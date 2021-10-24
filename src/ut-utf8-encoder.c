@@ -3,7 +3,6 @@
 #include "ut-end-of-stream.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
-#include "ut-mutable-list.h"
 #include "ut-object-private.h"
 #include "ut-uint32-list.h"
 #include "ut-uint8-array.h"
@@ -75,7 +74,7 @@ static size_t read_cb(void *user_data, UtObject *data) {
 
   if (!self->read_all) {
     size_t n_used = self->callback(self->user_data, self->buffer);
-    ut_mutable_list_remove(self->buffer, 0, n_used);
+    ut_list_remove(self->buffer, 0, n_used);
   }
 
   return code_points_length;

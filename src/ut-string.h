@@ -29,7 +29,7 @@ const char *ut_string_get_text(UtObject *object);
 
 char *ut_string_take_text(UtObject *object);
 
-//UtObject *ut_string_get_code_points(UtObject *object);
+// UtObject *ut_string_get_code_points(UtObject *object);
 
 // Returns a reference.
 UtObject *ut_string_get_utf8(UtObject *object);

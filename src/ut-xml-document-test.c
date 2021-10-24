@@ -36,7 +36,7 @@ static void test_encode() {
                 "<tag name1=\"value1\" name2=\"value2\"/>") == 0);
 
   UtObjectRef content_content = ut_list_new();
-  ut_mutable_list_append_take(content_content, ut_string_new("Hello World!"));
+  ut_list_append_take(content_content, ut_string_new("Hello World!"));
   UtObjectRef content_root = ut_xml_element_new("tag", NULL, content_content);
   UtObjectRef content_document = ut_xml_document_new(content_root);
   ut_cstring content_text = ut_xml_document_to_text(content_document);

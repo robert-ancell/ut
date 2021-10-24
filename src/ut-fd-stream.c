@@ -10,7 +10,6 @@
 #include "ut-fd-stream.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
-#include "ut-mutable-list.h"
 #include "ut-object-private.h"
 #include "ut-output-stream.h"
 #include "ut-uint8-array.h"
@@ -71,9 +70,9 @@ static void report_read_data(ReadData *data) {
 
   // FIXME: Can report more data than requested in a single read - trim buffer
   // in this case.
-  ut_mutable_list_resize(self->read_buffer, self->read_buffer_length);
+  ut_list_resize(self->read_buffer, self->read_buffer_length);
   size_t n_used = data->callback(data->user_data, self->read_buffer);
-  ut_mutable_list_remove(self->read_buffer, 0, n_used);
+  ut_list_remove(self->read_buffer, 0, n_used);
   self->read_buffer_length -= n_used;
 }
 
@@ -84,8 +83,8 @@ static void read_cb(void *user_data) {
   bool done = false;
   if (data->cancel == NULL || !ut_cancel_is_active(data->cancel)) {
     // Make space to read a new block.
-    ut_mutable_list_resize(self->read_buffer,
-                           self->read_buffer_length + data->block_length);
+    ut_list_resize(self->read_buffer,
+                   self->read_buffer_length + data->block_length);
 
     // Read a block.
     ssize_t n_read = read(self->fd,
