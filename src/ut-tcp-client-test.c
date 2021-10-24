@@ -5,6 +5,7 @@
 static size_t http_read_cb(void *user_data, UtObject *data) {
   printf("http read:\n%.*s'\n", (int)ut_list_get_length(data),
          ut_uint8_list_get_data(data));
+  ut_event_loop_return(NULL);
   return ut_list_get_length(data);
 }
 
