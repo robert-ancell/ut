@@ -6,7 +6,8 @@
 
 #include "ut-cancel.h"
 #include "ut-event-loop.h"
-#include "ut-fd-stream.h"
+#include "ut-fd-input-stream.h"
+#include "ut-fd-output-stream.h"
 #include "ut-file.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
@@ -20,7 +21,8 @@ typedef struct {
   UtObject object;
   char *path;
   int fd;
-  UtObject *stream;
+  UtObject *input_stream;
+  UtObject *output_stream;
 } UtLocalFile;
 
 static void close_file(UtLocalFile *self) {
@@ -34,7 +36,8 @@ static void ut_local_file_init(UtObject *object) {
   UtLocalFile *self = (UtLocalFile *)object;
   self->path = NULL;
   self->fd = -1;
-  self->stream = NULL;
+  self->input_stream = NULL;
+  self->output_stream = NULL;
 }
 
 static void ut_local_file_cleanup(UtObject *object) {
@@ -42,9 +45,13 @@ static void ut_local_file_cleanup(UtObject *object) {
   // FIXME: Cancel read/writes
   free(self->path);
   self->path = NULL;
-  if (self->stream != NULL) {
-    ut_object_unref(self->stream);
-    self->stream = NULL;
+  if (self->input_stream != NULL) {
+    ut_object_unref(self->input_stream);
+    self->input_stream = NULL;
+  }
+  if (self->output_stream != NULL) {
+    ut_object_unref(self->output_stream);
+    self->output_stream = NULL;
   }
   close_file(self);
 }
@@ -53,7 +60,7 @@ static void ut_local_file_open_read(UtObject *object) {
   UtLocalFile *self = (UtLocalFile *)object;
   assert(self->fd == -1);
   self->fd = open(self->path, O_RDONLY);
-  self->stream = ut_fd_stream_new(self->fd);
+  self->input_stream = ut_fd_input_stream_new(self->fd);
 }
 
 static void ut_local_file_open_write(UtObject *object, bool create) {
@@ -65,7 +72,7 @@ static void ut_local_file_open_write(UtObject *object, bool create) {
   }
   self->fd = open(self->path, O_WRONLY | flags,
                   S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
-  self->stream = ut_fd_stream_new(self->fd);
+  self->output_stream = ut_fd_output_stream_new(self->fd);
 }
 
 static void ut_local_file_close(UtObject *object) {
@@ -77,18 +84,19 @@ static void ut_local_file_read(UtObject *object, size_t block_size,
                                UtInputStreamCallback callback, void *user_data,
                                UtObject *cancel) {
   UtLocalFile *self = (UtLocalFile *)object;
-  assert(self->stream != NULL);
+  assert(self->input_stream != NULL);
 
-  ut_input_stream_read(self->stream, block_size, callback, user_data, cancel);
+  ut_input_stream_read(self->input_stream, block_size, callback, user_data,
+                       cancel);
 }
 
 static void ut_local_file_read_all(UtObject *object, size_t block_size,
                                    UtInputStreamCallback callback,
                                    void *user_data, UtObject *cancel) {
   UtLocalFile *self = (UtLocalFile *)object;
-  assert(self->stream != NULL);
+  assert(self->input_stream != NULL);
 
-  ut_input_stream_read_all(self->stream, block_size, callback, user_data,
+  ut_input_stream_read_all(self->input_stream, block_size, callback, user_data,
                            cancel);
 }
 
@@ -96,18 +104,20 @@ static void ut_local_file_write(UtObject *object, UtObject *data,
                                 UtOutputStreamCallback callback,
                                 void *user_data, UtObject *cancel) {
   UtLocalFile *self = (UtLocalFile *)object;
-  assert(self->stream != NULL);
+  assert(self->output_stream != NULL);
 
-  ut_output_stream_write(self->stream, data, callback, user_data, cancel);
+  ut_output_stream_write(self->output_stream, data, callback, user_data,
+                         cancel);
 }
 
 static void ut_local_file_write_all(UtObject *object, UtObject *data,
                                     UtOutputStreamCallback callback,
                                     void *user_data, UtObject *cancel) {
   UtLocalFile *self = (UtLocalFile *)object;
-  assert(self->stream != NULL);
+  assert(self->output_stream != NULL);
 
-  ut_output_stream_write_all(self->stream, data, callback, user_data, cancel);
+  ut_output_stream_write_all(self->output_stream, data, callback, user_data,
+                             cancel);
 }
 
 static UtFileInterface file_interface = {.open_read = ut_local_file_open_read,
