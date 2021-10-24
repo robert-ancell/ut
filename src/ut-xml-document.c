@@ -210,7 +210,7 @@ static char *decode_end_tag(const char *text, size_t *offset) {
 
   *offset = end;
 
-  return name;
+  return ut_cstring_take(&name);
 }
 
 static UtObject *decode_element(const char *text, size_t *offset) {
