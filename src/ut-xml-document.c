@@ -7,7 +7,6 @@
 #include "ut-map-item.h"
 #include "ut-map.h"
 #include "ut-mutable-list.h"
-#include "ut-mutable-string.h"
 #include "ut-object-private.h"
 #include "ut-string.h"
 #include "ut-xml-document.h"
@@ -252,14 +251,14 @@ static bool decode_document(const char *text, size_t *offset, UtObject **root) {
 }
 
 static bool encode_character_data(UtObject *buffer, const char *data) {
-  ut_mutable_string_append(buffer, data);
+  ut_string_append(buffer, data);
   return true;
 }
 
 static bool encode_element(UtObject *buffer, UtObject *element) {
   const char *name = ut_xml_element_get_name(element);
-  ut_mutable_string_append(buffer, "<");
-  ut_mutable_string_append(buffer, name);
+  ut_string_append(buffer, "<");
+  ut_string_append(buffer, name);
   UtObject *attributes = ut_xml_element_get_attributes(element);
   if (attributes != NULL) {
     UtObjectRef attribute_items = ut_map_get_items(attributes);
@@ -268,20 +267,20 @@ static bool encode_element(UtObject *buffer, UtObject *element) {
       UtObjectRef item = ut_list_get_element(attribute_items, i);
       UtObjectRef name = ut_map_item_get_key(item);
       UtObjectRef value = ut_map_item_get_value(item);
-      ut_mutable_string_append(buffer, " ");
-      ut_mutable_string_append(buffer, ut_string_get_text(name));
-      ut_mutable_string_append(buffer, "=\"");
-      ut_mutable_string_append(buffer, ut_string_get_text(value));
-      ut_mutable_string_append(buffer, "\"");
+      ut_string_append(buffer, " ");
+      ut_string_append(buffer, ut_string_get_text(name));
+      ut_string_append(buffer, "=\"");
+      ut_string_append(buffer, ut_string_get_text(value));
+      ut_string_append(buffer, "\"");
     }
   }
   UtObject *content = ut_xml_element_get_content(element);
   size_t content_length = content != NULL ? ut_list_get_length(content) : 0;
   if (content_length == 0) {
-    ut_mutable_string_append(buffer, "/>");
+    ut_string_append(buffer, "/>");
     return true;
   }
-  ut_mutable_string_append(buffer, ">");
+  ut_string_append(buffer, ">");
   for (size_t i = 0; i < content_length; i++) {
     UtObjectRef child = ut_list_get_element(content, i);
     if (ut_object_implements_string(child)) {
@@ -296,9 +295,9 @@ static bool encode_element(UtObject *buffer, UtObject *element) {
       assert(false);
     }
   }
-  ut_mutable_string_append(buffer, "</");
-  ut_mutable_string_append(buffer, name);
-  ut_mutable_string_append(buffer, ">");
+  ut_string_append(buffer, "</");
+  ut_string_append(buffer, name);
+  ut_string_append(buffer, ">");
 
   return true;
 }
@@ -348,7 +347,7 @@ UtObject *ut_xml_document_get_root(UtObject *object) {
 char *ut_xml_document_to_text(UtObject *object) {
   assert(ut_object_is_xml_document(object));
   UtXmlDocument *self = (UtXmlDocument *)object;
-  UtObjectRef buffer = ut_mutable_string_new("");
+  UtObjectRef buffer = ut_string_new("");
   encode_element(buffer, self->root);
   return ut_string_take_text(buffer);
 }

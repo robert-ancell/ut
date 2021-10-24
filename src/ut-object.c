@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ut-mutable-string.h"
 #include "ut-object-private.h"
 #include "ut-object.h"
 #include "ut-string.h"
@@ -33,9 +32,9 @@ char *ut_object_to_string(UtObject *object) {
     return object->interface->to_string(object);
   }
 
-  UtObjectRef string = ut_mutable_string_new("<");
-  ut_mutable_string_append(string, ut_object_get_type_name(object));
-  ut_mutable_string_append(string, ">");
+  UtObjectRef string = ut_string_new("<");
+  ut_string_append(string, ut_object_get_type_name(object));
+  ut_string_append(string, ">");
 
   return ut_string_take_text(string);
 }

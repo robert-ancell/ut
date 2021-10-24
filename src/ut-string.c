@@ -3,19 +3,22 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "ut-mutable-string.h"
+#include "ut-constant-utf8-string.h"
 #include "ut-object-private.h"
 #include "ut-string.h"
 #include "ut-uint32-array.h"
+#include "ut-utf8-string.h"
 
 int ut_string_id = 0;
 
-UtObject *ut_string_new(const char *text) {
-  return ut_mutable_string_new(text);
+UtObject *ut_string_new(const char *text) { return ut_utf8_string_new(text); }
+
+UtObject *ut_string_new_constant(const char *text) {
+  return ut_constant_utf8_string_new(text);
 }
 
 UtObject *ut_string_new_sized(const char *text, size_t length) {
-  return ut_mutable_string_new_sized(text, length);
+  return ut_utf8_string_new_sized(text, length);
 }
 
 const char *ut_string_get_text(UtObject *object) {
@@ -92,39 +95,93 @@ UtObject *ut_string_get_code_points(UtObject *object) {
   return code_points;
 }
 
+UtObject *ut_string_get_utf8(UtObject *object) {
+  UtStringInterface *string_interface =
+      ut_object_get_interface(object, &ut_string_id);
+  assert(string_interface != NULL);
+  return string_interface->get_utf8(object);
+}
+
+bool ut_string_is_mutable(UtObject *object) {
+  UtStringInterface *string_interface =
+      ut_object_get_interface(object, &ut_string_id);
+  assert(string_interface != NULL);
+  return string_interface->is_mutable;
+}
+
+void ut_string_clear(UtObject *object) {
+  UtStringInterface *string_interface =
+      ut_object_get_interface(object, &ut_string_id);
+  assert(string_interface != NULL);
+  assert(string_interface->is_mutable);
+  string_interface->clear(object);
+}
+
+void ut_string_prepend(UtObject *object, const char *text) {
+  UtStringInterface *string_interface =
+      ut_object_get_interface(object, &ut_string_id);
+  assert(string_interface != NULL);
+  assert(string_interface->is_mutable);
+  string_interface->prepend(object, text);
+}
+
+void ut_string_prepend_code_point(UtObject *object, uint32_t code_point) {
+  UtStringInterface *string_interface =
+      ut_object_get_interface(object, &ut_string_id);
+  assert(string_interface != NULL);
+  assert(string_interface->is_mutable);
+  string_interface->prepend_code_point(object, code_point);
+}
+
+void ut_string_append(UtObject *object, const char *text) {
+  UtStringInterface *string_interface =
+      ut_object_get_interface(object, &ut_string_id);
+  assert(string_interface != NULL);
+  assert(string_interface->is_mutable);
+  string_interface->append(object, text);
+}
+
+void ut_string_append_code_point(UtObject *object, uint32_t code_point) {
+  UtStringInterface *string_interface =
+      ut_object_get_interface(object, &ut_string_id);
+  assert(string_interface != NULL);
+  assert(string_interface->is_mutable);
+  string_interface->append_code_point(object, code_point);
+}
+
 char *ut_string_to_string(UtObject *object) {
-  UtObjectRef string = ut_mutable_string_new("\"");
+  UtObjectRef string = ut_string_new("\"");
   for (const char *c = ut_string_get_text(object); *c != '\0'; c++) {
     if (*c == 0x7) {
-      ut_mutable_string_append(string, "\\a");
+      ut_string_append(string, "\\a");
     } else if (*c == 0x8) {
-      ut_mutable_string_append(string, "\\b");
+      ut_string_append(string, "\\b");
     } else if (*c == 0x9) {
-      ut_mutable_string_append(string, "\\t");
+      ut_string_append(string, "\\t");
     } else if (*c == 0xa) {
-      ut_mutable_string_append(string, "\\n");
+      ut_string_append(string, "\\n");
     } else if (*c == 0xb) {
-      ut_mutable_string_append(string, "\\v");
+      ut_string_append(string, "\\v");
     } else if (*c == 0xc) {
-      ut_mutable_string_append(string, "\\f");
+      ut_string_append(string, "\\f");
     } else if (*c == 0xd) {
-      ut_mutable_string_append(string, "\\r");
+      ut_string_append(string, "\\r");
     } else if (*c == 0x1b) {
-      ut_mutable_string_append(string, "\\e");
+      ut_string_append(string, "\\e");
     } else if (*c == 0x22) {
-      ut_mutable_string_append(string, "\\\"");
+      ut_string_append(string, "\\\"");
     } else if (*c == 0x5c) {
-      ut_mutable_string_append(string, "\\\\");
+      ut_string_append(string, "\\\\");
     } else if (*c == 0x7f || *c <= 0x1f) {
-      ut_mutable_string_append(string, "\\x");
+      ut_string_append(string, "\\x");
       char hex_value[3];
       snprintf(hex_value, 3, "%02x", *c);
-      ut_mutable_string_append(string, hex_value);
+      ut_string_append(string, hex_value);
     } else {
-      ut_mutable_string_append_code_point(string, *c);
+      ut_string_append_code_point(string, *c);
     }
   }
-  ut_mutable_string_append(string, "\"");
+  ut_string_append(string, "\"");
 
   return ut_string_take_text(string);
 }

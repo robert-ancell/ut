@@ -4,7 +4,6 @@
 
 #include "ut-cstring.h"
 #include "ut-list.h"
-#include "ut-mutable-string.h"
 #include "ut-object-array.h"
 #include "ut-object-private.h"
 #include "ut-string.h"
@@ -28,20 +27,20 @@ UtObject *ut_list_get_element(UtObject *object, size_t index) {
 }
 
 char *ut_list_to_string(UtObject *object) {
-  UtObject *string = ut_mutable_string_new("[");
+  UtObject *string = ut_string_new("[");
   for (size_t i = 0; i < ut_list_get_length(object); i++) {
     UtObject *item = ut_list_get_element(object, i);
 
     if (i != 0) {
-      ut_mutable_string_append(string, ", ");
+      ut_string_append(string, ", ");
     }
 
     ut_cstring value_string = ut_object_to_string(item);
-    ut_mutable_string_append(string, value_string);
+    ut_string_append(string, value_string);
 
     ut_object_unref(item);
   }
-  ut_mutable_string_append(string, "]");
+  ut_string_append(string, "]");
 
   char *result = ut_string_take_text(string);
   ut_object_unref(string);

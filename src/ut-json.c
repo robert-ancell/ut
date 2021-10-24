@@ -12,7 +12,6 @@
 #include "ut-map-item.h"
 #include "ut-map.h"
 #include "ut-mutable-list.h"
-#include "ut-mutable-string.h"
 #include "ut-null.h"
 #include "ut-object-array.h"
 #include "ut-string.h"
@@ -76,7 +75,7 @@ static bool get_utf8_code_point(const char *text, size_t *offset,
 }
 
 static bool encode_string(UtObject *buffer, const char *value) {
-  ut_mutable_string_append(buffer, "\"");
+  ut_string_append(buffer, "\"");
   size_t offset = 0;
   while (true) {
     uint32_t code_point;
@@ -84,38 +83,38 @@ static bool encode_string(UtObject *buffer, const char *value) {
       return false;
     }
     if (code_point == '\0') {
-      ut_mutable_string_append(buffer, "\"");
+      ut_string_append(buffer, "\"");
       return true;
     }
     if (code_point <= 0x1f || code_point == 0x7f) {
       switch (code_point) {
       case '\b':
-        ut_mutable_string_append(buffer, "\\b");
+        ut_string_append(buffer, "\\b");
         break;
       case '\f':
-        ut_mutable_string_append(buffer, "\\f");
+        ut_string_append(buffer, "\\f");
         break;
       case '\n':
-        ut_mutable_string_append(buffer, "\\n");
+        ut_string_append(buffer, "\\n");
         break;
       case '\r':
-        ut_mutable_string_append(buffer, "\\r");
+        ut_string_append(buffer, "\\r");
         break;
       case '\t':
-        ut_mutable_string_append(buffer, "\\t");
+        ut_string_append(buffer, "\\t");
         break;
       default:
         char escape_sequence[7];
         snprintf(escape_sequence, 7, "\\u%04x", code_point);
-        ut_mutable_string_append(buffer, escape_sequence);
+        ut_string_append(buffer, escape_sequence);
         break;
       }
     } else if (code_point == '\"') {
-      ut_mutable_string_append(buffer, "\\\"");
+      ut_string_append(buffer, "\\\"");
     } else if (code_point == '\\') {
-      ut_mutable_string_append(buffer, "\\\\");
+      ut_string_append(buffer, "\\\\");
     } else {
-      ut_mutable_string_append_code_point(buffer, code_point);
+      ut_string_append_code_point(buffer, code_point);
     }
   }
 }
@@ -123,25 +122,25 @@ static bool encode_string(UtObject *buffer, const char *value) {
 static bool encode_integer_number(UtObject *buffer, int64_t value) {
   char text[1024];
   snprintf(text, 1024, "%li", value);
-  ut_mutable_string_append(buffer, text);
+  ut_string_append(buffer, text);
   return true;
 }
 
 static bool encode_float_number(UtObject *buffer, double value) {
   char text[1024];
   snprintf(text, 1024, "%e", value);
-  ut_mutable_string_append(buffer, text);
+  ut_string_append(buffer, text);
   return true;
 }
 
 static bool encode_object(UtObject *buffer, UtObject *value) {
-  ut_mutable_string_append(buffer, "{");
+  ut_string_append(buffer, "{");
   UtObjectRef items = ut_map_get_items(value);
   size_t length = ut_list_get_length(items);
   for (size_t i = 0; i < length; i++) {
     UtObjectRef item = ut_list_get_element(items, i);
     if (i != 0) {
-      ut_mutable_string_append(buffer, ",");
+      ut_string_append(buffer, ",");
     }
 
     UtObjectRef key = ut_map_item_get_key(item);
@@ -154,7 +153,7 @@ static bool encode_object(UtObject *buffer, UtObject *value) {
       return false;
     }
 
-    ut_mutable_string_append(buffer, ":");
+    ut_string_append(buffer, ":");
 
     UtObjectRef value = ut_map_item_get_value(item);
     result = encode_value(buffer, value);
@@ -162,34 +161,34 @@ static bool encode_object(UtObject *buffer, UtObject *value) {
       return false;
     }
   }
-  ut_mutable_string_append(buffer, "}");
+  ut_string_append(buffer, "}");
   return true;
 }
 
 static bool encode_array(UtObject *buffer, UtObject *value) {
-  ut_mutable_string_append(buffer, "[");
+  ut_string_append(buffer, "[");
   size_t length = ut_list_get_length(value);
   for (size_t i = 0; i < length; i++) {
     UtObjectRef child = ut_list_get_element(value, i);
     if (i != 0) {
-      ut_mutable_string_append(buffer, ",");
+      ut_string_append(buffer, ",");
     }
     bool result = encode_value(buffer, child);
     if (!result) {
       return false;
     }
   }
-  ut_mutable_string_append(buffer, "]");
+  ut_string_append(buffer, "]");
   return true;
 }
 
 static bool encode_boolean(UtObject *buffer, bool value) {
-  ut_mutable_string_append(buffer, value ? "true" : "false");
+  ut_string_append(buffer, value ? "true" : "false");
   return true;
 }
 
 static bool encode_null(UtObject *buffer) {
-  ut_mutable_string_append(buffer, "null");
+  ut_string_append(buffer, "null");
   return true;
 }
 
@@ -251,7 +250,7 @@ static UtObject *decode_string(const char *text, size_t *offset) {
   }
   end++;
 
-  UtObjectRef value = ut_mutable_string_new("");
+  UtObjectRef value = ut_string_new("");
   while (true) {
     if (text[end] == '\"') {
       *offset = end + 1;
@@ -319,7 +318,7 @@ static UtObject *decode_string(const char *text, size_t *offset) {
       }
     }
 
-    ut_mutable_string_append_code_point(value, code_point);
+    ut_string_append_code_point(value, code_point);
   }
 }
 
@@ -582,7 +581,7 @@ static UtObject *decode_value(const char *text, size_t *offset) {
 }
 
 char *ut_json_encode(UtObject *object) {
-  UtObjectRef buffer = ut_mutable_string_new("");
+  UtObjectRef buffer = ut_string_new("");
   encode_value(buffer, object);
   return ut_string_take_text(buffer);
 }

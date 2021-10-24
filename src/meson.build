@@ -1,7 +1,7 @@
 ut_sources = [
   'ut-boolean.c',
   'ut-cancel.c',
-  'ut-constant-string.c',
+  'ut-constant-utf8-string.c',
   'ut-constant-uint8-array.c',
   'ut-end-of-stream.c',
   'ut-event-loop.c',
@@ -19,7 +19,6 @@ ut_sources = [
   'ut-map.c',
   'ut-map-item.c',
   'ut-mutable-list.c',
-  'ut-mutable-string.c',
   'ut-null.c',
   'ut-object.c',
   'ut-object-array.c',
@@ -40,12 +39,13 @@ ut_sources = [
   'ut-uint64.c',
   'ut-utf8-decoder.c',
   'ut-utf8-encoder.c',
+  'ut-utf8-string.c',
   'ut-xml-document.c',
   'ut-xml-element.c'
 ]
 
-executable('ut-constant-string-test',
-           'ut-constant-string-test.c',
+executable('ut-constant-utf8-string-test',
+           'ut-constant-utf8-string-test.c',
            ut_sources)
 
 executable('ut-event-loop-test',
@@ -64,9 +64,6 @@ executable('ut-map-test',
            'ut-map-test.c',
            ut_sources)
 
-executable('ut-mutable-string-test',
-           'ut-mutable-string-test.c',
-           ut_sources)
 
 executable('ut-tcp-client-test',
            'ut-tcp-client-test.c',
@@ -82,6 +79,10 @@ executable('ut-utf8-decoder-test',
 
 executable('ut-utf8-encoder-test',
            'ut-utf8-encoder-test.c',
+           ut_sources)
+
+executable('ut-utf8-string-test',
+           'ut-utf8-string-test.c',
            ut_sources)
 
 executable('ut-xml-document-test',

@@ -16,8 +16,9 @@ int main(int argc, char **argv) {
 
   UtObjectRef test_file = ut_local_file_new("TEST");
   ut_file_open_write(test_file, true);
-  UtObject *test_data = ut_constant_string_new("Hello\n");
-  ut_output_stream_write_all(test_file, test_data, NULL, NULL, NULL);
+  UtObjectRef test_data = ut_string_new_constant("Hello\n");
+  UtObjectRef utf8 = ut_string_get_utf8(test_data);
+  ut_output_stream_write_all(test_file, utf8, NULL, NULL, NULL);
 
   ut_event_loop_run();
 

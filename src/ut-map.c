@@ -2,13 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ut-constant-string.h"
 #include "ut-cstring.h"
 #include "ut-hash-table.h"
 #include "ut-list.h"
 #include "ut-map-item.h"
 #include "ut-map.h"
-#include "ut-mutable-string.h"
 #include "ut-object-private.h"
 #include "ut-string.h"
 
@@ -51,7 +49,7 @@ UtObject *ut_map_lookup(UtObject *object, UtObject *key) {
 }
 
 UtObject *ut_map_lookup_string(UtObject *object, const char *key) {
-  UtObjectRef string_key = ut_constant_string_new(key);
+  UtObjectRef string_key = ut_string_new_constant(key);
   return ut_map_lookup(object, string_key);
 }
 
@@ -80,26 +78,26 @@ UtObject *ut_map_get_values(UtObject *object) {
 }
 
 char *ut_map_to_string(UtObject *object) {
-  UtObjectRef string = ut_mutable_string_new("{");
+  UtObjectRef string = ut_string_new("{");
   UtObjectRef items = ut_map_get_items(object);
   for (size_t i = 0; i < ut_list_get_length(items); i++) {
     UtObjectRef item = ut_list_get_element(items, i);
 
     if (i != 0) {
-      ut_mutable_string_append(string, ", ");
+      ut_string_append(string, ", ");
     }
 
     UtObjectRef key = ut_map_item_get_key(item);
     ut_cstring key_string = ut_object_to_string(key);
-    ut_mutable_string_append(string, key_string);
+    ut_string_append(string, key_string);
 
-    ut_mutable_string_append(string, ": ");
+    ut_string_append(string, ": ");
 
     UtObjectRef value = ut_map_item_get_value(item);
     ut_cstring value_string = ut_object_to_string(value);
-    ut_mutable_string_append(string, value_string);
+    ut_string_append(string, value_string);
   }
-  ut_mutable_string_append(string, "}");
+  ut_string_append(string, "}");
 
   return ut_string_take_text(string);
 }
