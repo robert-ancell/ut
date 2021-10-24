@@ -23,3 +23,7 @@ uint8_t *ut_uint8_list_take_data(UtObject *object) {
   assert(uint8_list_interface != NULL);
   return uint8_list_interface->take_data(object);
 }
+
+bool ut_object_implements_uint8_list(UtObject *object) {
+  return ut_object_get_interface(object, &ut_uint8_list_id) != NULL;
+}

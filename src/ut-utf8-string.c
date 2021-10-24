@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ut-constant-uint8-array.h"
 #include "ut-list.h"
 #include "ut-object-private.h"
 #include "ut-string.h"
@@ -126,7 +127,7 @@ static void ut_utf8_string_append_code_point(UtObject *object,
 
 static void ut_utf8_string_init(UtObject *object) {
   UtUtf8String *self = (UtUtf8String *)object;
-  self->data = NULL;
+  self->data = ut_uint8_array_new();
 }
 
 static void ut_utf8_string_cleanup(UtObject *object) {
@@ -161,7 +162,6 @@ UtObject *ut_utf8_string_new(const char *text) {
 UtObject *ut_utf8_string_new_sized(const char *text, size_t length) {
   UtObject *object = ut_object_new(sizeof(UtUtf8String), &object_interface);
   UtUtf8String *self = (UtUtf8String *)object;
-  self->data = ut_uint8_array_new();
   ut_list_resize(self->data, length + 1);
   uint8_t *buffer = ut_uint8_array_get_data(self->data);
   memcpy(buffer, text, length);
@@ -170,13 +170,26 @@ UtObject *ut_utf8_string_new_sized(const char *text, size_t length) {
 }
 
 UtObject *ut_utf8_string_new_from_data(UtObject *data) {
-  UtObject *object = ut_object_new(sizeof(UtUtf8String), &object_interface);
-  UtUtf8String *self = (UtUtf8String *)object;
-  // FIXME: This generates a UtUint8Array but should probably update API to
-  // ensure that as the code in this file relies on this being an array.
-  self->data = ut_list_copy(data);
-  assert(ut_object_is_uint8_array(self->data));
-  return object;
+  assert(data != NULL);
+  size_t data_length = ut_list_get_length(data);
+  if (ut_object_is_uint8_array(data)) {
+    return ut_utf8_string_new_sized((const char *)ut_uint8_array_get_data(data),
+                                    data_length);
+  } else if (ut_object_is_constant_uint8_array(data)) {
+    return ut_utf8_string_new_sized(
+        (const char *)ut_constant_uint8_array_get_data(data), data_length);
+  } else {
+    assert(ut_object_implements_uint8_list(data));
+    UtObject *object = ut_string_new("");
+    UtUtf8String *self = (UtUtf8String *)object;
+    ut_list_resize(self->data, data_length + 1);
+    uint8_t *buffer = ut_uint8_array_get_data(self->data);
+    for (size_t i = 0; i < data_length; i++) {
+      buffer[i] = ut_uint8_list_get_element(data, i);
+    }
+    buffer[data_length] = '\0';
+    return object;
+  }
 }
 
 bool ut_object_is_utf8_string(UtObject *object) {
