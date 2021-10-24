@@ -4,6 +4,7 @@
 #include "ut-constant-uint8-array.h"
 #include "ut-list.h"
 #include "ut-object-private.h"
+#include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
 #include "ut-uint8.h"
 
@@ -29,13 +30,21 @@ static UtObject *ut_constant_uint8_array_get_element(UtObject *object,
   return ut_uint8_new(self->data[index]);
 }
 
+static UtObject *ut_constant_uint8_array_copy(UtObject *object) {
+  UtConstantUint8Array *self = (UtConstantUint8Array *)object;
+  UtObject *copy = ut_uint8_array_new();
+  ut_uint8_array_append_block(copy, self->data, self->data_length);
+  return copy;
+}
+
 static UtUint8ListInterface uint8_list_interface = {
     .get_data = ut_constant_uint8_array_get_data,
     .get_length = ut_constant_uint8_array_get_length};
 
 static UtListInterface list_interface = {
     .get_length = ut_constant_uint8_array_get_length,
-    .get_element = ut_constant_uint8_array_get_element};
+    .get_element = ut_constant_uint8_array_get_element,
+    .copy = ut_constant_uint8_array_copy};
 
 static void ut_constant_uint8_array_init(UtObject *object) {
   UtConstantUint8Array *self = (UtConstantUint8Array *)object;

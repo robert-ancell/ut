@@ -68,6 +68,13 @@ static UtObject *ut_uint8_array_get_element(UtObject *object, size_t index) {
   return ut_uint8_new(self->data[index]);
 }
 
+static UtObject *ut_uint8_array_copy(UtObject *object) {
+  UtUint8Array *self = (UtUint8Array *)object;
+  UtObject *copy = ut_uint8_array_new();
+  ut_uint8_array_append_block(copy, self->data, self->data_length);
+  return copy;
+}
+
 static void ut_uint8_array_read(UtObject *object, size_t block_size,
                                 UtInputStreamCallback callback, void *user_data,
                                 UtObject *cancel) {
@@ -103,6 +110,7 @@ static UtListInterface list_interface = {
     .is_mutable = true,
     .get_length = ut_uint8_array_get_length,
     .get_element = ut_uint8_array_get_element,
+    .copy = ut_uint8_array_copy,
     .insert = ut_uint8_array_insert_object,
     .remove = ut_uint8_array_remove,
     .resize = ut_uint8_array_resize};

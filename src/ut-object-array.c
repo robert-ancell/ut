@@ -69,6 +69,17 @@ static UtObject *ut_object_array_get_element_ref(UtObject *object,
   return ut_object_ref(self->data[index]);
 }
 
+static UtObject *ut_object_array_copy(UtObject *object) {
+  UtObjectArray *self = (UtObjectArray *)object;
+  UtObjectArray *copy = (UtObjectArray *)ut_object_array_new();
+  copy->data = malloc(sizeof(UtObject *) * self->data_length);
+  copy->data_length = self->data_length;
+  for (size_t i = 0; i < self->data_length; i++) {
+    copy->data[i] = ut_object_ref(self->data[i]);
+  }
+  return (UtObject *)copy;
+}
+
 static void ut_object_array_read(UtObject *object, size_t block_size,
                                  UtInputStreamCallback callback,
                                  void *user_data, UtObject *cancel) {
@@ -107,6 +118,7 @@ static UtListInterface list_interface = {
     .is_mutable = true,
     .get_length = ut_object_array_get_length,
     .get_element = ut_object_array_get_element_ref,
+    .copy = ut_object_array_copy,
     .insert = ut_object_array_insert,
     .remove = ut_object_array_remove,
     .resize = ut_object_array_resize};
