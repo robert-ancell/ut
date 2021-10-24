@@ -154,7 +154,8 @@ static UtObject *decode_content(const char *text, size_t *offset) {
 
 static char *decode_attribute_value(const char *text, size_t *offset) {
   size_t end = *offset;
-  if (text[end] != '"') {
+  char quote = text[end];
+  if (quote != '"' && quote != '\'') {
     return NULL;
   }
   end++;
@@ -163,7 +164,7 @@ static char *decode_attribute_value(const char *text, size_t *offset) {
   while (true) {
     if (text[end] == '\0') {
       return NULL;
-    } else if (text[end] == '"') {
+    } else if (text[end] == quote) {
       *offset = end + 1;
       return strndup(text + start, end - start);
     }
@@ -301,7 +302,53 @@ static bool decode_document(const char *text, size_t *offset, UtObject **root) {
   return true;
 }
 
-static bool encode_character_data(UtObject *buffer, const char *data) {
+static void encode_attribute_value(UtObject *buffer, const char *value) {
+  size_t single_quote_count = 0;
+  size_t double_quote_count = 0;
+  for (const char *c = value; *c != '\0'; c++) {
+    if (*c == '\'') {
+      single_quote_count++;
+    } else if (*c == '"') {
+      double_quote_count++;
+    }
+  }
+  char quote = double_quote_count > single_quote_count ? '\'' : '"';
+
+  ut_string_append_code_point(buffer, quote);
+  for (const char *c = value; *c != '\0'; c++) {
+    switch (*c) {
+    case '<':
+      ut_string_append(buffer, "&lt;");
+      break;
+    case '>':
+      ut_string_append(buffer, "&gt;");
+      break;
+    case '&':
+      ut_string_append(buffer, "&amp;");
+      break;
+    case '\'':
+      if (quote == '\'') {
+        ut_string_append(buffer, "&apos;");
+      } else {
+        ut_string_append_code_point(buffer, *c);
+      }
+      break;
+    case '"':
+      if (quote == '"') {
+        ut_string_append(buffer, "&quot;");
+      } else {
+        ut_string_append_code_point(buffer, *c);
+      }
+      break;
+    default:
+      ut_string_append_code_point(buffer, *c);
+      break;
+    }
+  }
+  ut_string_append_code_point(buffer, quote);
+}
+
+static void encode_character_data(UtObject *buffer, const char *data) {
   for (const char *c = data; *c != '\0'; c++) {
     switch (*c) {
     case '<':
@@ -318,7 +365,6 @@ static bool encode_character_data(UtObject *buffer, const char *data) {
       break;
     }
   }
-  return true;
 }
 
 static bool encode_element(UtObject *buffer, UtObject *element) {
@@ -335,9 +381,8 @@ static bool encode_element(UtObject *buffer, UtObject *element) {
       UtObjectRef value = ut_map_item_get_value(item);
       ut_string_append(buffer, " ");
       ut_string_append(buffer, ut_string_get_text(name));
-      ut_string_append(buffer, "=\"");
-      ut_string_append(buffer, ut_string_get_text(value));
-      ut_string_append(buffer, "\"");
+      ut_string_append(buffer, "=");
+      encode_attribute_value(buffer, ut_string_get_text(value));
     }
   }
   UtObject *content = ut_xml_element_get_content(element);
@@ -350,9 +395,7 @@ static bool encode_element(UtObject *buffer, UtObject *element) {
   for (size_t i = 0; i < content_length; i++) {
     UtObjectRef child = ut_list_get_element(content, i);
     if (ut_object_implements_string(child)) {
-      if (!encode_character_data(buffer, ut_string_get_text(child))) {
-        return false;
-      }
+      encode_character_data(buffer, ut_string_get_text(child));
     } else if (ut_object_is_xml_element(child)) {
       if (!encode_element(buffer, child)) {
         return false;

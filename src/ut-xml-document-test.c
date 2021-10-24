@@ -23,9 +23,9 @@ static void test_encode() {
 
   UtObjectRef multiple_attribute_attributes = ut_map_new();
   ut_map_insert_string_take(multiple_attribute_attributes, "name1",
-                            ut_string_new("value1"));
+                            ut_string_new("'value1'"));
   ut_map_insert_string_take(multiple_attribute_attributes, "name2",
-                            ut_string_new("value2"));
+                            ut_string_new("\"value2\""));
   UtObjectRef multiple_attribute_root =
       ut_xml_element_new("tag", multiple_attribute_attributes, NULL);
   UtObjectRef multiple_attribute_document =
@@ -33,7 +33,7 @@ static void test_encode() {
   ut_cstring multiple_attribute_text =
       ut_xml_document_to_text(multiple_attribute_document);
   assert(strcmp(multiple_attribute_text,
-                "<tag name1=\"value1\" name2=\"value2\"/>") == 0);
+                "<tag name1=\"'value1'\" name2='\"value2\"'/>") == 0);
 
   UtObjectRef content_content = ut_list_new();
   ut_list_append_take(content_content, ut_string_new("Hello World!"));
@@ -77,9 +77,13 @@ static void test_decode() {
       ut_xml_document_new_from_text("<tag name=\"value\"/>");
   assert(attribute_document != NULL);
 
-  UtObjectRef multiple_attribute_document =
-      ut_xml_document_new_from_text("<foo name1=\"value1\" name2=\"value2\"/>");
+  UtObjectRef multiple_attribute_document = ut_xml_document_new_from_text(
+      "<foo name1=\"'value1'\" name2='\"value2\"'/>");
   assert(multiple_attribute_document != NULL);
+
+  UtObjectRef escaped_attribute_document =
+      ut_xml_document_new_from_text("<tag name=\"&quot;value&quot;\"/>");
+  assert(escaped_attribute_document != NULL);
 
   UtObjectRef no_content_document =
       ut_xml_document_new_from_text("<tag></tag>");
