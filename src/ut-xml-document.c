@@ -76,26 +76,78 @@ static UtObject *decode_character_data(const char *text, size_t *offset) {
   return ut_string_new_sized(text + start, end - start);
 }
 
+static char *decode_reference(const char *text, size_t *offset) {
+  size_t end = *offset;
+  if (text[end] != '&') {
+    return NULL;
+  }
+  end++;
+
+  ut_cstring name = decode_name(text, &end);
+
+  if (text[end] != ';') {
+    return NULL;
+  }
+  end++;
+
+  *offset = end;
+  return ut_cstring_take(&name);
+}
+
+static UtObject *reference_to_character_data(const char *name) {
+  if (strcmp(name, "lt") == 0) {
+    return ut_string_new("<");
+  } else if (strcmp(name, "gt") == 0) {
+    return ut_string_new(">");
+  } else if (strcmp(name, "amp") == 0) {
+    return ut_string_new("&");
+  } else if (strcmp(name, "apos") == 0) {
+    return ut_string_new("'");
+  } else if (strcmp(name, "quot") == 0) {
+    return ut_string_new("\"");
+  } else {
+    // FIXME: Throw error
+    return NULL;
+  }
+}
+
+static void append_content(UtObject *content, UtObject *child) {
+  if (ut_list_get_length(content) > 0 && ut_object_implements_string(child) &&
+      ut_object_implements_string(ut_list_get_last(content))) {
+    ut_string_append(ut_list_get_last(content), ut_string_get_text(child));
+  } else {
+    ut_list_append(content, child);
+  }
+}
+
 static UtObject *decode_content(const char *text, size_t *offset) {
   UtObjectRef content = ut_list_new();
 
   size_t end = *offset;
   UtObjectRef leading_text = decode_character_data(text, &end);
   if (leading_text != NULL) {
-    ut_list_append(content, leading_text);
+    append_content(content, leading_text);
   }
   while (true) {
-    UtObjectRef element = decode_element(text, &end);
-    if (element == NULL) {
+    UtObjectRef child = NULL;
+    if (text[end] == '<') {
+      child = decode_element(text, &end);
+    } else if (text[end] == '&') {
+      ut_cstring name = decode_reference(text, &end);
+      if (name != NULL) {
+        child = reference_to_character_data(name);
+      }
+    }
+
+    if (child == NULL) {
       *offset = end;
       return ut_list_get_length(content) == 0 ? NULL : ut_object_ref(content);
     }
-
-    ut_list_append(content, element);
+    append_content(content, child);
 
     UtObjectRef trailing_text = decode_character_data(text, &end);
     if (trailing_text != NULL) {
-      ut_list_append(content, trailing_text);
+      append_content(content, trailing_text);
     }
   }
 }

@@ -49,9 +49,9 @@ static void test_decode() {
 
   UtObjectRef empty_element_document = ut_xml_document_new_from_text("<tag/>");
   assert(empty_element_document != NULL);
-  assert(strcmp(ut_xml_element_get_name(
-                    ut_xml_document_get_root(empty_element_document)),
-                "tag") == 0);
+  UtObject *root = ut_xml_document_get_root(empty_element_document);
+  assert(strcmp(ut_xml_element_get_name(root), "tag") == 0);
+  assert(ut_xml_element_get_content(root) == NULL);
 
   UtObjectRef tag_name_leading_whitespace_document =
       ut_xml_document_new_from_text("< tag/>");
@@ -60,9 +60,9 @@ static void test_decode() {
   UtObjectRef tag_name_trailing_whitespace_document =
       ut_xml_document_new_from_text("<tag />");
   assert(tag_name_trailing_whitespace_document != NULL);
-  assert(strcmp(ut_xml_element_get_name(ut_xml_document_get_root(
-                    tag_name_trailing_whitespace_document)),
-                "tag") == 0);
+  root = ut_xml_document_get_root(tag_name_trailing_whitespace_document);
+  assert(strcmp(ut_xml_element_get_name(root), "tag") == 0);
+  assert(ut_xml_element_get_content(root) == NULL);
 
   UtObjectRef attribute_document =
       ut_xml_document_new_from_text("<tag name=\"value\"/>");
@@ -75,16 +75,34 @@ static void test_decode() {
   UtObjectRef no_content_document =
       ut_xml_document_new_from_text("<tag></tag>");
   assert(no_content_document != NULL);
-  assert(strcmp(ut_xml_element_get_name(
-                    ut_xml_document_get_root(no_content_document)),
-                "tag") == 0);
+  root = ut_xml_document_get_root(no_content_document);
+  assert(strcmp(ut_xml_element_get_name(root), "tag") == 0);
+  assert(ut_xml_element_get_content(root) == NULL);
 
   UtObjectRef content_document =
       ut_xml_document_new_from_text("<tag>Hello World!</tag>");
   assert(content_document != NULL);
-  assert(strcmp(ut_xml_element_get_name(
-                    ut_xml_document_get_root(content_document)),
-                "tag") == 0);
+  root = ut_xml_document_get_root(content_document);
+  assert(strcmp(ut_xml_element_get_name(root), "tag") == 0);
+  UtObject *content = ut_xml_element_get_content(root);
+  assert(content != NULL);
+  assert(ut_list_get_length(content) == 1);
+  UtObjectRef content_document_content = ut_list_get_element(content, 0);
+  assert(strcmp(ut_string_get_text(content_document_content), "Hello World!") ==
+         0);
+
+  UtObjectRef escaped_document = ut_xml_document_new_from_text(
+      "<tag>&lt;&quot;Fast&quot; &amp; &apos;Efficient&apos;&gt;</tag>");
+  assert(escaped_document != NULL);
+  root = ut_xml_document_get_root(escaped_document);
+  assert(strcmp(ut_xml_element_get_name(root), "tag") == 0);
+  assert(ut_xml_element_get_content(root) != NULL);
+  content = ut_xml_element_get_content(root);
+  assert(content != NULL);
+  assert(ut_list_get_length(content) == 1);
+  UtObjectRef escaped_document_content = ut_list_get_element(content, 0);
+  assert(strcmp(ut_string_get_text(escaped_document_content),
+                "<\"Fast\" & 'Efficient'>") == 0);
 
   UtObjectRef mismatched_tags_document =
       ut_xml_document_new_from_text("<foo></bar>");

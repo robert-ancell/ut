@@ -26,6 +26,15 @@ UtObject *ut_list_get_element(UtObject *object, size_t index) {
   return list_interface->get_element(object, index);
 }
 
+UtObject *ut_list_get_first(UtObject *object) {
+  return ut_list_get_element(object, 0);
+}
+
+UtObject *ut_list_get_last(UtObject *object) {
+  size_t length = ut_list_get_length(object);
+  return length > 0 ? ut_list_get_element(object, length - 1) : NULL;
+}
+
 UtObject *ut_list_copy(UtObject *object) {
   UtListInterface *list_interface =
       ut_object_get_interface(object, &ut_list_id);
