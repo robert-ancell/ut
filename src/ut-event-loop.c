@@ -305,6 +305,10 @@ UtObject *ut_event_loop_run() {
       }
     }
 
+    if (loop->complete) {
+      break;
+    }
+
     int max_fd = -1;
     fd_set read_fds;
     fd_set write_fds;
