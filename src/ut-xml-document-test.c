@@ -41,6 +41,15 @@ static void test_encode() {
   UtObjectRef content_document = ut_xml_document_new(content_root);
   ut_cstring content_text = ut_xml_document_to_text(content_document);
   assert(strcmp(content_text, "<tag>Hello World!</tag>") == 0);
+
+  UtObjectRef escaped_content = ut_list_new();
+  ut_list_append_take(escaped_content,
+                      ut_string_new("<\"Fast\" & 'Efficient'>"));
+  UtObjectRef escaped_root = ut_xml_element_new("tag", NULL, escaped_content);
+  UtObjectRef escaped_document = ut_xml_document_new(escaped_root);
+  ut_cstring escaped_text = ut_xml_document_to_text(escaped_document);
+  assert(strcmp(escaped_text,
+                "<tag>&lt;\"Fast\" &amp; 'Efficient'&gt;</tag>") == 0);
 }
 
 static void test_decode() {

@@ -302,7 +302,22 @@ static bool decode_document(const char *text, size_t *offset, UtObject **root) {
 }
 
 static bool encode_character_data(UtObject *buffer, const char *data) {
-  ut_string_append(buffer, data);
+  for (const char *c = data; *c != '\0'; c++) {
+    switch (*c) {
+    case '<':
+      ut_string_append(buffer, "&lt;");
+      break;
+    case '>':
+      ut_string_append(buffer, "&gt;");
+      break;
+    case '&':
+      ut_string_append(buffer, "&amp;");
+      break;
+    default:
+      ut_string_append_code_point(buffer, *c);
+      break;
+    }
+  }
   return true;
 }
 
