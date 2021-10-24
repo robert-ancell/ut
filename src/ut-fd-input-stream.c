@@ -40,7 +40,6 @@ static void report_read_data(UtFdInputStream *self) {
 static void read_cb(void *user_data) {
   UtFdInputStream *self = user_data;
 
-  bool done = false;
   if (self->cancel == NULL || !ut_cancel_is_active(self->cancel)) {
     // Make space to read a new block.
     ut_list_resize(self->read_buffer,
@@ -60,29 +59,18 @@ static void read_cb(void *user_data) {
       } else {
         UtObjectRef end_of_stream = ut_end_of_stream_new(
             self->read_buffer_length > 0 ? self->read_buffer : NULL);
-        self->callback(self->user_data, end_of_stream);
+        if (self->cancel == NULL || !ut_cancel_is_active(self->cancel)) {
+          self->callback(self->user_data, end_of_stream);
+        }
       }
-      done = true;
     } else if (!self->read_all) {
       report_read_data(self);
     }
-  } else {
-    done = true;
   }
 
   // Stop listening for read events when done.
-  if (done) {
+  if (self->cancel != NULL && ut_cancel_is_active(self->cancel)) {
     ut_cancel_activate(self->watch_cancel);
-    self->block_size = 0;
-    self->read_all = false;
-    ut_object_unref(self->watch_cancel);
-    self->watch_cancel = NULL;
-    self->callback = NULL;
-    self->user_data = NULL;
-    if (self->cancel != NULL) {
-      ut_object_unref(self->cancel);
-      self->cancel = NULL;
-    }
   }
 }
 
@@ -105,6 +93,17 @@ static void buffered_read_cb(void *user_data) {
 static void start_read(UtFdInputStream *self, size_t block_size, bool read_all,
                        UtInputStreamCallback callback, void *user_data,
                        UtObject *cancel) {
+  // Clean up after the previous read.
+  if (self->cancel != NULL && ut_cancel_is_active(self->cancel)) {
+    self->block_size = 0;
+    self->read_all = false;
+    ut_object_unref(self->watch_cancel);
+    self->callback = NULL;
+    self->user_data = NULL;
+    ut_object_unref(self->cancel);
+    self->cancel = NULL;
+  }
+
   assert(self->callback == NULL);
 
   self->block_size = block_size;
