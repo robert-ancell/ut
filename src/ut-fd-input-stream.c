@@ -20,7 +20,7 @@ typedef struct {
   int fd;
   UtObject *read_buffer;
   size_t read_buffer_length;
-  size_t block_length;
+  size_t block_size;
   bool read_all;
   UtObject *watch_cancel;
   UtInputStreamCallback callback;
@@ -44,13 +44,13 @@ static void read_cb(void *user_data) {
   if (self->cancel == NULL || !ut_cancel_is_active(self->cancel)) {
     // Make space to read a new block.
     ut_list_resize(self->read_buffer,
-                   self->read_buffer_length + self->block_length);
+                   self->read_buffer_length + self->block_size);
 
     // Read a block.
     ssize_t n_read = read(self->fd,
                           ut_uint8_array_get_data(self->read_buffer) +
                               self->read_buffer_length,
-                          self->block_length);
+                          self->block_size);
     assert(n_read >= 0);
     self->read_buffer_length += n_read;
 
@@ -73,7 +73,7 @@ static void read_cb(void *user_data) {
   // Stop listening for read events when done.
   if (done) {
     ut_cancel_activate(self->watch_cancel);
-    self->block_length = 0;
+    self->block_size = 0;
     self->read_all = false;
     ut_object_unref(self->watch_cancel);
     self->watch_cancel = NULL;
@@ -102,12 +102,12 @@ static void buffered_read_cb(void *user_data) {
   add_read_watch(self);
 }
 
-static void start_read(UtFdInputStream *self, size_t block_length,
-                       bool read_all, UtInputStreamCallback callback,
-                       void *user_data, UtObject *cancel) {
+static void start_read(UtFdInputStream *self, size_t block_size, bool read_all,
+                       UtInputStreamCallback callback, void *user_data,
+                       UtObject *cancel) {
   assert(self->callback == NULL);
 
-  self->block_length = block_length;
+  self->block_size = block_size;
   self->read_all = read_all;
   self->watch_cancel = ut_cancel_new();
   self->callback = callback;
@@ -127,7 +127,7 @@ static void ut_fd_input_stream_init(UtObject *object) {
   self->fd = -1;
   self->read_buffer = ut_uint8_array_new();
   self->read_buffer_length = 0;
-  self->block_length = 0;
+  self->block_size = 0;
   self->read_all = false;
   self->watch_cancel = NULL;
   self->callback = NULL;
