@@ -148,26 +148,23 @@ static void ut_tcp_client_cleanup(UtObject *object) {
   disconnect_client(self);
 }
 
-static void ut_tcp_client_read(UtObject *object, size_t block_size,
-                               UtInputStreamCallback callback, void *user_data,
-                               UtObject *cancel) {
+static void ut_tcp_client_read(UtObject *object, UtInputStreamCallback callback,
+                               void *user_data, UtObject *cancel) {
   assert(ut_object_is_tcp_client(object));
   UtTcpClient *self = (UtTcpClient *)object;
   assert(self->input_stream != NULL);
 
-  ut_input_stream_read(self->input_stream, block_size, callback, user_data,
-                       cancel);
+  ut_input_stream_read(self->input_stream, callback, user_data, cancel);
 }
 
-static void ut_tcp_client_read_all(UtObject *object, size_t block_size,
+static void ut_tcp_client_read_all(UtObject *object,
                                    UtInputStreamCallback callback,
                                    void *user_data, UtObject *cancel) {
   assert(ut_object_is_tcp_client(object));
   UtTcpClient *self = (UtTcpClient *)object;
   assert(self->input_stream != NULL);
 
-  ut_input_stream_read_all(self->input_stream, block_size, callback, user_data,
-                           cancel);
+  ut_input_stream_read_all(self->input_stream, callback, user_data, cancel);
 }
 
 static UtInputStreamInterface input_stream_interface = {

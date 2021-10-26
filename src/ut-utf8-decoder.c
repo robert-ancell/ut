@@ -113,7 +113,7 @@ static size_t read_cb(void *user_data, UtObject *data) {
   return offset;
 }
 
-static void ut_utf8_decoder_read(UtObject *object, size_t block_size,
+static void ut_utf8_decoder_read(UtObject *object,
                                  UtInputStreamCallback callback,
                                  void *user_data, UtObject *cancel) {
   UtUtf8Decoder *self = (UtUtf8Decoder *)object;
@@ -122,10 +122,10 @@ static void ut_utf8_decoder_read(UtObject *object, size_t block_size,
   self->callback = callback;
   self->user_data = user_data;
   self->read_all = false;
-  ut_input_stream_read(self->input, block_size, read_cb, self, cancel);
+  ut_input_stream_read(self->input, read_cb, self, cancel);
 }
 
-static void ut_utf8_decoder_read_all(UtObject *object, size_t block_size,
+static void ut_utf8_decoder_read_all(UtObject *object,
                                      UtInputStreamCallback callback,
                                      void *user_data, UtObject *cancel) {
   UtUtf8Decoder *self = (UtUtf8Decoder *)object;
@@ -134,7 +134,7 @@ static void ut_utf8_decoder_read_all(UtObject *object, size_t block_size,
   self->callback = callback;
   self->user_data = user_data;
   self->read_all = true;
-  ut_input_stream_read(self->input, block_size, read_cb, self, cancel);
+  ut_input_stream_read(self->input, read_cb, self, cancel);
 }
 
 static UtInputStreamInterface input_stream_interface = {

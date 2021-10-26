@@ -90,12 +90,11 @@ static void buffered_read_cb(void *user_data) {
   add_read_watch(self);
 }
 
-static void start_read(UtFdInputStream *self, size_t block_size, bool read_all,
+static void start_read(UtFdInputStream *self, bool read_all,
                        UtInputStreamCallback callback, void *user_data,
                        UtObject *cancel) {
   // Clean up after the previous read.
   if (self->cancel != NULL && ut_cancel_is_active(self->cancel)) {
-    self->block_size = 0;
     self->read_all = false;
     ut_object_unref(self->watch_cancel);
     self->callback = NULL;
@@ -106,7 +105,6 @@ static void start_read(UtFdInputStream *self, size_t block_size, bool read_all,
 
   assert(self->callback == NULL);
 
-  self->block_size = block_size;
   self->read_all = read_all;
   self->watch_cancel = ut_cancel_new();
   self->callback = callback;
@@ -126,7 +124,7 @@ static void ut_fd_input_stream_init(UtObject *object) {
   self->fd = -1;
   self->read_buffer = ut_uint8_array_new();
   self->read_buffer_length = 0;
-  self->block_size = 0;
+  self->block_size = 4096;
   self->read_all = false;
   self->watch_cancel = NULL;
   self->callback = NULL;
@@ -145,24 +143,24 @@ static void ut_fd_input_stream_cleanup(UtObject *object) {
   }
 }
 
-static void ut_fd_input_stream_read(UtObject *object, size_t block_size,
+static void ut_fd_input_stream_read(UtObject *object,
                                     UtInputStreamCallback callback,
                                     void *user_data, UtObject *cancel) {
   UtFdInputStream *self = (UtFdInputStream *)object;
   assert(self->fd >= 0);
   assert(callback != NULL);
 
-  start_read(self, block_size, false, callback, user_data, cancel);
+  start_read(self, false, callback, user_data, cancel);
 }
 
-static void ut_fd_input_stream_read_all(UtObject *object, size_t block_size,
+static void ut_fd_input_stream_read_all(UtObject *object,
                                         UtInputStreamCallback callback,
                                         void *user_data, UtObject *cancel) {
   UtFdInputStream *self = (UtFdInputStream *)object;
   assert(self->fd >= 0);
   assert(callback != NULL);
 
-  start_read(self, block_size, true, callback, user_data, cancel);
+  start_read(self, true, callback, user_data, cancel);
 }
 
 static UtInputStreamInterface input_stream_interface = {

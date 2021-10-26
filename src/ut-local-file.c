@@ -80,24 +80,21 @@ static void ut_local_file_close(UtObject *object) {
   close_file(self);
 }
 
-static void ut_local_file_read(UtObject *object, size_t block_size,
-                               UtInputStreamCallback callback, void *user_data,
-                               UtObject *cancel) {
+static void ut_local_file_read(UtObject *object, UtInputStreamCallback callback,
+                               void *user_data, UtObject *cancel) {
   UtLocalFile *self = (UtLocalFile *)object;
   assert(self->input_stream != NULL);
 
-  ut_input_stream_read(self->input_stream, block_size, callback, user_data,
-                       cancel);
+  ut_input_stream_read(self->input_stream, callback, user_data, cancel);
 }
 
-static void ut_local_file_read_all(UtObject *object, size_t block_size,
+static void ut_local_file_read_all(UtObject *object,
                                    UtInputStreamCallback callback,
                                    void *user_data, UtObject *cancel) {
   UtLocalFile *self = (UtLocalFile *)object;
   assert(self->input_stream != NULL);
 
-  ut_input_stream_read_all(self->input_stream, block_size, callback, user_data,
-                           cancel);
+  ut_input_stream_read_all(self->input_stream, callback, user_data, cancel);
 }
 
 static void ut_local_file_write(UtObject *object, UtObject *data,

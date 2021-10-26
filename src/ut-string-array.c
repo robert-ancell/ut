@@ -79,7 +79,7 @@ static UtObject *ut_string_array_copy(UtObject *object) {
   return (UtObject *)copy;
 }
 
-static void ut_string_array_read(UtObject *object, size_t block_size,
+static void ut_string_array_read(UtObject *object,
                                  UtInputStreamCallback callback,
                                  void *user_data, UtObject *cancel) {
   UtStringArray *self = (UtStringArray *)object;

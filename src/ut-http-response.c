@@ -99,7 +99,7 @@ static size_t read_cb(void *user_data, UtObject *data) {
   return n_used;
 }
 
-static void start_read(UtHttpResponse *self, size_t block_size, bool read_all,
+static void start_read(UtHttpResponse *self, bool read_all,
                        UtInputStreamCallback callback, void *user_data,
                        UtObject *cancel) {
   // Clean up after the previous read.
@@ -120,8 +120,7 @@ static void start_read(UtHttpResponse *self, size_t block_size, bool read_all,
   self->user_data = user_data;
   self->cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
 
-  ut_input_stream_read(self->tcp_client, block_size, read_cb, self,
-                       self->read_cancel);
+  ut_input_stream_read(self->tcp_client, read_cb, self, self->read_cancel);
 }
 
 static void ut_http_response_init(UtObject *object) {
@@ -147,23 +146,23 @@ static void ut_http_response_cleanup(UtObject *object) {
   }
 }
 
-static void ut_http_response_read(UtObject *object, size_t block_size,
+static void ut_http_response_read(UtObject *object,
                                   UtInputStreamCallback callback,
                                   void *user_data, UtObject *cancel) {
   UtHttpResponse *self = (UtHttpResponse *)object;
   assert(callback != NULL);
 
-  start_read(self, block_size, false, callback, user_data, cancel);
+  start_read(self, false, callback, user_data, cancel);
 }
 
-static void ut_http_response_read_all(UtObject *object, size_t block_size,
+static void ut_http_response_read_all(UtObject *object,
                                       UtInputStreamCallback callback,
                                       void *user_data, UtObject *cancel) {
   UtHttpResponse *self = (UtHttpResponse *)object;
   assert(callback != NULL);
   assert(self->callback == NULL);
 
-  start_read(self, block_size, true, callback, user_data, cancel);
+  start_read(self, true, callback, user_data, cancel);
 }
 
 static UtInputStreamInterface input_stream_interface = {

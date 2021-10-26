@@ -18,7 +18,7 @@ static void http_response_cb(void *user_data, UtObject *response) {
     printf("%s: %s\n", ut_http_header_get_name(header),
            ut_http_header_get_value(header));
   }
-  ut_input_stream_read_all(response, 65535, read_cb, NULL, NULL);
+  ut_input_stream_read_all(response, read_cb, NULL, NULL);
 }
 
 int main(int argc, char **argv) {

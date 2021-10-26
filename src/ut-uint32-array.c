@@ -68,7 +68,7 @@ static UtObject *ut_uint32_array_copy(UtObject *object) {
   return copy;
 }
 
-static void ut_uint32_array_read(UtObject *object, size_t block_size,
+static void ut_uint32_array_read(UtObject *object,
                                  UtInputStreamCallback callback,
                                  void *user_data, UtObject *cancel) {
   UtUint32Array *self = (UtUint32Array *)object;

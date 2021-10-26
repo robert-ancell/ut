@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
   ut_uint32_array_append(code_points, 'i');
   ut_uint32_array_append(code_points, 0x1f600);
   UtObjectRef utf8_encoder = ut_utf8_encoder_new(code_points);
-  ut_input_stream_read_all(utf8_encoder, 1, read_cb, NULL, NULL);
+  ut_input_stream_read_all(utf8_encoder, read_cb, NULL, NULL);
 
   ut_event_loop_run();
 
