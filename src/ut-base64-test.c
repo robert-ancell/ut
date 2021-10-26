@@ -27,9 +27,9 @@ static void test_encode() {
   ut_cstring sentence_text = ut_base64_encode(sentence_list);
   assert(strcmp(sentence_text, "TWFueSBoYW5kcyBtYWtlIGxpZ2h0IHdvcmsu") == 0);
 
-  UtObjectRef binary_list = ut_uint8_array_new();
+  UtObjectRef binary_list = ut_uint8_list_new();
   for (size_t i = 0; i < 256; i++) {
-    ut_uint8_array_append(binary_list, i);
+    ut_uint8_list_append(binary_list, i);
   }
   ut_cstring binary_text = ut_base64_encode(binary_list);
   assert(

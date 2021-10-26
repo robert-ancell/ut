@@ -5,7 +5,6 @@
 #include "ut-general-error.h"
 #include "ut-list.h"
 #include "ut-string.h"
-#include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
 
 #define PADDING '='
@@ -56,7 +55,7 @@ static size_t decode_block(const char *text, size_t offset, UtObject *decoded) {
   if (value2 == INVALID) {
     return 0;
   }
-  ut_uint8_array_append(decoded, value1 << 2 | value2 >> 4);
+  ut_uint8_list_append(decoded, value1 << 2 | value2 >> 4);
   size_t used = 2;
   char c3 = text[offset + 2];
   if (c3 != '\0') {
@@ -67,7 +66,7 @@ static size_t decode_block(const char *text, size_t offset, UtObject *decoded) {
       if (value3 == INVALID) {
         return 0;
       }
-      ut_uint8_array_append(decoded, (value2 & 0x0f) << 4 | value3 >> 2);
+      ut_uint8_list_append(decoded, (value2 & 0x0f) << 4 | value3 >> 2);
     }
     char c4 = text[offset + 3];
     if (c3 == PADDING && c4 != PADDING) {
@@ -80,7 +79,7 @@ static size_t decode_block(const char *text, size_t offset, UtObject *decoded) {
         if (value4 == INVALID) {
           return 0;
         }
-        ut_uint8_array_append(decoded, (value3 & 0x03) << 6 | value4);
+        ut_uint8_list_append(decoded, (value3 & 0x03) << 6 | value4);
       }
     }
   }
@@ -115,7 +114,7 @@ char *ut_base64_encode(UtObject *data) {
 }
 
 UtObject *ut_base64_decode(const char *text) {
-  UtObjectRef decoded = ut_uint8_array_new();
+  UtObjectRef decoded = ut_uint8_list_new();
   size_t offset = 0;
   while (text[offset] != '\0') {
     size_t used = decode_block(text, offset, decoded);

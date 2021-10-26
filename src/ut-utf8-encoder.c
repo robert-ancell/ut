@@ -5,7 +5,7 @@
 #include "ut-list.h"
 #include "ut-object-private.h"
 #include "ut-uint32-list.h"
-#include "ut-uint8-array.h"
+#include "ut-uint8-list.h"
 #include "ut-utf8-encoder.h"
 
 typedef struct {
@@ -21,7 +21,7 @@ typedef struct {
 static void ut_utf8_encoder_init(UtObject *object) {
   UtUtf8Encoder *self = (UtUtf8Encoder *)object;
   self->input = NULL;
-  self->buffer = ut_uint8_array_new();
+  self->buffer = ut_uint8_list_new();
   self->callback = NULL;
   self->user_data = NULL;
   self->read_all = false;
@@ -53,19 +53,19 @@ static size_t read_cb(void *user_data, UtObject *data) {
   for (size_t i = 0; i < code_points_length; i++) {
     uint32_t code_point = ut_uint32_list_get_element(data, i);
     if (code_point <= 0x7f) {
-      ut_uint8_array_append(self->buffer, code_point);
+      ut_uint8_list_append(self->buffer, code_point);
     } else if (code_point <= 0x7ff) {
-      ut_uint8_array_append(self->buffer, 0xc0 | (code_point >> 6));
-      ut_uint8_array_append(self->buffer, 0x80 | (code_point & 0x3f));
+      ut_uint8_list_append(self->buffer, 0xc0 | (code_point >> 6));
+      ut_uint8_list_append(self->buffer, 0x80 | (code_point & 0x3f));
     } else if (code_point <= 0xffff) {
-      ut_uint8_array_append(self->buffer, 0xe0 | (code_point >> 12));
-      ut_uint8_array_append(self->buffer, 0x80 | ((code_point >> 6) & 0x3f));
-      ut_uint8_array_append(self->buffer, 0x80 | (code_point & 0x3f));
+      ut_uint8_list_append(self->buffer, 0xe0 | (code_point >> 12));
+      ut_uint8_list_append(self->buffer, 0x80 | ((code_point >> 6) & 0x3f));
+      ut_uint8_list_append(self->buffer, 0x80 | (code_point & 0x3f));
     } else if (code_point <= 0x10ffff) {
-      ut_uint8_array_append(self->buffer, 0xf0 | (code_point >> 18));
-      ut_uint8_array_append(self->buffer, 0x80 | ((code_point >> 12) & 0x3f));
-      ut_uint8_array_append(self->buffer, 0x80 | ((code_point >> 6) & 0x3f));
-      ut_uint8_array_append(self->buffer, 0x80 | (code_point & 0x3f));
+      ut_uint8_list_append(self->buffer, 0xf0 | (code_point >> 18));
+      ut_uint8_list_append(self->buffer, 0x80 | ((code_point >> 12) & 0x3f));
+      ut_uint8_list_append(self->buffer, 0x80 | ((code_point >> 6) & 0x3f));
+      ut_uint8_list_append(self->buffer, 0x80 | (code_point & 0x3f));
     } else {
       assert(false);
     }

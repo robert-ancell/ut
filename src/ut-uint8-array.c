@@ -105,7 +105,8 @@ static void ut_uint8_array_cleanup(UtObject *object) {
 
 static UtUint8ListInterface uint8_list_interface = {
     .get_element = ut_uint8_array_get_element,
-    .take_data = ut_uint8_array_take_data};
+    .take_data = ut_uint8_array_take_data,
+    .insert = ut_uint8_array_insert};
 
 static UtListInterface list_interface = {
     .is_mutable = true,
