@@ -7,6 +7,8 @@
 
 UtObject *ut_string_array_new();
 
+UtObject *ut_string_array_new_with_data(size_t length, ...);
+
 void ut_string_array_prepend(UtObject *object, const char *value);
 
 void ut_string_array_append(UtObject *object, const char *value);

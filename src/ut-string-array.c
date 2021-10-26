@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -129,6 +130,21 @@ static UtObjectInterface object_interface = {
 
 UtObject *ut_string_array_new() {
   return ut_object_new(sizeof(UtStringArray), &object_interface);
+}
+
+UtObject *ut_string_array_new_with_data(size_t length, ...) {
+  UtObject *object = ut_string_array_new();
+  UtStringArray *self = (UtStringArray *)object;
+
+  self->data = realloc(self->data, sizeof(char *) * length);
+  va_list ap;
+  va_start(ap, length);
+  for (size_t i = 0; i < length; i++) {
+    self->data[i] = strdup(va_arg(ap, const char *));
+  }
+  va_end(ap);
+
+  return object;
 }
 
 void ut_string_array_prepend(UtObject *object, const char *value) {
