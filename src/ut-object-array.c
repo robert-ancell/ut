@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdarg.h>
 #include <stdlib.h>
 
 #include "ut-end-of-stream.h"
@@ -138,6 +139,36 @@ static UtObjectInterface object_interface = {
 
 UtObject *ut_object_array_new() {
   return ut_object_new(sizeof(UtObjectArray), &object_interface);
+}
+
+UtObject *ut_object_array_new_with_data(size_t length, ...) {
+  UtObject *object = ut_object_array_new();
+  UtObjectArray *self = (UtObjectArray *)object;
+
+  self->data = realloc(self->data, sizeof(UtObject *) * length);
+  va_list ap;
+  va_start(ap, length);
+  for (size_t i = 0; i < length; i++) {
+    self->data[i] = ut_object_ref(va_arg(ap, UtObject *));
+  }
+  va_end(ap);
+
+  return object;
+}
+
+UtObject *ut_object_array_new_with_data_take(size_t length, ...) {
+  UtObject *object = ut_object_array_new();
+  UtObjectArray *self = (UtObjectArray *)object;
+
+  self->data = realloc(self->data, sizeof(UtObject *) * length);
+  va_list ap;
+  va_start(ap, length);
+  for (size_t i = 0; i < length; i++) {
+    self->data[i] = va_arg(ap, UtObject *);
+  }
+  va_end(ap);
+
+  return object;
 }
 
 bool ut_object_is_object_array(UtObject *object) {
