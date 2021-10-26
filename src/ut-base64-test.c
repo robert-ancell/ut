@@ -10,21 +10,15 @@ static void test_encode() {
   ut_cstring empty_text = ut_base64_encode(empty_list);
   assert(strcmp(empty_text, "") == 0);
 
-  UtObjectRef short1_list = ut_uint8_array_new();
-  ut_uint8_array_append(short1_list, 'M');
+  UtObjectRef short1_list = ut_uint8_array_new_with_data(1, 'M');
   ut_cstring short1_text = ut_base64_encode(short1_list);
   assert(strcmp(short1_text, "TQ==") == 0);
 
-  UtObjectRef short2_list = ut_uint8_array_new();
-  ut_uint8_array_append(short2_list, 'M');
-  ut_uint8_array_append(short2_list, 'a');
+  UtObjectRef short2_list = ut_uint8_array_new_with_data(2, 'M', 'a');
   ut_cstring short2_text = ut_base64_encode(short2_list);
   assert(strcmp(short2_text, "TWE=") == 0);
 
-  UtObjectRef short3_list = ut_uint8_array_new();
-  ut_uint8_array_append(short3_list, 'M');
-  ut_uint8_array_append(short3_list, 'a');
-  ut_uint8_array_append(short3_list, 'n');
+  UtObjectRef short3_list = ut_uint8_array_new_with_data(3, 'M', 'a', 'n');
   ut_cstring short3_text = ut_base64_encode(short3_list);
   assert(strcmp(short3_text, "TWFu") == 0);
 

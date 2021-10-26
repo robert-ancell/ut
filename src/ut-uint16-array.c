@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdarg.h>
 #include <stdlib.h>
 
 #include "ut-end-of-stream.h"
@@ -121,6 +122,21 @@ static UtObjectInterface object_interface = {
 
 UtObject *ut_uint16_array_new() {
   return ut_object_new(sizeof(UtUint16Array), &object_interface);
+}
+
+UtObject *ut_uint16_array_new_with_data(size_t length, ...) {
+  UtObject *object = ut_uint16_array_new();
+  UtUint16Array *self = (UtUint16Array *)object;
+
+  resize_list(self, length);
+  va_list ap;
+  va_start(ap, length);
+  for (size_t i = 0; i < length; i++) {
+    self->data[i] = va_arg(ap, int);
+  }
+  va_end(ap);
+
+  return object;
 }
 
 void ut_uint16_array_append(UtObject *object, uint16_t data) {

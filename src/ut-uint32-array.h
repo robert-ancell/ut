@@ -8,6 +8,8 @@
 
 UtObject *ut_uint32_array_new();
 
+UtObject *ut_uint32_array_new_with_data(size_t length, ...);
+
 void ut_uint32_array_append(UtObject *object, uint32_t data);
 
 void ut_uint32_array_append_block(UtObject *object, const uint32_t *data,
