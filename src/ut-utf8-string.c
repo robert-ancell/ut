@@ -62,7 +62,8 @@ static char *ut_utf8_string_take_text(UtObject *object) {
 
 static UtObject *ut_utf8_string_get_utf8(UtObject *object) {
   UtUtf8String *self = (UtUtf8String *)object;
-  return ut_object_ref(self->data);
+  return ut_constant_uint8_array_new(ut_uint8_array_get_data(self->data),
+                                     ut_list_get_length(self->data) - 1);
 }
 
 static void ut_utf8_string_clear(UtObject *object) {
