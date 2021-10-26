@@ -23,8 +23,6 @@ uint8_t *ut_uint8_list_take_data(UtObject *object);
 
 void ut_uint8_list_append(UtObject *object, uint8_t item);
 
-void ut_uint8_list_append_take(UtObject *object, uint8_t item);
-
 void ut_uint8_list_prepend(UtObject *object, uint8_t item);
 
 void ut_uint8_list_insert(UtObject *object, size_t index, uint8_t item);

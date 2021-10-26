@@ -29,6 +29,14 @@ static uint32_t ut_uint32_array_get_element(UtObject *object, size_t index) {
   return self->data[index];
 }
 
+static uint32_t *ut_uint32_array_take_data(UtObject *object) {
+  UtUint32Array *self = (UtUint32Array *)object;
+  uint32_t *result = self->data;
+  self->data = NULL;
+  self->data_length = 0;
+  return result;
+}
+
 static void ut_uint32_array_insert_object(UtObject *object, size_t index,
                                           UtObject *item) {
   assert(ut_object_is_uint32(item));
@@ -96,7 +104,9 @@ static void ut_uint32_array_cleanup(UtObject *object) {
 }
 
 static UtUint32ListInterface uint32_list_interface = {
-    .get_element = ut_uint32_array_get_element};
+    .get_element = ut_uint32_array_get_element,
+    .take_data = ut_uint32_array_take_data,
+    .insert = ut_uint32_array_insert};
 
 static UtListInterface list_interface = {
     .is_mutable = true,
@@ -125,16 +135,21 @@ UtObject *ut_uint32_array_new() {
 }
 
 UtObject *ut_uint32_array_new_with_data(size_t length, ...) {
+  va_list ap;
+  va_start(ap, length);
+  UtObject *object = ut_uint32_array_new_with_va_data(length, ap);
+  va_end(ap);
+  return object;
+}
+
+UtObject *ut_uint32_array_new_with_va_data(size_t length, va_list ap) {
   UtObject *object = ut_uint32_array_new();
   UtUint32Array *self = (UtUint32Array *)object;
 
   resize_list(self, length);
-  va_list ap;
-  va_start(ap, length);
   for (size_t i = 0; i < length; i++) {
     self->data[i] = va_arg(ap, int);
   }
-  va_end(ap);
 
   return object;
 }

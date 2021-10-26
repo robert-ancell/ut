@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -9,6 +10,8 @@
 UtObject *ut_uint32_array_new();
 
 UtObject *ut_uint32_array_new_with_data(size_t length, ...);
+
+UtObject *ut_uint32_array_new_with_va_data(size_t length, va_list ap);
 
 void ut_uint32_array_append(UtObject *object, uint32_t data);
 
