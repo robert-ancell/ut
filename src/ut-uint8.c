@@ -12,8 +12,8 @@ typedef struct {
 
 static char *ut_uint8_to_string(UtObject *object) {
   UtUint8 *self = (UtUint8 *)object;
-  char string[3];
-  snprintf(string, 3, "%d", self->value);
+  char string[4];
+  snprintf(string, 4, "%d", self->value);
   return strdup(string);
 }
 
