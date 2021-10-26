@@ -134,18 +134,23 @@ UtObject *ut_uint8_array_new() {
   return ut_object_new(sizeof(UtUint8Array), &object_interface);
 }
 
-UtObject *ut_uint8_array_new_with_data(size_t length, ...) {
+UtObject *ut_uint8_array_new_with_va_data(size_t length, va_list ap) {
   UtObject *object = ut_uint8_array_new();
   UtUint8Array *self = (UtUint8Array *)object;
 
   resize_list(self, length);
-  va_list ap;
-  va_start(ap, length);
   for (size_t i = 0; i < length; i++) {
     self->data[i] = va_arg(ap, int);
   }
-  va_end(ap);
 
+  return object;
+}
+
+UtObject *ut_uint8_array_new_with_data(size_t length, ...) {
+  va_list ap;
+  va_start(ap, length);
+  UtObject *object = ut_uint8_array_new_with_va_data(length, ap);
+  va_end(ap);
   return object;
 }
 

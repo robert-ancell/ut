@@ -6,7 +6,6 @@
 #pragma once
 
 typedef struct {
-  bool is_mutable;
   uint8_t (*get_element)(UtObject *object, size_t index);
   uint8_t *(*take_data)(UtObject *object);
   void (*insert)(UtObject *object, size_t index, uint8_t item);
@@ -15,6 +14,8 @@ typedef struct {
 extern int ut_uint8_list_id;
 
 UtObject *ut_uint8_list_new();
+
+UtObject *ut_uint8_list_new_with_data(size_t length, ...);
 
 uint8_t ut_uint8_list_get_element(UtObject *object, size_t index);
 

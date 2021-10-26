@@ -12,14 +12,14 @@ static size_t read_cb(void *user_data, UtObject *data) {
 
 int main(int argc, char **argv) {
   UtObjectRef sync_input =
-      ut_uint8_array_new_with_data(4, 0xf0, 0x9f, 0x98, 0x80);
+      ut_uint8_list_new_with_data(4, 0xf0, 0x9f, 0x98, 0x80);
   UtObjectRef sync_decoder = ut_utf8_decoder_new(sync_input);
   UtObjectRef sync_result = ut_input_stream_read_sync(sync_decoder);
   assert(ut_list_get_length(sync_result) == 1);
   assert(ut_uint32_list_get_element(sync_result, 0) == 0x1f600);
 
   UtObjectRef async_input =
-      ut_uint8_array_new_with_data(4, 0xf0, 0x9f, 0x98, 0x80);
+      ut_uint8_list_new_with_data(4, 0xf0, 0x9f, 0x98, 0x80);
   UtObjectRef async_decoder = ut_utf8_decoder_new(async_input);
   ut_input_stream_read_all(async_decoder, read_cb, NULL, NULL);
 

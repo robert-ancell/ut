@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -10,6 +11,13 @@
 int ut_uint8_list_id = 0;
 
 UtObject *ut_uint8_list_new() { return ut_uint8_array_new(); }
+
+UtObject *ut_uint8_list_new_with_data(size_t length, ...) {
+  va_list ap;
+  va_start(ap, length);
+  return ut_uint8_array_new_with_va_data(length, ap);
+  va_end(ap);
+}
 
 uint8_t ut_uint8_list_get_element(UtObject *object, size_t index) {
   UtUint8ListInterface *uint8_list_interface =
@@ -38,7 +46,7 @@ void ut_uint8_list_insert(UtObject *object, size_t index, uint8_t item) {
   UtUint8ListInterface *uint8_list_interface =
       ut_object_get_interface(object, &ut_uint8_list_id);
   assert(uint8_list_interface != NULL);
-  assert(uint8_list_interface->is_mutable);
+  assert(ut_list_is_mutable(object));
   uint8_list_interface->insert(object, index, item);
 }
 
