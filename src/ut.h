@@ -33,6 +33,8 @@
 #include "ut-uint32-array.h"
 #include "ut-uint32-list.h"
 #include "ut-uint32.h"
+#include "ut-uint64-array.h"
+#include "ut-uint64-list.h"
 #include "ut-uint64.h"
 #include "ut-uint8-array.h"
 #include "ut-uint8-list.h"

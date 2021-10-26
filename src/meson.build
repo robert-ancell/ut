@@ -41,6 +41,8 @@ ut_sources = [
   'ut-uint32-list.c',
   'ut-uint32-array.c',
   'ut-uint64.c',
+  'ut-uint64-list.c',
+  'ut-uint64-array.c',
   'ut-unix-domain-socket-client.c',
   'ut-utf8-decoder.c',
   'ut-utf8-encoder.c',
