@@ -37,6 +37,7 @@
 #include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
 #include "ut-uint8.h"
+#include "ut-unix-domain-socket-client.h"
 #include "ut-utf8-decoder.h"
 #include "ut-utf8-encoder.h"
 #include "ut-utf8-string.h"

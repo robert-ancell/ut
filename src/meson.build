@@ -41,6 +41,7 @@ ut_sources = [
   'ut-uint32-list.c',
   'ut-uint32-array.c',
   'ut-uint64.c',
+  'ut-unix-domain-socket-client.c',
   'ut-utf8-decoder.c',
   'ut-utf8-encoder.c',
   'ut-utf8-string.c',
@@ -76,13 +77,16 @@ executable('ut-map-test',
            'ut-map-test.c',
            ut_sources)
 
-
 executable('ut-tcp-client-test',
            'ut-tcp-client-test.c',
            ut_sources)
 
 executable('ut-uint8-array-test',
            'ut-uint8-array-test.c',
+           ut_sources)
+
+executable('ut-unix-domain-socket-client-test',
+           'ut-unix-domain-socket-client-test.c',
            ut_sources)
 
 executable('ut-utf8-decoder-test',
