@@ -1,3 +1,4 @@
+#include "ut-base64.h"
 #include "ut-boolean.h"
 #include "ut-cancel.h"
 #include "ut-constant-uint8-array.h"
@@ -38,5 +39,6 @@
 #include "ut-uint8.h"
 #include "ut-utf8-decoder.h"
 #include "ut-utf8-encoder.h"
+#include "ut-utf8-string.h"
 #include "ut-xml-document.h"
 #include "ut-xml-element.h"

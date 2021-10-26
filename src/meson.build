@@ -1,4 +1,5 @@
 ut_sources = [
+  'ut-base64.c',
   'ut-boolean.c',
   'ut-cancel.c',
   'ut-constant-utf8-string.c',
@@ -46,6 +47,10 @@ ut_sources = [
   'ut-xml-document.c',
   'ut-xml-element.c'
 ]
+
+executable('ut-base64-test',
+           'ut-base64-test.c',
+           ut_sources)
 
 executable('ut-constant-utf8-string-test',
            'ut-constant-utf8-string-test.c',
