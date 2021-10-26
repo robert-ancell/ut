@@ -23,4 +23,6 @@ void ut_input_stream_read(UtObject *object, UtInputStreamCallback callback,
 void ut_input_stream_read_all(UtObject *object, UtInputStreamCallback callback,
                               void *user_data, UtObject *cancel);
 
+UtObject *ut_input_stream_read_sync(UtObject *object);
+
 bool ut_object_implements_input_stream(UtObject *object);
