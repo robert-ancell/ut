@@ -5,9 +5,11 @@
 
 #include "ut-constant-utf8-string.h"
 #include "ut-general-error.h"
+#include "ut-list.h"
 #include "ut-object-private.h"
 #include "ut-string.h"
-#include "ut-uint32-array.h"
+#include "ut-uint16-list.h"
+#include "ut-uint32-list.h"
 #include "ut-utf8-string.h"
 
 int ut_string_id = 0;
@@ -47,12 +49,12 @@ char *ut_string_take_text(UtObject *object) {
 UtObject *ut_string_get_code_points(UtObject *object) {
   const char *text = ut_string_get_text(object);
   size_t text_length = strlen(text);
-  UtObjectRef code_points = ut_uint32_array_new();
+  UtObjectRef code_points = ut_uint32_list_new();
   size_t offset = 0;
   while (offset < text_length) {
     uint8_t byte1 = text[offset];
     if ((byte1 & 0x80) == 0) {
-      ut_uint32_array_append(code_points, byte1);
+      ut_uint32_list_append(code_points, byte1);
       offset++;
     } else if ((byte1 & 0xe0) == 0xc0) {
       if (text_length - offset < 2) {
@@ -62,7 +64,7 @@ UtObject *ut_string_get_code_points(UtObject *object) {
       if ((byte2 & 0xc0) != 0x80) {
         return ut_general_error_new("Invalid UTF-8");
       }
-      ut_uint32_array_append(code_points, (byte1 & 0x1f) << 6 | (byte2 & 0x3f));
+      ut_uint32_list_append(code_points, (byte1 & 0x1f) << 6 | (byte2 & 0x3f));
       offset += 2;
     } else if ((byte1 & 0xf0) == 0xe0) {
       if (text_length - offset < 3) {
@@ -73,9 +75,9 @@ UtObject *ut_string_get_code_points(UtObject *object) {
       if ((byte2 & 0xc0) != 0x80 || (byte3 & 0xc0) != 0x80) {
         return ut_general_error_new("Invalid UTF-8");
       }
-      ut_uint32_array_append(code_points, (byte1 & 0x0f) << 12 |
-                                              (byte2 & 0x3f) << 6 |
-                                              (byte3 & 0x3f));
+      ut_uint32_list_append(code_points, (byte1 & 0x0f) << 12 |
+                                             (byte2 & 0x3f) << 6 |
+                                             (byte3 & 0x3f));
       offset += 3;
     } else if ((byte1 & 0xf8) == 0xf0) {
       if (text_length - offset < 4) {
@@ -88,9 +90,9 @@ UtObject *ut_string_get_code_points(UtObject *object) {
           (byte4 & 0xc0) != 0x80) {
         return ut_general_error_new("Invalid UTF-8");
       }
-      ut_uint32_array_append(code_points,
-                             (byte1 & 0x07) << 18 | (byte2 & 0x3f) << 12 |
-                                 (byte3 & 0x3f) << 6 | (byte4 & 0x3f));
+      ut_uint32_list_append(code_points,
+                            (byte1 & 0x07) << 18 | (byte2 & 0x3f) << 12 |
+                                (byte3 & 0x3f) << 6 | (byte4 & 0x3f));
       offset += 4;
     } else {
       return ut_general_error_new("Invalid UTF-8");
@@ -105,6 +107,29 @@ UtObject *ut_string_get_utf8(UtObject *object) {
       ut_object_get_interface(object, &ut_string_id);
   assert(string_interface != NULL);
   return string_interface->get_utf8(object);
+}
+
+UtObject *ut_string_get_utf16(UtObject *object) {
+  UtObjectRef code_points = ut_string_get_code_points(object);
+  UtObjectRef utf16 = ut_uint16_list_new();
+  size_t code_points_length = ut_list_get_length(code_points);
+  for (size_t i = 0; i < code_points_length; i++) {
+    uint32_t code_point = ut_uint32_list_get_element(code_points, i);
+    if (code_point <= 0xffff) {
+      if (code_point >= 0xd800 && code_point <= 0xdfff) {
+        return ut_general_error_new("Invalid code points");
+      }
+      ut_uint16_list_append(utf16, code_point);
+    } else if (code_point <= 0x10ffff) {
+      uint32_t u = code_point - 0x10000;
+      ut_uint16_list_append(utf16, 0xd800 + (u >> 10));
+      ut_uint16_list_append(utf16, 0xdc00 + (u & 0x3ff));
+    } else {
+      return ut_general_error_new("Invalid code points");
+    }
+  }
+
+  return ut_object_ref(utf16);
 }
 
 bool ut_string_is_mutable(UtObject *object) {

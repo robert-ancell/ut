@@ -65,5 +65,49 @@ int main(int argc, char **argv) {
   ut_string_append_code_point(appended6, 0x1f600);
   assert(strcmp(ut_string_get_text(appended6), "Smile! 😀") == 0);
 
+  UtObjectRef encoding = ut_string_new("$¢€𐐷😀");
+  UtObjectRef code_points = ut_string_get_code_points(encoding);
+  assert(ut_list_get_length(code_points) == 5);
+  assert(ut_uint32_list_get_element(code_points, 0) == 0x24);
+  assert(ut_uint32_list_get_element(code_points, 1) == 0xa2);
+  assert(ut_uint32_list_get_element(code_points, 2) == 0x20ac);
+  assert(ut_uint32_list_get_element(code_points, 3) == 0x10437);
+  assert(ut_uint32_list_get_element(code_points, 4) == 0x1f600);
+  UtObjectRef utf8 = ut_string_get_utf8(encoding);
+  assert(ut_list_get_length(utf8) == 14);
+  // $
+  assert(ut_uint8_list_get_element(utf8, 0) == 0x24);
+  // ¢
+  assert(ut_uint8_list_get_element(utf8, 1) == 0xc2);
+  assert(ut_uint8_list_get_element(utf8, 2) == 0xa2);
+  // €
+  assert(ut_uint8_list_get_element(utf8, 3) == 0xe2);
+  assert(ut_uint8_list_get_element(utf8, 4) == 0x82);
+  assert(ut_uint8_list_get_element(utf8, 5) == 0xac);
+  // 𐐷
+  assert(ut_uint8_list_get_element(utf8, 6) == 0xf0);
+  assert(ut_uint8_list_get_element(utf8, 7) == 0x90);
+  assert(ut_uint8_list_get_element(utf8, 8) == 0x90);
+  assert(ut_uint8_list_get_element(utf8, 9) == 0xb7);
+  // 😀
+  assert(ut_uint8_list_get_element(utf8, 10) == 0xf0);
+  assert(ut_uint8_list_get_element(utf8, 11) == 0x9f);
+  assert(ut_uint8_list_get_element(utf8, 12) == 0x98);
+  assert(ut_uint8_list_get_element(utf8, 13) == 0x80);
+  UtObjectRef utf16 = ut_string_get_utf16(encoding);
+  assert(ut_list_get_length(utf16) == 7);
+  // $
+  assert(ut_uint16_list_get_element(utf16, 0) == 0x24);
+  // ¢
+  assert(ut_uint16_list_get_element(utf16, 1) == 0xa2);
+  // €
+  assert(ut_uint16_list_get_element(utf16, 2) == 0x20ac);
+  // 𐐷
+  assert(ut_uint16_list_get_element(utf16, 3) == 0xd801);
+  assert(ut_uint16_list_get_element(utf16, 4) == 0xdc37);
+  // 😀
+  assert(ut_uint16_list_get_element(utf16, 5) == 0xd83d);
+  assert(ut_uint16_list_get_element(utf16, 6) == 0xde00);
+
   return 0;
 }

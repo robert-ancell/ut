@@ -37,7 +37,8 @@ UtObject *ut_string_get_code_points(UtObject *object);
 // Returns a reference.
 UtObject *ut_string_get_utf8(UtObject *object);
 
-// UtObject *ut_string_get_utf16(UtObject *object);
+// Returns a reference.
+UtObject *ut_string_get_utf16(UtObject *object);
 
 bool ut_string_is_mutable(UtObject *object);
 
