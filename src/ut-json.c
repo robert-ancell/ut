@@ -86,6 +86,7 @@ static bool encode_string(UtObject *buffer, const char *value) {
       return true;
     }
     if (code_point <= 0x1f || code_point == 0x7f) {
+      char escape_sequence[7];
       switch (code_point) {
       case '\b':
         ut_string_append(buffer, "\\b");
@@ -103,7 +104,6 @@ static bool encode_string(UtObject *buffer, const char *value) {
         ut_string_append(buffer, "\\t");
         break;
       default:
-        char escape_sequence[7];
         snprintf(escape_sequence, 7, "\\u%04x", code_point);
         ut_string_append(buffer, escape_sequence);
         break;
