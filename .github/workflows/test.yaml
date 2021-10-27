@@ -1,0 +1,23 @@
+name: C
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: sudo apt-get install meson ninja-build
+
+      - name: Meson
+        run: meson _build
+
+      - name: Test
+        run: ninja -C _build test
