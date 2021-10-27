@@ -1,11 +1,13 @@
 #include <assert.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "ut-end-of-stream.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-object-private.h"
+#include "ut-string.h"
 #include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
 #include "ut-uint8.h"
@@ -98,6 +100,22 @@ static void ut_uint8_array_init(UtObject *object) {
   self->data_length = 0;
 }
 
+static char *ut_uint8_array_to_string(UtObject *object) {
+  UtUint8Array *self = (UtUint8Array *)object;
+  UtObjectRef string = ut_string_new("<uint8>[");
+  for (size_t i = 0; i < self->data_length; i++) {
+    if (i != 0) {
+      ut_string_append(string, ", ");
+    }
+    char value_string[4];
+    snprintf(value_string, 4, "%d", self->data[i]);
+    ut_string_append(string, value_string);
+  }
+  ut_string_append(string, "]");
+
+  return ut_string_take_text(string);
+}
+
 static void ut_uint8_array_cleanup(UtObject *object) {
   UtUint8Array *self = (UtUint8Array *)object;
   free(self->data);
@@ -123,7 +141,7 @@ static UtInputStreamInterface input_stream_interface = {
 static UtObjectInterface object_interface = {
     .type_name = "UtUint8Array",
     .init = ut_uint8_array_init,
-    .to_string = ut_list_to_string,
+    .to_string = ut_uint8_array_to_string,
     .cleanup = ut_uint8_array_cleanup,
     .interfaces = {{&ut_uint8_list_id, &uint8_list_interface},
                    {&ut_list_id, &list_interface},
