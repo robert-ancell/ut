@@ -100,7 +100,7 @@ void ut_list_resize(UtObject *object, size_t length) {
 }
 
 char *ut_list_to_string(UtObject *object) {
-  UtObject *string = ut_string_new("[");
+  UtObjectRef string = ut_string_new("[");
   for (size_t i = 0; i < ut_list_get_length(object); i++) {
     UtObject *item = ut_list_get_element(object, i);
 
@@ -115,9 +115,7 @@ char *ut_list_to_string(UtObject *object) {
   }
   ut_string_append(string, "]");
 
-  char *result = ut_string_take_text(string);
-  ut_object_unref(string);
-  return result;
+  return ut_string_take_text(string);
 }
 
 bool ut_object_implements_list(UtObject *object) {
