@@ -5,4 +5,6 @@ project(
   meson_version : '>= 0.53.0'
 )
 
+thread_dep = dependency('threads')
+
 subdir('src')

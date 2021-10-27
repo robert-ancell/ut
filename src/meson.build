@@ -53,7 +53,7 @@ ut_sources = [
   'ut-xml-element.c'
 ]
 
-ut_lib = static_library('ut', ut_sources)
+ut_lib = static_library('ut', ut_sources, dependencies: thread_dep)
 
 uint8_array_test = executable('ut-uint8-array-test',
                               'ut-uint8-array-test.c',
