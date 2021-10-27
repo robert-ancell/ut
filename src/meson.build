@@ -53,58 +53,74 @@ ut_sources = [
   'ut-xml-element.c'
 ]
 
-executable('ut-base64-test',
-           'ut-base64-test.c',
-           ut_sources)
+ut_lib = static_library('ut', ut_sources)
 
-executable('ut-constant-utf8-string-test',
-           'ut-constant-utf8-string-test.c',
-           ut_sources)
+uint8_array_test = executable('ut-uint8-array-test',
+                              'ut-uint8-array-test.c',
+                              link_with: ut_lib)
+test('Uint8 Array', uint8_array_test)
 
-executable('ut-event-loop-test',
-           'ut-event-loop-test.c',
-           ut_sources)
+map_test = executable('ut-map-test',
+                      'ut-map-test.c',
+                      link_with: ut_lib)
+test('Map', map_test)
 
-executable('ut-json-test',
-           'ut-json-test.c',
-           ut_sources)
+tcp_client_test = executable('ut-tcp-client-test',
+                             'ut-tcp-client-test.c',
+                             link_with: ut_lib)
+utf8_string_test = executable('ut-utf8-string-test',
+                              'ut-utf8-string-test.c',
+                              link_with: ut_lib)
+test('String', utf8_string_test)
 
-executable('ut-local-file-test',
-           'ut-local-file-test.c',
-           ut_sources)
+const_utf8_string_test = executable('ut-constant-utf8-string-test',
+                                    'ut-constant-utf8-string-test.c',
+                                    link_with: ut_lib)
+test('Constant String', const_utf8_string_test)
 
-executable('ut-http-client-test',
-           'ut-http-client-test.c',
-           ut_sources)
+base64_test = executable('ut-base64-test',
+                         'ut-base64-test.c',
+                         link_with: ut_lib)
+test('Base64', base64_test)
 
-executable('ut-map-test',
-           'ut-map-test.c',
-           ut_sources)
+utf8_decoder_test = executable('ut-utf8-decoder-test',
+                               'ut-utf8-decoder-test.c',
+                               link_with: ut_lib)
+test('UTF-8 Decoder', utf8_decoder_test)
 
-executable('ut-tcp-client-test',
-           'ut-tcp-client-test.c',
-           ut_sources)
+utf8_encoder_test = executable('ut-utf8-encoder-test',
+                               'ut-utf8-encoder-test.c',
+                               link_with: ut_lib)
+test('UTF-8 Encoder', utf8_encoder_test)
 
-executable('ut-uint8-array-test',
-           'ut-uint8-array-test.c',
-           ut_sources)
+xml_document_test = executable('ut-xml-document-test',
+                               'ut-xml-document-test.c',
+                               link_with: ut_lib)
+test('XML', xml_document_test)
 
-executable('ut-unix-domain-socket-client-test',
-           'ut-unix-domain-socket-client-test.c',
-           ut_sources)
+json_test = executable('ut-json-test',
+                       'ut-json-test.c',
+                       link_with: ut_lib)
+test('JSON', json_test)
 
-executable('ut-utf8-decoder-test',
-           'ut-utf8-decoder-test.c',
-           ut_sources)
+event_loop_test = executable('ut-event-loop-test',
+                             'ut-event-loop-test.c',
+                             link_with: ut_lib)
+#test('Event Loop', event_loop_test)
 
-executable('ut-utf8-encoder-test',
-           'ut-utf8-encoder-test.c',
-           ut_sources)
+local_file_test = executable('ut-local-file-test',
+                             'ut-local-file-test.c',
+                             link_with: ut_lib)
+#test('Local File', local_file_test)
 
-executable('ut-utf8-string-test',
-           'ut-utf8-string-test.c',
-           ut_sources)
+#test('TCP Client', tcp_client_test)
 
-executable('ut-xml-document-test',
-           'ut-xml-document-test.c',
-           ut_sources)
+unix_domain_socket_client_test = executable('ut-unix-domain-socket-client-test',
+                                            'ut-unix-domain-socket-client-test.c',
+                                            link_with: ut_lib)
+#test('Unix Domain Socket Client', unix_domain_socket_client_test)
+
+http_client_test = executable('ut-http-client-test',
+                              'ut-http-client-test.c',
+                              link_with: ut_lib)
+#test('HTTP Client', http_client_test)
