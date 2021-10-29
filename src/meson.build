@@ -51,6 +51,7 @@ ut_sources = [
   'ut-utf8-decoder.c',
   'ut-utf8-encoder.c',
   'ut-utf8-string.c',
+  'ut-x11-client.c',
   'ut-xml-document.c',
   'ut-xml-element.c'
 ]
@@ -67,9 +68,6 @@ map_test = executable('ut-map-test',
                       link_with: ut_lib)
 test('Map', map_test)
 
-tcp_client_test = executable('ut-tcp-client-test',
-                             'ut-tcp-client-test.c',
-                             link_with: ut_lib)
 utf8_string_test = executable('ut-utf8-string-test',
                               'ut-utf8-string-test.c',
                               link_with: ut_lib)
@@ -115,6 +113,9 @@ local_file_test = executable('ut-local-file-test',
                              link_with: ut_lib)
 #test('Local File', local_file_test)
 
+tcp_client_test = executable('ut-tcp-client-test',
+                             'ut-tcp-client-test.c',
+                             link_with: ut_lib)
 #test('TCP Client', tcp_client_test)
 
 unix_domain_socket_client_test = executable('ut-unix-domain-socket-client-test',
@@ -126,3 +127,8 @@ http_client_test = executable('ut-http-client-test',
                               'ut-http-client-test.c',
                               link_with: ut_lib)
 #test('HTTP Client', http_client_test)
+
+x11_client_test = executable('ut-x11-client-test',
+                             'ut-x11-client-test.c',
+                             link_with: ut_lib)
+#test('X11 Client', x11_client_test)

@@ -44,5 +44,6 @@
 #include "ut-utf8-decoder.h"
 #include "ut-utf8-encoder.h"
 #include "ut-utf8-string.h"
+#include "ut-x11-client.h"
 #include "ut-xml-document.h"
 #include "ut-xml-element.h"
