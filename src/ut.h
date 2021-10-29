@@ -1,3 +1,4 @@
+#include "ut-assert.h"
 #include "ut-base64.h"
 #include "ut-boolean.h"
 #include "ut-cancel.h"

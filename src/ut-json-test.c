@@ -8,97 +8,98 @@
 static void test_encode() {
   UtObjectRef null = ut_null_new();
   ut_cstring null_text = ut_json_encode(null);
-  assert(strcmp(null_text, "null") == 0);
+  ut_assert_cstring_equal(null_text, "null");
 
   UtObjectRef boolean_true = ut_boolean_new(true);
   ut_cstring boolean_true_text = ut_json_encode(boolean_true);
-  assert(strcmp(boolean_true_text, "true") == 0);
+  ut_assert_cstring_equal(boolean_true_text, "true");
 
   UtObjectRef boolean_false = ut_boolean_new(false);
   ut_cstring boolean_false_text = ut_json_encode(boolean_false);
-  assert(strcmp(boolean_false_text, "false") == 0);
+  ut_assert_cstring_equal(boolean_false_text, "false");
 
   UtObjectRef zero = ut_int64_new(0);
   ut_cstring zero_text = ut_json_encode(zero);
-  assert(strcmp(zero_text, "0") == 0);
+  ut_assert_cstring_equal(zero_text, "0");
 
   UtObjectRef one = ut_int64_new(1);
   ut_cstring one_text = ut_json_encode(one);
-  assert(strcmp(one_text, "1") == 0);
+  ut_assert_cstring_equal(one_text, "1");
 
   UtObjectRef minus_one = ut_int64_new(-1);
   ut_cstring minus_one_text = ut_json_encode(minus_one);
-  assert(strcmp(minus_one_text, "-1") == 0);
+  ut_assert_cstring_equal(minus_one_text, "-1");
 
   UtObjectRef one_k = ut_int64_new(1024);
   ut_cstring one_k_text = ut_json_encode(one_k);
-  assert(strcmp(one_k_text, "1024") == 0);
+  ut_assert_cstring_equal(one_k_text, "1024");
 
   UtObjectRef one_point_one = ut_float64_new(1.1);
   ut_cstring one_point_one_text = ut_json_encode(one_point_one);
-  assert(strcmp(one_point_one_text, "1.100000e+00") == 0);
+  ut_assert_cstring_equal(one_point_one_text, "1.100000e+00");
 
   UtObjectRef minus_one_point_one = ut_float64_new(-1.1);
   ut_cstring minus_one_point_one_text = ut_json_encode(minus_one_point_one);
-  assert(strcmp(minus_one_point_one_text, "-1.100000e+00") == 0);
+  ut_assert_cstring_equal(minus_one_point_one_text, "-1.100000e+00");
 
   UtObjectRef scientific_number = ut_float64_new(1024);
   ut_cstring scientific_number_text = ut_json_encode(scientific_number);
-  assert(strcmp(scientific_number_text, "1.024000e+03") == 0);
+  ut_assert_cstring_equal(scientific_number_text, "1.024000e+03");
 
   UtObjectRef one_M = ut_float64_new(1000000);
   ut_cstring one_M_text = ut_json_encode(one_M);
-  assert(strcmp(one_M_text, "1.000000e+06") == 0);
+  ut_assert_cstring_equal(one_M_text, "1.000000e+06");
 
   UtObjectRef one_u = ut_float64_new(0.000001);
   ut_cstring one_u_text = ut_json_encode(one_u);
-  assert(strcmp(one_u_text, "1.000000e-06") == 0);
+  ut_assert_cstring_equal(one_u_text, "1.000000e-06");
 
   UtObjectRef empty_string = ut_string_new("");
   ut_cstring empty_string_text = ut_json_encode(empty_string);
-  assert(strcmp(empty_string_text, "\"\"") == 0);
+  ut_assert_cstring_equal(empty_string_text, "\"\"");
 
   UtObjectRef string = ut_string_new("Hello World!");
   ut_cstring string_text = ut_json_encode(string);
-  assert(strcmp(string_text, "\"Hello World!\"") == 0);
+  ut_assert_cstring_equal(string_text, "\"Hello World!\"");
 
   UtObjectRef escaped_string = ut_string_new("\"\\/\b\f\n\r\t\x12");
   ut_cstring escaped_string_text = ut_json_encode(escaped_string);
-  assert(strcmp(escaped_string_text, "\"\\\"\\\\/\\b\\f\\n\\r\\t\\u0012\"") ==
-         0);
+  ut_assert_cstring_equal(escaped_string_text,
+                          "\"\\\"\\\\/\\b\\f\\n\\r\\t\\u0012\"");
 
   UtObjectRef emoji_string = ut_string_new("😀");
   ut_cstring emoji_string_text = ut_json_encode(emoji_string);
-  assert(strcmp(emoji_string_text, "\"😀\"") == 0);
+  ut_assert_cstring_equal(emoji_string_text, "\"😀\"");
 
   UtObjectRef empty_array = ut_list_new();
   ut_cstring empty_array_text = ut_json_encode(empty_array);
-  assert(strcmp(empty_array_text, "[]") == 0);
+  ut_assert_cstring_equal(empty_array_text, "[]");
 
   UtObjectRef number_array = ut_list_new();
   ut_list_append_take(number_array, ut_int64_new(1));
   ut_list_append_take(number_array, ut_int64_new(2));
   ut_list_append_take(number_array, ut_int64_new(3));
   ut_cstring number_array_text = ut_json_encode(number_array);
-  assert(strcmp(number_array_text, "[1,2,3]") == 0);
+  ut_assert_cstring_equal(number_array_text, "[1,2,3]");
 
   UtObjectRef mixed_array = ut_list_new();
   ut_list_append_take(mixed_array, ut_boolean_new(false));
   ut_list_append_take(mixed_array, ut_string_new("two"));
   ut_list_append_take(mixed_array, ut_float64_new(3.1));
   ut_cstring mixed_array_text = ut_json_encode(mixed_array);
-  assert(strcmp(mixed_array_text, "[false,\"two\",3.100000e+00]") == 0);
+  ut_assert_cstring_equal(mixed_array_text, "[false,\"two\",3.100000e+00]");
 
   UtObjectRef empty_object = ut_map_new();
   ut_cstring empty_object_text = ut_json_encode(empty_object);
-  assert(strcmp(empty_object_text, "{}") == 0);
+  ut_assert_cstring_equal(empty_object_text, "{}");
 
   UtObjectRef number_object = ut_map_new();
   ut_map_insert_take(number_object, ut_string_new("one"), ut_int64_new(1));
   ut_map_insert_take(number_object, ut_string_new("two"), ut_int64_new(2));
   ut_map_insert_take(number_object, ut_string_new("three"), ut_int64_new(3));
   ut_cstring number_object_text = ut_json_encode(number_object);
-  assert(strcmp(number_object_text, "{\"one\":1,\"two\":2,\"three\":3}") == 0);
+  ut_assert_cstring_equal(number_object_text,
+                          "{\"one\":1,\"two\":2,\"three\":3}");
 
   UtObjectRef mixed_object = ut_map_new();
   ut_map_insert_take(mixed_object, ut_string_new("boolean"),
@@ -107,8 +108,8 @@ static void test_encode() {
   ut_map_insert_take(mixed_object, ut_string_new("string"),
                      ut_string_new("foo"));
   ut_cstring mixed_object_text = ut_json_encode(mixed_object);
-  assert(strcmp(mixed_object_text,
-                "{\"boolean\":true,\"number\":42,\"string\":\"foo\"}") == 0);
+  ut_assert_cstring_equal(
+      mixed_object_text, "{\"boolean\":true,\"number\":42,\"string\":\"foo\"}");
 }
 
 static void test_decode() {
@@ -183,24 +184,24 @@ static void test_decode() {
   UtObjectRef empty_string = ut_json_decode("\"\"");
   assert(empty_string != NULL);
   assert(ut_object_implements_string(empty_string));
-  assert(strcmp(ut_string_get_text(empty_string), "") == 0);
+  ut_assert_cstring_equal(ut_string_get_text(empty_string), "");
 
   UtObjectRef string = ut_json_decode("\"Hello World!\"");
   assert(string != NULL);
   assert(ut_object_implements_string(string));
-  assert(strcmp(ut_string_get_text(string), "Hello World!") == 0);
+  ut_assert_cstring_equal(ut_string_get_text(string), "Hello World!");
 
   UtObjectRef escaped_string =
       ut_json_decode("\"\\\"\\\\\\/\\b\\f\\n\\r\\t\\u0012\"");
   assert(escaped_string != NULL);
   assert(ut_object_implements_string(escaped_string));
-  assert(strcmp(ut_string_get_text(escaped_string), "\"\\/\b\f\n\r\t\x12") ==
-         0);
+  ut_assert_cstring_equal(ut_string_get_text(escaped_string),
+                          "\"\\/\b\f\n\r\t\x12");
 
   UtObjectRef emoji_string = ut_json_decode("\"😀\"");
   assert(emoji_string != NULL);
   assert(ut_object_implements_string(emoji_string));
-  assert(strcmp(ut_string_get_text(emoji_string), "😀") == 0);
+  ut_assert_cstring_equal(ut_string_get_text(emoji_string), "😀");
 
   UtObjectRef unterminated_array = ut_json_decode("[");
   assert(unterminated_array == NULL);
@@ -262,7 +263,7 @@ static void test_decode() {
   UtObjectRef mixed_value3 = ut_map_lookup_string(mixed_object, "string");
   assert(mixed_value3 != NULL);
   assert(ut_object_implements_string(mixed_value3));
-  assert(strcmp(ut_string_get_text(mixed_value3), "foo") == 0);
+  ut_assert_cstring_equal(ut_string_get_text(mixed_value3), "foo");
 }
 
 int main(int argc, char **argv) {

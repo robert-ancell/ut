@@ -1,4 +1,5 @@
 ut_sources = [
+  'ut-assert.c',
   'ut-base64.c',
   'ut-boolean.c',
   'ut-cancel.c',
