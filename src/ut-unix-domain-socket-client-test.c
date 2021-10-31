@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
 
   UtObjectRef request = ut_string_new_constant("GET / HTTP/1.1\nHost:\n\n");
   UtObjectRef utf8 = ut_string_get_utf8(request);
-  ut_output_stream_write_all(client, utf8, NULL, NULL, NULL);
+  ut_output_stream_write(client, utf8);
   ut_input_stream_read(client, read_cb, NULL, NULL);
 
   ut_event_loop_run();

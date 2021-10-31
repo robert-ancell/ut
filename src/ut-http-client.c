@@ -315,7 +315,7 @@ static void connect_cb(void *user_data) {
   ut_string_append(header, "\r\n");
   ut_string_append(header, "\r\n");
   UtObjectRef utf8 = ut_string_get_utf8(header);
-  ut_output_stream_write_all(request->tcp_client, utf8, NULL, NULL, NULL);
+  ut_output_stream_write(request->tcp_client, utf8);
   ut_input_stream_read(request->tcp_client, read_cb, request,
                        request->header_read_cancel);
 }

@@ -87,24 +87,12 @@ static void ut_unix_domain_socket_client_write(UtObject *object, UtObject *data,
   UtUnixDomainSocketClient *self = (UtUnixDomainSocketClient *)object;
   assert(self->output_stream != NULL);
 
-  ut_output_stream_write(self->output_stream, data, callback, user_data,
-                         cancel);
-}
-
-static void
-ut_unix_domain_socket_client_write_all(UtObject *object, UtObject *data,
-                                       UtOutputStreamCallback callback,
-                                       void *user_data, UtObject *cancel) {
-  UtUnixDomainSocketClient *self = (UtUnixDomainSocketClient *)object;
-  assert(self->output_stream != NULL);
-
-  ut_output_stream_write_all(self->output_stream, data, callback, user_data,
-                             cancel);
+  ut_output_stream_write_full(self->output_stream, data, callback, user_data,
+                              cancel);
 }
 
 static UtOutputStreamInterface output_stream_interface = {
-    .write = ut_unix_domain_socket_client_write,
-    .write_all = ut_unix_domain_socket_client_write_all};
+    .write = ut_unix_domain_socket_client_write};
 
 static UtObjectInterface object_interface = {
     .type_name = "UtUnixDomainSocketClient",
