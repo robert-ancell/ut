@@ -5,6 +5,7 @@ ut_sources = [
   'ut-cancel.c',
   'ut-constant-utf8-string.c',
   'ut-constant-uint8-array.c',
+  'ut-cstring.c',
   'ut-end-of-stream.c',
   'ut-event-loop.c',
   'ut-error.c',

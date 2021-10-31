@@ -1,6 +1,12 @@
+#include <stdarg.h>
 #include <stdlib.h>
 
 #pragma once
+
+char *ut_cstring_new_printf(const char *format, ...)
+    __attribute((format(printf, 1, 2)));
+
+char *ut_cstring_new_vprintf(const char *format, va_list ap);
 
 static inline void ut_cstring_clear(char **string) {
   if (*string != NULL) {
