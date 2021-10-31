@@ -15,94 +15,121 @@
 #include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
 
-typedef struct {
-  UtObject object;
-  int fd;
+typedef struct _WriteBlock WriteBlock;
+
+struct _WriteBlock {
   UtObject *data;
   size_t n_written;
-  UtObject *watch_cancel;
   UtOutputStreamCallback callback;
   void *user_data;
   UtObject *cancel;
+  WriteBlock *next;
+};
+
+typedef struct {
+  UtObject object;
+  int fd;
+  UtObject *watch_cancel;
+  WriteBlock *blocks;
+  WriteBlock *last_block;
 } UtFdOutputStream;
+
+static void add_block(UtFdOutputStream *self, UtObject *data,
+                      UtOutputStreamCallback callback, void *user_data,
+                      UtObject *cancel) {
+  WriteBlock *block;
+
+  block = malloc(sizeof(WriteBlock));
+  block->data = ut_object_ref(data);
+  block->n_written = 0;
+  block->callback = callback;
+  block->user_data = user_data;
+  block->cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
+  block->next = NULL;
+
+  if (self->last_block != NULL) {
+    self->last_block->next = block;
+  } else {
+    self->blocks = self->last_block = block;
+  }
+}
+
+static void free_block(WriteBlock *block) {
+  ut_object_unref(block->data);
+  if (block->cancel != NULL) {
+    ut_object_unref(block->cancel);
+  }
+  free(block);
+}
 
 static void write_cb(void *user_data) {
   UtFdOutputStream *self = user_data;
 
-  bool done = false;
-  if (self->cancel == NULL || !ut_cancel_is_active(self->cancel)) {
-    // Write remaining data.
-    size_t n_to_write = ut_list_get_length(self->data) - self->n_written;
-    const uint8_t *buffer;
-    uint8_t *allocated_buffer = NULL;
-    if (ut_object_is_uint8_array(self->data)) {
-      buffer = ut_uint8_array_get_data(self->data) + self->n_written;
-    } else if (ut_object_is_constant_uint8_array(self->data)) {
-      buffer = ut_constant_uint8_array_get_data(self->data) + self->n_written;
-    } else {
-      allocated_buffer = malloc(sizeof(uint8_t) * n_to_write);
-      for (size_t i = 0; i < n_to_write; i++) {
-        allocated_buffer[i] =
-            ut_uint8_list_get_element(self->data, self->n_written + i);
-      }
-    }
-    ssize_t n_written = write(self->fd, buffer, n_to_write);
-    if (allocated_buffer != NULL) {
-      free(allocated_buffer);
-    }
-    assert(n_written >= 0);
-    self->n_written += n_written;
+  WriteBlock *block = self->blocks;
+  assert(block != NULL);
 
-    // Done if all data written or only doing single write.
-    done = self->n_written == ut_list_get_length(self->data);
-
-    // Report how much data was written.
-    if (done && self->callback != NULL) {
-      self->callback(self->user_data, NULL);
-    }
+  // Write remaining data.
+  size_t block_length = ut_list_get_length(block->data);
+  size_t n_to_write = block_length - block->n_written;
+  const uint8_t *buffer;
+  uint8_t *allocated_buffer = NULL;
+  if (ut_object_is_uint8_array(block->data)) {
+    buffer = ut_uint8_array_get_data(block->data) + block->n_written;
+  } else if (ut_object_is_constant_uint8_array(block->data)) {
+    buffer = ut_constant_uint8_array_get_data(block->data) + block->n_written;
   } else {
-    done = true;
+    allocated_buffer = malloc(sizeof(uint8_t) * n_to_write);
+    for (size_t i = 0; i < n_to_write; i++) {
+      allocated_buffer[i] =
+          ut_uint8_list_get_element(block->data, block->n_written + i);
+    }
+  }
+  ssize_t n_written = write(self->fd, buffer, n_to_write);
+  if (allocated_buffer != NULL) {
+    free(allocated_buffer);
+  }
+  assert(n_written >= 0);
+  block->n_written += n_written;
+
+  if (block->n_written == block_length) {
+    self->blocks = block->next;
+    if (self->blocks == NULL) {
+      self->last_block = NULL;
+    }
+
+    if (block->callback != NULL) {
+      block->callback(block->user_data, NULL);
+    }
+
+    free_block(block);
   }
 
   // Stop listening for write events when done.
-  if (done) {
+  if (self->blocks == NULL) {
     ut_cancel_activate(self->watch_cancel);
-    ut_object_unref(self->data);
-    self->data = NULL;
-    self->n_written = 0;
     ut_object_unref(self->watch_cancel);
     self->watch_cancel = NULL;
-    self->callback = NULL;
-    self->user_data = NULL;
-    if (self->cancel != NULL) {
-      ut_object_unref(self->cancel);
-      self->cancel = NULL;
-    }
   }
 }
 
 static void ut_fd_output_stream_init(UtObject *object) {
   UtFdOutputStream *self = (UtFdOutputStream *)object;
   self->fd = -1;
-  self->data = NULL;
-  self->n_written = 0;
   self->watch_cancel = NULL;
-  self->callback = NULL;
-  self->user_data = NULL;
-  self->cancel = NULL;
+  self->blocks = NULL;
 }
 
 static void ut_fd_output_stream_cleanup(UtObject *object) {
   UtFdOutputStream *self = (UtFdOutputStream *)object;
-  if (self->data != NULL) {
-    ut_object_unref(self->data);
-  }
   if (self->watch_cancel != NULL) {
     ut_object_unref(self->watch_cancel);
   }
-  if (self->cancel != NULL) {
-    ut_object_unref(self->cancel);
+  WriteBlock *next_block;
+  for (WriteBlock *b = self->blocks; b != NULL; b = next_block) {
+    next_block = b->next;
+    free_block(b);
   }
+  self->blocks = NULL;
 }
 
 static void ut_fd_output_stream_write(UtObject *object, UtObject *data,
@@ -111,13 +138,12 @@ static void ut_fd_output_stream_write(UtObject *object, UtObject *data,
   UtFdOutputStream *self = (UtFdOutputStream *)object;
   assert(self->fd >= 0);
 
-  self->data = ut_object_ref(data);
-  self->n_written = 0;
-  self->watch_cancel = ut_cancel_new();
-  self->callback = callback;
-  self->user_data = user_data;
-  self->cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
-  ut_event_loop_add_write_watch(self->fd, write_cb, self, self->watch_cancel);
+  add_block(self, data, callback, user_data, cancel);
+
+  if (self->watch_cancel == NULL) {
+    self->watch_cancel = ut_cancel_new();
+    ut_event_loop_add_write_watch(self->fd, write_cb, self, self->watch_cancel);
+  }
 }
 
 static UtOutputStreamInterface output_stream_interface = {
