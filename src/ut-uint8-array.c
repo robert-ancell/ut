@@ -7,6 +7,7 @@
 #include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-object-private.h"
+#include "ut-output-stream.h"
 #include "ut-string.h"
 #include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
@@ -94,6 +95,28 @@ static void ut_uint8_array_read(UtObject *object,
   callback(user_data, eos);
 }
 
+static void ut_uint8_array_write(UtObject *object, UtObject *data,
+                                 UtOutputStreamCallback callback,
+                                 void *user_data, UtObject *cancel) {
+  UtUint8Array *self = (UtUint8Array *)object;
+
+  if (ut_object_is_uint8_array(data)) {
+    ut_uint8_array_append_block(object, ut_uint8_array_get_data(data),
+                                ut_uint8_array_get_length(data));
+  } else {
+    size_t data_length = ut_list_get_length(data);
+    size_t start = self->data_length;
+    resize_list(self, self->data_length + data_length);
+    for (size_t i = 0; i < data_length; i++) {
+      self->data[start + i] = ut_uint8_list_get_element(data, i);
+    }
+  }
+
+  if (callback != NULL) {
+    callback(user_data, NULL);
+  }
+}
+
 static void ut_uint8_array_init(UtObject *object) {
   UtUint8Array *self = (UtUint8Array *)object;
   self->data = NULL;
@@ -138,6 +161,9 @@ static UtListInterface list_interface = {
 static UtInputStreamInterface input_stream_interface = {
     .read = ut_uint8_array_read, .read_all = ut_uint8_array_read};
 
+static UtOutputStreamInterface output_stream_interface = {
+    .write = ut_uint8_array_write};
+
 static UtObjectInterface object_interface = {
     .type_name = "UtUint8Array",
     .init = ut_uint8_array_init,
@@ -146,6 +172,7 @@ static UtObjectInterface object_interface = {
     .interfaces = {{&ut_uint8_list_id, &uint8_list_interface},
                    {&ut_list_id, &list_interface},
                    {&ut_input_stream_id, &input_stream_interface},
+                   {&ut_output_stream_id, &output_stream_interface},
                    {NULL, NULL}}};
 
 UtObject *ut_uint8_array_new() {
