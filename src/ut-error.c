@@ -6,8 +6,13 @@
 
 int ut_error_id = 0;
 
-UtObject *ut_error_new(const char *description) {
-  return ut_general_error_new(description);
+UtObject *ut_error_new(const char *format, ...) {
+  va_list ap;
+  va_start(ap, format);
+  UtObject *error = ut_general_error_new_valist(format, ap);
+  va_end(ap);
+
+  return error;
 }
 
 char *ut_error_get_description(UtObject *object) {
