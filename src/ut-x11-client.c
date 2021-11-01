@@ -14,6 +14,58 @@
 #include "ut-unix-domain-socket-client.h"
 #include "ut-x11-client.h"
 
+typedef enum {
+  WINDOW_CLASS_INHERIT_FROM_PARENT = 0,
+  WINDOW_CLASS_INPUT_OUTPUT = 1,
+  WINDOW_CLASS_INPUT_ONLY = 2
+} UtX11WindowClass;
+
+typedef enum {
+  VALUE_MASK_BACKGROUND_PIXMAP = 0x00000001,
+  VALUE_MASK_BACKGROUND_PIXEL = 0x00000002,
+  VALUE_MASK_BORDER_PIXMAP = 0x00000004,
+  VALUE_MASK_BORDER_PIXEL = 0x00000008,
+  VALUE_MASK_BIT_GRAVITY = 0x00000010,
+  VALUE_MASK_WIN_GRAVITY = 0x00000020,
+  VALUE_MASK_BACKING_STORE = 0x00000040,
+  VALUE_MASK_BACKING_PLANES = 0x00000080,
+  VALUE_MASK_BACKING_PIXEL = 0x00000100,
+  VALUE_MASK_OVERRIDE_REDIRECT = 0x00000200,
+  VALUE_MASK_SAVE_UNDER = 0x00000400,
+  VALUE_MASK_EVENT_MASK = 0x00000800,
+  VALUE_MASK_DO_NOT_PROPAGATE_MASK = 0x00001000,
+  VALUE_MASK_COLORMAP = 0x00002000,
+  VALUE_MASK_CURSOR = 0x00004000
+} UtX11ValueMask;
+
+typedef enum {
+  EVENT_KEY_PRESS = 0x00000001,
+  EVENT_KEY_RELEASE = 0x00000002,
+  EVENT_BUTTON_PRESS = 0x00000004,
+  EVENT_BUTTON_RELEASE = 0x00000008,
+  EVENT_ENTER_WINDOW = 0x00000010,
+  EVENT_LEAVE_WINDOW = 0x00000020,
+  EVENT_POINTER_MOTION = 0x00000040,
+  EVENT_POINTER_MOTION_HINT = 0x00000080,
+  EVENT_BUTTON1_MOTION = 0x00000100,
+  EVENT_BUTTON2_MOTION = 0x00000200,
+  EVENT_BUTTON3_MOTION = 0x00000400,
+  EVENT_BUTTON4_MOTION = 0x00000800,
+  EVENT_BUTTON5_MOTION = 0x00001000,
+  EVENT_BUTTON_MOTION = 0x00002000,
+  EVENT_KEYMAP_STATE = 0x00004000,
+  EVENT_EXPOSURE = 0x00008000,
+  EVENT_VISIBILITY_CHANGE = 0x00010000,
+  EVENT_STRUCTURE_NOTIFY = 0x00020000,
+  EVENT_RESIZE_REDIRECT = 0x00040000,
+  EVENT_SUBSTRUCTURE_NOTIFY = 0x00080000,
+  EVENT_SUBSTRUCTURE_REDIRECT = 0x00100000,
+  EVENT_FOCUS_CHANGE = 0x00200000,
+  EVENT_PROPERTY_CHANGE = 0x00400000,
+  EVENT_COLORMAP_CHANGE = 0x00800000,
+  EVENT_OWNER_GRAB_BUTTON = 0x01000000
+} UtX11Event;
+
 typedef struct {
   uint8_t depth;
   uint8_t bits_per_pixel;
@@ -153,6 +205,10 @@ static uint16_t read_card16(UtObject *buffer, size_t *offset) {
   uint16_t byte1 = read_card8(buffer, offset);
   uint16_t byte2 = read_card8(buffer, offset);
   return byte1 | byte2 << 8;
+}
+
+static int16_t read_int16(UtObject *buffer, size_t *offset) {
+  return (int16_t)read_card16(buffer, offset);
 }
 
 static uint32_t read_card32(UtObject *buffer, size_t *offset) {
@@ -378,10 +434,198 @@ static bool decode_reply(UtX11Client *self, UtObject *data, size_t *offset) {
   return false;
 }
 
+static void decode_key_press(UtObject *data, size_t *offset) {
+  uint8_t keycode = read_card8(data, offset);
+  read_card16(data, offset); // sequence_number
+  read_card32(data, offset); // time
+  read_card32(data, offset); // root
+  uint32_t window = read_card32(data, offset);
+  read_card32(data, offset); // child
+  read_int16(data, offset);  // root_x
+  read_int16(data, offset);  // root_y
+  int16_t x = read_int16(data, offset);
+  int16_t y = read_int16(data, offset);
+  read_card16(data, offset); // state
+  read_card8(data, offset);  // same_screen
+  read_padding(data, offset, 1);
+  printf("XServer >> KeyPress %08x %d %d,%d\n", window, keycode, x, y);
+}
+
+static void decode_key_release(UtObject *data, size_t *offset) {
+  uint8_t keycode = read_card8(data, offset);
+  read_card16(data, offset); // sequence_number
+  read_card32(data, offset); // time
+  read_card32(data, offset); // root
+  uint32_t window = read_card32(data, offset);
+  read_card32(data, offset); // child
+  read_int16(data, offset);  // root_x
+  read_int16(data, offset);  // root_y
+  int16_t x = read_int16(data, offset);
+  int16_t y = read_int16(data, offset);
+  read_card16(data, offset); // state
+  read_card8(data, offset);  // same_screen
+  read_padding(data, offset, 1);
+  printf("XServer >> KeyRelease %08x %d %d,%d\n", window, keycode, x, y);
+}
+
+static void decode_button_press(UtObject *data, size_t *offset) {
+  uint8_t button = read_card8(data, offset);
+  read_card16(data, offset); // sequence_number
+  read_card32(data, offset); // time
+  read_card32(data, offset); // root
+  uint32_t window = read_card32(data, offset);
+  read_card32(data, offset); // child
+  read_int16(data, offset);  // root_x
+  read_int16(data, offset);  // root_y
+  int16_t x = read_int16(data, offset);
+  int16_t y = read_int16(data, offset);
+  read_card16(data, offset); // state
+  read_card8(data, offset);  // same_screen
+  read_padding(data, offset, 1);
+  printf("XServer >> ButtonPress %08x %d %d,%d\n", window, button, x, y);
+}
+
+static void decode_button_release(UtObject *data, size_t *offset) {
+  uint8_t button = read_card8(data, offset);
+  read_card16(data, offset); // sequence_number
+  read_card32(data, offset); // time
+  read_card32(data, offset); // root
+  uint32_t window = read_card32(data, offset);
+  read_card32(data, offset); // child
+  read_int16(data, offset);  // root_x
+  read_int16(data, offset);  // root_y
+  int16_t x = read_int16(data, offset);
+  int16_t y = read_int16(data, offset);
+  read_card16(data, offset); // state
+  read_card8(data, offset);  // same_screen
+  read_padding(data, offset, 1);
+  printf("XServer >> ButtonRelease %08x %d %d,%d\n", window, button, x, y);
+}
+
+static void decode_motion_notify(UtObject *data, size_t *offset) {
+  read_card8(data, offset);  // detail
+  read_card16(data, offset); // sequence_number
+  read_card32(data, offset); // time
+  read_card32(data, offset); // root
+  uint32_t window = read_card32(data, offset);
+  read_card32(data, offset); // child
+  read_int16(data, offset);  // root_x
+  read_int16(data, offset);  // root_y
+  int16_t x = read_int16(data, offset);
+  int16_t y = read_int16(data, offset);
+  read_card16(data, offset); // state
+  read_card8(data, offset);  // same_screen
+  read_padding(data, offset, 1);
+  printf("XServer >> MotionNotify %08x %d,%d\n", window, x, y);
+}
+
+static void decode_enter_notify(UtObject *data, size_t *offset) {
+  read_card8(data, offset);  // detail
+  read_card16(data, offset); // sequence_number
+  read_card32(data, offset); // time
+  read_card32(data, offset); // root
+  uint32_t window = read_card32(data, offset);
+  read_card32(data, offset); // child
+  read_int16(data, offset);  // root_x
+  read_int16(data, offset);  // root_y
+  int16_t x = read_int16(data, offset);
+  int16_t y = read_int16(data, offset);
+  read_card16(data, offset); // state
+  read_card8(data, offset);  // mode
+  read_card8(data, offset);  // same_screen, focus
+  printf("XServer >> EnterNotify %08x %d,%d\n", window, x, y);
+}
+
+static void decode_leave_notify(UtObject *data, size_t *offset) {
+  read_card8(data, offset);  // detail
+  read_card16(data, offset); // sequence_number
+  read_card32(data, offset); // time
+  read_card32(data, offset); // root
+  uint32_t window = read_card32(data, offset);
+  read_card32(data, offset); // child
+  read_int16(data, offset);  // root_x
+  read_int16(data, offset);  // root_y
+  int16_t x = read_int16(data, offset);
+  int16_t y = read_int16(data, offset);
+  read_card16(data, offset); // state
+  read_card8(data, offset);  // mode
+  read_card8(data, offset);  // same_screen, focus
+  printf("XServer >> LeaveNotify %08x %d,%d\n", window, x, y);
+}
+
+static void decode_expose(UtObject *data, size_t *offset) {
+  read_padding(data, offset, 1);
+  read_card16(data, offset); // sequence_number
+  uint32_t window = read_card32(data, offset);
+  uint16_t x = read_card16(data, offset);
+  uint16_t y = read_card16(data, offset);
+  uint16_t width = read_card16(data, offset);
+  uint16_t height = read_card16(data, offset);
+  read_card16(data, offset); // count
+  read_padding(data, offset, 14);
+  printf("XServer >> Expose %08x %d,%d %dx%d\n", window, x, y, width, height);
+}
+
+static void decode_configure_notify(UtObject *data, size_t *offset) {
+  read_padding(data, offset, 1);
+  read_card16(data, offset); // sequence_number
+  read_card32(data, offset); // event
+  uint32_t window = read_card32(data, offset);
+  read_card32(data, offset); // above_sibling
+  int16_t x = read_int16(data, offset);
+  int16_t y = read_int16(data, offset);
+  uint16_t width = read_card16(data, offset);
+  uint16_t height = read_card16(data, offset);
+  read_card16(data, offset); // border_width
+  read_card8(data, offset);  // override_redirect
+  read_padding(data, offset, 5);
+  printf("XServer >> ConfigureNotify %08x %d,%d %dx%d\n", window, x, y, width,
+         height);
+}
+
+static void decode_property_notify(UtObject *data, size_t *offset) {
+  read_padding(data, offset, 1);
+  read_card16(data, offset); // sequence_number
+  uint32_t window = read_card32(data, offset);
+  uint32_t atom = read_card32(data, offset);
+  read_card32(data, offset); // time
+  read_card8(data, offset);  // state
+  read_padding(data, offset, 15);
+  printf("XServer >> PropertyNotify %08x %08x\n", window, atom);
+}
+
 static bool decode_event(UtX11Client *self, UtObject *data, size_t *offset) {
-  ut_cstring s = ut_object_to_string(data);
-  printf("XServer >> (event) %s\n", s);
-  return false;
+  if (ut_list_get_length(data) < 32) {
+    return false;
+  }
+
+  uint8_t code = read_card8(data, offset);
+  if (code == 2) {
+    decode_key_press(data, offset);
+  } else if (code == 3) {
+    decode_key_release(data, offset);
+  } else if (code == 4) {
+    decode_button_press(data, offset);
+  } else if (code == 5) {
+    decode_button_release(data, offset);
+  } else if (code == 6) {
+    decode_motion_notify(data, offset);
+  } else if (code == 7) {
+    decode_enter_notify(data, offset);
+  } else if (code == 8) {
+    decode_leave_notify(data, offset);
+  } else if (code == 12) {
+    decode_expose(data, offset);
+  } else if (code == 22) {
+    decode_configure_notify(data, offset);
+  } else if (code == 28) {
+    decode_property_notify(data, offset);
+  } else {
+    read_padding(data, offset, 31);
+    printf("XServer >> Event %d\n", code);
+  }
+
+  return true;
 }
 
 static bool decode_message(UtX11Client *self, UtObject *data, size_t *offset) {
@@ -524,9 +768,14 @@ uint32_t ut_x11_client_create_window(UtObject *object, int16_t x, int16_t y,
   write_card16(request, width);
   write_card16(request, height);
   write_card16(request, 0); // border_width
-  write_card16(request, 1); // class=InputOutput
+  write_card16(request, WINDOW_CLASS_INPUT_OUTPUT);
   write_card32(request, screen->root_visual->id);
-  write_card32(request, 0x00000000); // value_mask
+  write_card32(request, VALUE_MASK_EVENT_MASK);
+  write_card32(request, EVENT_KEY_PRESS | EVENT_KEY_RELEASE |
+                            EVENT_BUTTON_PRESS | EVENT_BUTTON_RELEASE |
+                            EVENT_ENTER_WINDOW | EVENT_LEAVE_WINDOW |
+                            EVENT_POINTER_MOTION | EVENT_EXPOSURE |
+                            EVENT_STRUCTURE_NOTIFY | EVENT_PROPERTY_CHANGE);
 
   send_request(self, 1, screen->root_visual->depth, request);
 
