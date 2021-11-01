@@ -5,15 +5,17 @@
 
 static UtObject *client = NULL;
 
-static void intern_atom_cb(void *user_data, uint32_t atom) {
+static void intern_atom_cb(void *user_data, uint32_t atom, UtObject *error) {
   printf("Atom %08x\n", atom);
 }
 
-static void get_atom_name_cb(void *user_data, const char *name) {
+static void get_atom_name_cb(void *user_data, const char *name,
+                             UtObject *error) {
   printf("Atom name \"%s\"\n", name);
 }
 
-static void list_extensions_cb(void *user_data, const char **names) {
+static void list_extensions_cb(void *user_data, const char **names,
+                               UtObject *error) {
   for (size_t i = 0; names[i] != NULL; i++) {
     printf("%s\n", names[i]);
   }

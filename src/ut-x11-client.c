@@ -10,6 +10,8 @@
 #include "ut-object-private.h"
 #include "ut-output-stream.h"
 #include "ut-string.h"
+#include "ut-uint16-list.h"
+#include "ut-uint32-list.h"
 #include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
 #include "ut-unix-domain-socket-client.h"
@@ -182,6 +184,14 @@ static void write_card32(UtObject *buffer, uint32_t value) {
   ut_uint8_array_append(buffer, value >> 24);
 }
 
+static void write_value_card16(UtObject *buffer, uint16_t value) {
+  write_card32(buffer, value);
+}
+
+static void write_value_int16(UtObject *buffer, int16_t value) {
+  write_value_card16(buffer, (uint16_t)value);
+}
+
 static void write_string8(UtObject *buffer, const char *value) {
   for (const char *c = value; *c != '\0'; c++) {
     write_card8(buffer, *c);
@@ -232,6 +242,10 @@ static uint8_t read_card8(UtObject *buffer, size_t *offset) {
   uint8_t value = peek_card8(buffer, offset);
   (*offset)++;
   return value;
+}
+
+static bool read_bool(UtObject *buffer, size_t *offset) {
+  return read_card8(buffer, offset) != 0;
 }
 
 static size_t get_remaining(UtObject *buffer, size_t *offset) {
@@ -485,7 +499,7 @@ static void decode_intern_atom_reply(UtX11Client *self, Request *request,
       (request->cancel == NULL || !ut_cancel_is_active(request->cancel))) {
     UtX11InternAtomCallback callback =
         (UtX11InternAtomCallback)request->callback;
-    callback(request->user_data, atom);
+    callback(request->user_data, atom, NULL);
   }
 }
 
@@ -501,7 +515,63 @@ static void decode_get_atom_name_reply(UtX11Client *self, Request *request,
       (request->cancel == NULL || !ut_cancel_is_active(request->cancel))) {
     UtX11GetAtomNameCallback callback =
         (UtX11GetAtomNameCallback)request->callback;
-    callback(request->user_data, name);
+    callback(request->user_data, name, NULL);
+  }
+}
+
+static void decode_get_property_reply(UtX11Client *self, Request *request,
+                                      uint8_t data0, UtObject *data,
+                                      size_t *offset) {
+  uint8_t format = data0;
+  uint32_t type = read_card32(data, offset);
+  uint32_t bytes_after = read_card32(data, offset);
+  size_t length = read_card32(data, offset);
+  read_padding(data, offset, 12);
+  UtObjectRef value = NULL;
+  if (format == 0) {
+  } else if (format == 8) {
+    value = ut_uint8_array_new();
+    for (size_t i = 0; i < length; i++) {
+      ut_uint8_array_append(value, read_card8(data, offset));
+    }
+  } else if (format == 16) {
+    value = ut_uint16_list_new();
+    for (size_t i = 0; i < length; i++) {
+      ut_uint16_list_append(value, read_card16(data, offset));
+    }
+  } else if (format == 32) {
+    value = ut_uint32_list_new();
+    for (size_t i = 0; i < length; i++) {
+      ut_uint32_list_append(value, read_card32(data, offset));
+    }
+  } else {
+    assert(false);
+  }
+  read_align_padding(data, offset, 4);
+
+  if (request->callback != NULL &&
+      (request->cancel == NULL || !ut_cancel_is_active(request->cancel))) {
+    UtX11GetPropertyCallback callback =
+        (UtX11GetPropertyCallback)request->callback;
+    callback(request->user_data, type, value, bytes_after, NULL);
+  }
+}
+
+static void decode_list_properties_reply(UtX11Client *self, Request *request,
+                                         uint8_t data0, UtObject *data,
+                                         size_t *offset) {
+  size_t atoms_length = read_card16(data, offset);
+  read_padding(data, offset, 22);
+  UtObjectRef atoms = ut_uint32_list_new();
+  for (size_t i = 0; i < atoms_length; i++) {
+    ut_uint32_list_append(atoms, read_card32(data, offset));
+  }
+
+  if (request->callback != NULL &&
+      (request->cancel == NULL || !ut_cancel_is_active(request->cancel))) {
+    UtX11ListPropertiesCallback callback =
+        (UtX11ListPropertiesCallback)request->callback;
+    callback(request->user_data, atoms, NULL);
   }
 }
 
@@ -522,7 +592,25 @@ static void decode_list_extensions_reply(UtX11Client *self, Request *request,
       (request->cancel == NULL || !ut_cancel_is_active(request->cancel))) {
     UtX11ListExtensionsCallback callback =
         (UtX11ListExtensionsCallback)request->callback;
-    callback(request->user_data, (const char **)names);
+    callback(request->user_data, (const char **)names, NULL);
+  }
+}
+
+static void decode_query_extension_reply(UtX11Client *self, Request *request,
+                                         uint8_t data0, UtObject *data,
+                                         size_t *offset) {
+  uint8_t major_opcode = read_card8(data, offset);
+  bool present = read_bool(data, offset);
+  uint8_t first_event = read_card8(data, offset);
+  uint8_t first_error = read_card8(data, offset);
+  read_padding(data, offset, 20);
+
+  if (request->callback != NULL &&
+      (request->cancel == NULL || !ut_cancel_is_active(request->cancel))) {
+    UtX11QueryExtensionCallback callback =
+        (UtX11QueryExtensionCallback)request->callback;
+    callback(request->user_data, present, major_opcode, first_event,
+             first_error, NULL);
   }
 }
 
@@ -925,11 +1013,6 @@ uint32_t ut_x11_client_create_window(UtObject *object, int16_t x, int16_t y,
   return id;
 }
 
-void ut_x11_client_change_window_attributes(UtObject *object, uint32_t window) {
-}
-
-void ut_x11_client_get_window_attributes(UtObject *object, uint32_t window) {}
-
 void ut_x11_client_destroy_window(UtObject *object, uint32_t window) {
   UtX11Client *self = (UtX11Client *)object;
 
@@ -957,7 +1040,22 @@ void ut_x11_client_unmap_window(UtObject *object, uint32_t window) {
   send_request(self, 10, 0, request);
 }
 
-void ut_x11_client_configure_window(UtObject *object, uint32_t window) {}
+void ut_x11_client_configure_window(UtObject *object, uint32_t window,
+                                    int16_t x, int16_t y, uint16_t width,
+                                    uint16_t height) {
+  UtX11Client *self = (UtX11Client *)object;
+
+  UtObjectRef request = ut_uint8_array_new();
+  write_card32(request, window);
+  write_card16(request, 0x0001 | 0x0002 | 0x0004 | 0x0008);
+  write_padding(request, 2);
+  write_value_int16(request, x);
+  write_value_int16(request, y);
+  write_value_card16(request, width);
+  write_value_card16(request, height);
+
+  send_request(self, 12, 0, request);
+}
 
 void ut_x11_client_intern_atom(UtObject *object, const char *name,
                                bool only_if_exists,
@@ -988,11 +1086,102 @@ void ut_x11_client_get_atom_name(UtObject *object, uint32_t atom,
                           (RequestCallback)callback, user_data, cancel);
 }
 
-void ut_x11_client_create_pixmap(UtObject *object) {}
+void ut_x11_client_change_property(UtObject *object, uint32_t window,
+                                   uint32_t property, uint32_t type) {}
 
-void ut_x11_client_free_pixmap(UtObject *object, uint32_t pixmap) {}
+void ut_x11_client_delete_property(UtObject *object, uint32_t window,
+                                   uint32_t property) {
+  UtX11Client *self = (UtX11Client *)object;
 
-void ut_x11_client_query_extension(UtObject *object, const char *name) {}
+  UtObjectRef request = ut_uint8_array_new();
+  write_card32(request, window);
+  write_card32(request, property);
+
+  send_request(self, 19, 0, request);
+}
+
+void ut_x11_client_get_property(UtObject *object, uint32_t window,
+                                uint32_t property,
+                                UtX11GetPropertyCallback callback,
+                                void *user_data, UtObject *cancel) {
+  return ut_x11_client_get_property_full(object, window, property, 0, 0,
+                                         0xffffffff, false, callback, user_data,
+                                         cancel);
+}
+
+void ut_x11_client_get_property_full(UtObject *object, uint32_t window,
+                                     uint32_t property, uint32_t type,
+                                     uint32_t long_offset, uint32_t long_length,
+                                     bool delete,
+                                     UtX11GetPropertyCallback callback,
+                                     void *user_data, UtObject *cancel) {
+  UtX11Client *self = (UtX11Client *)object;
+
+  UtObjectRef request = ut_uint8_array_new();
+  write_card32(request, window);
+  write_card32(request, property);
+  write_card32(request, type);
+  write_card32(request, long_offset);
+  write_card32(request, long_length);
+
+  send_request_with_reply(self, 31, delete ? 1 : 0, request,
+                          decode_get_property_reply, (RequestCallback)callback,
+                          user_data, cancel);
+}
+
+void ut_x11_client_list_properties(UtObject *object, uint32_t window,
+                                   UtX11ListPropertiesCallback callback,
+                                   void *user_data, UtObject *cancel) {
+  UtX11Client *self = (UtX11Client *)object;
+
+  UtObjectRef request = ut_uint8_array_new();
+  write_card32(request, window);
+
+  send_request_with_reply(self, 32, 0, request, decode_list_properties_reply,
+                          (RequestCallback)callback, user_data, cancel);
+}
+
+uint32_t ut_x11_client_create_pixmap(UtObject *object, uint32_t drawable,
+                                     uint16_t width, uint16_t height,
+                                     uint8_t depth) {
+  UtX11Client *self = (UtX11Client *)object;
+
+  uint32_t id = create_resource_id(self);
+
+  UtObjectRef request = ut_uint8_array_new();
+  write_card32(request, id);
+  write_card32(request, drawable);
+  write_card16(request, width);
+  write_card16(request, height);
+
+  send_request(self, 53, depth, request);
+
+  return id;
+}
+
+void ut_x11_client_free_pixmap(UtObject *object, uint32_t pixmap) {
+  UtX11Client *self = (UtX11Client *)object;
+
+  UtObjectRef request = ut_uint8_array_new();
+  write_card32(request, pixmap);
+
+  send_request(self, 54, 0, request);
+}
+
+void ut_x11_client_query_extension(UtObject *object, const char *name,
+                                   UtX11QueryExtensionCallback callback,
+                                   void *user_data, UtObject *cancel) {
+  UtX11Client *self = (UtX11Client *)object;
+
+  UtObjectRef request = ut_uint8_array_new();
+  write_card16(request, strlen(name));
+  write_padding(request, 2);
+  write_string8(request, name);
+  write_align_padding(request, 4);
+
+  send_request_with_reply(self, 98, 0, request, decode_query_extension_reply,
+                          (RequestCallback)callback, user_data, cancel);
+}
 
 void ut_x11_client_list_extensions(UtObject *object,
                                    UtX11ListExtensionsCallback callback,
