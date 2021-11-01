@@ -19,8 +19,8 @@ typedef void (*UtX11QueryExtensionCallback)(void *user_data, bool present,
                                             uint8_t first_event,
                                             uint8_t first_error,
                                             UtObject *error);
-typedef void (*UtX11ListExtensionsCallback)(void *user_data, const char **names,
-                                            UtObject *error); // UtStringList
+typedef void (*UtX11ListExtensionsCallback)(void *user_data, UtObject *names,
+                                            UtObject *error);
 
 UtObject *ut_x11_client_new();
 

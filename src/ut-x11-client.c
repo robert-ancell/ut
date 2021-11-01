@@ -9,6 +9,7 @@
 #include "ut-list.h"
 #include "ut-object-private.h"
 #include "ut-output-stream.h"
+#include "ut-string-list.h"
 #include "ut-string.h"
 #include "ut-uint16-list.h"
 #include "ut-uint32-list.h"
@@ -580,19 +581,19 @@ static void decode_list_extensions_reply(UtX11Client *self, Request *request,
                                          size_t *offset) {
   read_padding(data, offset, 24);
   size_t names_length = data0;
-  char **names = malloc(sizeof(char *) * (names_length + 1));
+  UtObjectRef names = ut_string_list_new();
   for (size_t i = 0; i < names_length; i++) {
     uint8_t name_length = read_card8(data, offset);
-    names[i] = read_string8(data, offset, name_length);
+    ut_cstring name = read_string8(data, offset, name_length);
+    ut_string_list_append(names, name);
   }
-  names[names_length] = NULL;
   read_align_padding(data, offset, 4);
 
   if (request->callback != NULL &&
       (request->cancel == NULL || !ut_cancel_is_active(request->cancel))) {
     UtX11ListExtensionsCallback callback =
         (UtX11ListExtensionsCallback)request->callback;
-    callback(request->user_data, (const char **)names, NULL);
+    callback(request->user_data, names, NULL);
   }
 }
 

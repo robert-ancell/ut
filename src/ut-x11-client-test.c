@@ -14,10 +14,11 @@ static void get_atom_name_cb(void *user_data, const char *name,
   printf("Atom name \"%s\"\n", name);
 }
 
-static void list_extensions_cb(void *user_data, const char **names,
+static void list_extensions_cb(void *user_data, UtObject *names,
                                UtObject *error) {
-  for (size_t i = 0; names[i] != NULL; i++) {
-    printf("%s\n", names[i]);
+  size_t names_length = ut_list_get_length(names);
+  for (size_t i = 0; i < names_length; i++) {
+    printf("%s\n", ut_string_list_get_element(names, i));
   }
 }
 
