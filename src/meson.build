@@ -34,6 +34,7 @@ ut_sources = [
   'ut-output-stream.c',
   'ut-string.c',
   'ut-string-array.c',
+  'ut-string-list.c',
   'ut-tcp-client.c',
   'ut-uint8.c',
   'ut-uint8-array.c',

@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -7,7 +8,9 @@
 
 UtObject *ut_string_array_new();
 
-UtObject *ut_string_array_new_with_data(size_t length, ...);
+UtObject *ut_string_array_new_with_data(const char *value, ...);
+
+UtObject *ut_string_array_new_with_va_data(const char *value, va_list ap);
 
 void ut_string_array_prepend(UtObject *object, const char *value);
 

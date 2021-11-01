@@ -26,6 +26,8 @@
 #include "ut-object-list.h"
 #include "ut-object.h"
 #include "ut-output-stream.h"
+#include "ut-string-array.h"
+#include "ut-string-list.h"
 #include "ut-string.h"
 #include "ut-tcp-client.h"
 #include "ut-uint16-array.h"
