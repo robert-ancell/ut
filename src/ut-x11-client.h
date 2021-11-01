@@ -5,6 +5,8 @@
 #pragma once
 
 typedef void (*UtX11ClientConnectCallback)(void *user_data, UtObject *error);
+typedef void (*UtX11InternAtomCallback)(void *user_data, uint32_t atom);
+typedef void (*UtX11GetAtomNameCallback)(void *user_data, const char *name);
 
 UtObject *ut_x11_client_new();
 
@@ -31,9 +33,13 @@ void ut_x11_client_unmap_window(UtObject *object, uint32_t window);
 void ut_x11_client_configure_window(UtObject *object, uint32_t window);
 
 void ut_x11_client_intern_atom(UtObject *object, const char *name,
-                               bool only_if_exists);
+                               bool only_if_exists,
+                               UtX11InternAtomCallback callback,
+                               void *user_data, UtObject *cancel);
 
-void ut_x11_client_get_atom_name(UtObject *object, uint32_t atom);
+void ut_x11_client_get_atom_name(UtObject *object, uint32_t atom,
+                                 UtX11GetAtomNameCallback callback,
+                                 void *user_data, UtObject *cancel);
 
 void ut_x11_client_create_pixmap(UtObject *object);
 

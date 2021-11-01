@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <string.h>
 
 #include "ut-cancel.h"
 #include "ut-cstring.h"
@@ -13,6 +14,15 @@
 #include "ut-uint8-list.h"
 #include "ut-unix-domain-socket-client.h"
 #include "ut-x11-client.h"
+
+typedef struct _UtX11Client UtX11Client;
+typedef struct _Request Request;
+
+typedef void (*DecodeReplyFunction)(UtX11Client *self, Request *request,
+                                    uint8_t data0, UtObject *data,
+                                    size_t *offset);
+
+typedef void (*RequestCallback)(void *user_data);
 
 typedef enum {
   WINDOW_CLASS_INHERIT_FROM_PARENT = 0,
@@ -98,7 +108,16 @@ typedef struct {
   size_t visuals_length;
 } X11Screen;
 
-typedef struct {
+struct _Request {
+  uint16_t sequence_number;
+  DecodeReplyFunction decode_reply_function;
+  RequestCallback callback;
+  void *user_data;
+  UtObject *cancel;
+  Request *next;
+};
+
+struct _UtX11Client {
   UtObject object;
   UtObject *socket;
   UtObject *read_cancel;
@@ -119,7 +138,9 @@ typedef struct {
   size_t screens_length;
 
   uint32_t next_resource_id;
-} UtX11Client;
+  uint16_t sequence_number;
+  Request *requests;
+};
 
 #include <stdio.h> // FIXME: Remove
 
@@ -129,6 +150,20 @@ static uint32_t create_resource_id(UtX11Client *self) {
 
 static void write_card8(UtObject *buffer, uint8_t value) {
   ut_uint8_array_append(buffer, value);
+}
+
+static void write_padding(UtObject *buffer, size_t count) {
+  for (size_t i = 0; i < count; i++) {
+    write_card8(buffer, 0);
+  }
+}
+
+static void write_align_padding(UtObject *buffer, size_t alignment) {
+  size_t buffer_length = ut_list_get_length(buffer);
+  size_t extra = buffer_length % alignment;
+  if (extra != 0) {
+    write_padding(buffer, alignment - extra);
+  }
 }
 
 static void write_card16(UtObject *buffer, uint16_t value) {
@@ -147,22 +182,17 @@ static void write_card32(UtObject *buffer, uint32_t value) {
   ut_uint8_array_append(buffer, value >> 24);
 }
 
-static void write_padding(UtObject *buffer, size_t count) {
-  for (size_t i = 0; i < count; i++) {
-    write_card8(buffer, 0);
+static void write_string8(UtObject *buffer, const char *value) {
+  for (const char *c = value; *c != '\0'; c++) {
+    write_card8(buffer, *c);
   }
 }
 
-static void write_align_padding(UtObject *buffer, size_t alignment) {
-  size_t buffer_length = ut_list_get_length(buffer);
-  size_t extra = buffer_length % alignment;
-  if (extra != 0) {
-    write_padding(buffer, alignment - extra);
-  }
-}
-
-static void send_request(UtX11Client *self, uint8_t opcode, uint8_t data0,
-                         UtObject *data) {
+static void send_request_with_reply(UtX11Client *self, uint8_t opcode,
+                                    uint8_t data0, UtObject *data,
+                                    DecodeReplyFunction decode_reply_function,
+                                    RequestCallback callback, void *user_data,
+                                    UtObject *cancel) {
   size_t data_length = ut_list_get_length(data);
   assert(data_length % 4 == 0);
 
@@ -173,7 +203,25 @@ static void send_request(UtX11Client *self, uint8_t opcode, uint8_t data0,
   ut_uint8_array_append_block(request, ut_uint8_array_get_data(data),
                               data_length);
 
+  self->sequence_number++;
+
+  if (decode_reply_function != NULL) {
+    Request *request = malloc(sizeof(Request));
+    request->sequence_number = self->sequence_number;
+    request->decode_reply_function = decode_reply_function;
+    request->callback = callback;
+    request->user_data = user_data;
+    request->cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
+    request->next = self->requests;
+    self->requests = request;
+  }
+
   ut_output_stream_write(self->socket, request);
+}
+
+static void send_request(UtX11Client *self, uint8_t opcode, uint8_t data0,
+                         UtObject *data) {
+  send_request_with_reply(self, opcode, data0, data, NULL, NULL, NULL, NULL);
 }
 
 static uint8_t peek_card8(UtObject *buffer, size_t *offset) {
@@ -219,10 +267,10 @@ static uint32_t read_card32(UtObject *buffer, size_t *offset) {
   return byte1 | byte2 << 8 | byte3 << 16 | byte4 << 24;
 }
 
-static UtObject *read_string(UtObject *buffer, size_t *offset, size_t length) {
+static char *read_string8(UtObject *buffer, size_t *offset, size_t length) {
   assert(ut_list_get_length(buffer) >= *offset + length);
-  UtObject *string = ut_string_new_sized(
-      (const char *)ut_uint8_array_get_data(buffer) + *offset, length);
+  char *string =
+      strndup((const char *)ut_uint8_array_get_data(buffer) + *offset, length);
   (*offset) += length;
   return string;
 }
@@ -245,10 +293,10 @@ static bool decode_setup_failed(UtX11Client *self, UtObject *data,
   if (data_length < message_length) {
     return false;
   }
-  UtObjectRef reason = read_string(data, &o, reason_length);
+  ut_cstring reason = read_string8(data, &o, reason_length);
 
-  UtObjectRef error = ut_general_error_new("Failed to connect to X server: %s",
-                                           ut_string_get_text(reason));
+  UtObjectRef error =
+      ut_general_error_new("Failed to connect to X server: %s", reason);
   self->connect_callback(self->connect_user_data, error);
 
   *offset = o;
@@ -288,8 +336,7 @@ static bool decode_setup_success(UtX11Client *self, UtObject *data,
   read_card8(data, &o); // min_keycode
   read_card8(data, &o); // max_keycode
   read_padding(data, &o, 4);
-  UtObjectRef vendor = read_string(data, &o, vendor_length);
-  self->vendor = ut_string_take_text(vendor);
+  self->vendor = read_string8(data, &o, vendor_length);
   read_align_padding(data, &o, 4);
 
   self->pixmap_formats =
@@ -384,7 +431,7 @@ static bool decode_setup_message(UtX11Client *self, UtObject *data,
 }
 
 static bool decode_error(UtX11Client *self, UtObject *data, size_t *offset) {
-  if (ut_list_get_length(data) < 32) {
+  if (get_remaining(data, offset) < 32) {
     return false;
   }
 
@@ -397,29 +444,29 @@ static bool decode_error(UtX11Client *self, UtObject *data, size_t *offset) {
     uint16_t minor_opcode = read_card16(data, offset);
     uint8_t major_opcode = read_card8(data, offset);
     read_padding(data, offset, 21);
-    printf("XServer >> Request Error %d opcode %d.%d seq %d\n", code,
-           major_opcode, minor_opcode, sequence_number);
+    printf("XServer >> RequestError opcode %d.%d seq %d\n", major_opcode,
+           minor_opcode, sequence_number);
   } else if (code == 3) {
     uint32_t window = read_card32(data, offset);
     uint16_t minor_opcode = read_card16(data, offset);
     uint8_t major_opcode = read_card8(data, offset);
     read_padding(data, offset, 21);
-    printf("XServer >> Window Error %d opcode %d.%d window %08x seq %d\n", code,
+    printf("XServer >> WindowError opcode %d.%d window %08x seq %d\n",
            major_opcode, minor_opcode, window, sequence_number);
   } else if (code == 14) {
     uint32_t resource = read_card32(data, offset);
     uint16_t minor_opcode = read_card16(data, offset);
     uint8_t major_opcode = read_card8(data, offset);
     read_padding(data, offset, 21);
-    printf("XServer >> IDChoice Error %d opcode %d.%d resource %08x seq %d\n",
-           code, major_opcode, minor_opcode, resource, sequence_number);
+    printf("XServer >> IDChoiceError opcode %d.%d resource %08x seq %d\n",
+           major_opcode, minor_opcode, resource, sequence_number);
   } else if (code == 16) {
     read_padding(data, offset, 4);
     uint16_t minor_opcode = read_card16(data, offset);
     uint8_t major_opcode = read_card8(data, offset);
     read_padding(data, offset, 21);
-    printf("XServer >> Length Error %d opcode %d.%d seq %d\n", code,
-           major_opcode, minor_opcode, sequence_number);
+    printf("XServer >> LengthError opcode %d.%d seq %d\n", major_opcode,
+           minor_opcode, sequence_number);
   } else {
     read_padding(data, offset, 28);
     printf("XServer >> Error %d seq %d\n", code, sequence_number);
@@ -428,10 +475,74 @@ static bool decode_error(UtX11Client *self, UtObject *data, size_t *offset) {
   return true;
 }
 
+static void decode_intern_atom_reply(UtX11Client *self, Request *request,
+                                     uint8_t data0, UtObject *data,
+                                     size_t *offset) {
+  uint32_t atom = read_card32(data, offset);
+  read_padding(data, offset, 20);
+
+  if (request->callback != NULL &&
+      (request->cancel == NULL || !ut_cancel_is_active(request->cancel))) {
+    UtX11InternAtomCallback callback =
+        (UtX11InternAtomCallback)request->callback;
+    callback(request->user_data, atom);
+  }
+}
+
+static void decode_get_atom_name_reply(UtX11Client *self, Request *request,
+                                       uint8_t data0, UtObject *data,
+                                       size_t *offset) {
+  uint16_t name_length = read_card16(data, offset);
+  read_padding(data, offset, 22);
+  ut_cstring name = read_string8(data, offset, name_length);
+  read_align_padding(data, offset, 4);
+
+  if (request->callback != NULL &&
+      (request->cancel == NULL || !ut_cancel_is_active(request->cancel))) {
+    UtX11GetAtomNameCallback callback =
+        (UtX11GetAtomNameCallback)request->callback;
+    callback(request->user_data, name);
+  }
+}
+
+static Request *find_request(UtX11Client *self, uint16_t sequence_number) {
+  for (Request *request = self->requests; request != NULL;
+       request = request->next) {
+    if (request->sequence_number == sequence_number) {
+      return request;
+    }
+  }
+
+  return NULL;
+}
+
 static bool decode_reply(UtX11Client *self, UtObject *data, size_t *offset) {
-  ut_cstring s = ut_object_to_string(data);
-  printf("XServer >> (reply) %s\n", s);
-  return false;
+  if (get_remaining(data, offset) < 4) {
+    return false;
+  }
+
+  size_t o = *offset;
+  assert(read_card8(data, &o) == 1);
+  uint8_t data0 = read_card8(data, &o);
+  uint16_t sequence_number = read_card16(data, &o);
+  uint32_t length = read_card32(data, &o);
+
+  size_t payload_length = 24 + length * 4;
+  if (get_remaining(data, &o) < payload_length) {
+    return false;
+  }
+
+  Request *request = find_request(self, sequence_number);
+  if (request != NULL) {
+    size_t reply_offset = o;
+    request->decode_reply_function(self, request, data0, data, &reply_offset);
+  } else {
+    printf("XServer >> Reply seq %d\n", sequence_number);
+  }
+  read_padding(data, &o, payload_length);
+
+  *offset = o;
+  return true;
 }
 
 static void decode_key_press(UtObject *data, size_t *offset) {
@@ -595,7 +706,7 @@ static void decode_property_notify(UtObject *data, size_t *offset) {
 }
 
 static bool decode_event(UtX11Client *self, UtObject *data, size_t *offset) {
-  if (ut_list_get_length(data) < 32) {
+  if (get_remaining(data, offset) < 32) {
     return false;
   }
 
@@ -681,6 +792,8 @@ static void ut_x11_client_init(UtObject *object) {
   self->screens = NULL;
   self->screens_length = 0;
   self->next_resource_id = 0;
+  self->sequence_number = 0;
+  self->requests = NULL;
 }
 
 static void ut_x11_client_cleanup(UtObject *object) {
@@ -705,6 +818,15 @@ static void ut_x11_client_cleanup(UtObject *object) {
     free(screen);
   }
   free(self->screens);
+  Request *next_request;
+  for (Request *request = self->requests; request != NULL;
+       request = next_request) {
+    next_request = request->next;
+    if (request->cancel != NULL) {
+      ut_object_unref(request->cancel);
+    }
+    free(request);
+  }
 }
 
 static UtObjectInterface object_interface = {.type_name = "UtX11Client",
@@ -806,9 +928,34 @@ void ut_x11_client_unmap_window(UtObject *object, uint32_t window) {}
 void ut_x11_client_configure_window(UtObject *object, uint32_t window) {}
 
 void ut_x11_client_intern_atom(UtObject *object, const char *name,
-                               bool only_if_exists) {}
+                               bool only_if_exists,
+                               void (*callback)(void *user_data, uint32_t atom),
+                               void *user_data, UtObject *cancel) {
+  UtX11Client *self = (UtX11Client *)object;
 
-void ut_x11_client_get_atom_name(UtObject *object, uint32_t atom) {}
+  UtObjectRef request = ut_uint8_array_new();
+  write_card16(request, strlen(name));
+  write_padding(request, 2);
+  write_string8(request, name);
+  write_align_padding(request, 4);
+
+  send_request_with_reply(self, 16, only_if_exists ? 1 : 0, request,
+                          decode_intern_atom_reply, (RequestCallback)callback,
+                          user_data, cancel);
+}
+
+void ut_x11_client_get_atom_name(UtObject *object, uint32_t atom,
+                                 void (*callback)(void *user_data,
+                                                  const char *name),
+                                 void *user_data, UtObject *cancel) {
+  UtX11Client *self = (UtX11Client *)object;
+
+  UtObjectRef request = ut_uint8_array_new();
+  write_card32(request, atom);
+
+  send_request_with_reply(self, 17, 0, request, decode_get_atom_name_reply,
+                          (RequestCallback)callback, user_data, cancel);
+}
 
 void ut_x11_client_create_pixmap(UtObject *object) {}
 
