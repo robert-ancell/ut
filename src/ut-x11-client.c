@@ -505,6 +505,27 @@ static void decode_get_atom_name_reply(UtX11Client *self, Request *request,
   }
 }
 
+static void decode_list_extensions_reply(UtX11Client *self, Request *request,
+                                         uint8_t data0, UtObject *data,
+                                         size_t *offset) {
+  read_padding(data, offset, 24);
+  size_t names_length = data0;
+  char **names = malloc(sizeof(char *) * (names_length + 1));
+  for (size_t i = 0; i < names_length; i++) {
+    uint8_t name_length = read_card8(data, offset);
+    names[i] = read_string8(data, offset, name_length);
+  }
+  names[names_length] = NULL;
+  read_align_padding(data, offset, 4);
+
+  if (request->callback != NULL &&
+      (request->cancel == NULL || !ut_cancel_is_active(request->cancel))) {
+    UtX11ListExtensionsCallback callback =
+        (UtX11ListExtensionsCallback)request->callback;
+    callback(request->user_data, (const char **)names);
+  }
+}
+
 static Request *find_request(UtX11Client *self, uint16_t sequence_number) {
   for (Request *request = self->requests; request != NULL;
        request = request->next) {
@@ -909,10 +930,14 @@ void ut_x11_client_change_window_attributes(UtObject *object, uint32_t window) {
 
 void ut_x11_client_get_window_attributes(UtObject *object, uint32_t window) {}
 
-void ut_x11_client_destroy_window(UtObject *object, uint32_t window) {}
+void ut_x11_client_destroy_window(UtObject *object, uint32_t window) {
+  UtX11Client *self = (UtX11Client *)object;
 
-void ut_x11_client_reparent_window(UtObject *object, uint32_t window,
-                                   uint32_t parent, int16_t x, int16_t y) {}
+  UtObjectRef request = ut_uint8_array_new();
+  write_card32(request, window);
+
+  send_request(self, 4, 0, request);
+}
 
 void ut_x11_client_map_window(UtObject *object, uint32_t window) {
   UtX11Client *self = (UtX11Client *)object;
@@ -923,13 +948,20 @@ void ut_x11_client_map_window(UtObject *object, uint32_t window) {
   send_request(self, 8, 0, request);
 }
 
-void ut_x11_client_unmap_window(UtObject *object, uint32_t window) {}
+void ut_x11_client_unmap_window(UtObject *object, uint32_t window) {
+  UtX11Client *self = (UtX11Client *)object;
+
+  UtObjectRef request = ut_uint8_array_new();
+  write_card32(request, window);
+
+  send_request(self, 10, 0, request);
+}
 
 void ut_x11_client_configure_window(UtObject *object, uint32_t window) {}
 
 void ut_x11_client_intern_atom(UtObject *object, const char *name,
                                bool only_if_exists,
-                               void (*callback)(void *user_data, uint32_t atom),
+                               UtX11InternAtomCallback callback,
                                void *user_data, UtObject *cancel) {
   UtX11Client *self = (UtX11Client *)object;
 
@@ -945,8 +977,7 @@ void ut_x11_client_intern_atom(UtObject *object, const char *name,
 }
 
 void ut_x11_client_get_atom_name(UtObject *object, uint32_t atom,
-                                 void (*callback)(void *user_data,
-                                                  const char *name),
+                                 UtX11GetAtomNameCallback callback,
                                  void *user_data, UtObject *cancel) {
   UtX11Client *self = (UtX11Client *)object;
 
@@ -963,7 +994,15 @@ void ut_x11_client_free_pixmap(UtObject *object, uint32_t pixmap) {}
 
 void ut_x11_client_query_extension(UtObject *object, const char *name) {}
 
-void ut_x11_client_list_extensions(UtObject *object) {}
+void ut_x11_client_list_extensions(UtObject *object,
+                                   UtX11ListExtensionsCallback callback,
+                                   void *user_data, UtObject *cancel) {
+  UtX11Client *self = (UtX11Client *)object;
+
+  UtObjectRef request = ut_uint8_array_new();
+  send_request_with_reply(self, 99, 0, request, decode_list_extensions_reply,
+                          (RequestCallback)callback, user_data, cancel);
+}
 
 bool ut_object_is_x11_client(UtObject *object) {
   return ut_object_is_type(object, &object_interface);

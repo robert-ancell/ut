@@ -7,6 +7,8 @@
 typedef void (*UtX11ClientConnectCallback)(void *user_data, UtObject *error);
 typedef void (*UtX11InternAtomCallback)(void *user_data, uint32_t atom);
 typedef void (*UtX11GetAtomNameCallback)(void *user_data, const char *name);
+typedef void (*UtX11ListExtensionsCallback)(void *user_data,
+                                            const char **names);
 
 UtObject *ut_x11_client_new();
 
@@ -22,9 +24,6 @@ void ut_x11_client_change_window_attributes(UtObject *object, uint32_t window);
 void ut_x11_client_get_window_attributes(UtObject *object, uint32_t window);
 
 void ut_x11_client_destroy_window(UtObject *object, uint32_t window);
-
-void ut_x11_client_reparent_window(UtObject *object, uint32_t window,
-                                   uint32_t parent, int16_t x, int16_t y);
 
 void ut_x11_client_map_window(UtObject *object, uint32_t window);
 
@@ -47,6 +46,8 @@ void ut_x11_client_free_pixmap(UtObject *object, uint32_t pixmap);
 
 void ut_x11_client_query_extension(UtObject *object, const char *name);
 
-void ut_x11_client_list_extensions(UtObject *object);
+void ut_x11_client_list_extensions(UtObject *object,
+                                   UtX11ListExtensionsCallback callback,
+                                   void *user_data, UtObject *cancel);
 
 bool ut_object_is_x11_client(UtObject *object);
