@@ -49,6 +49,7 @@ static void add_block(UtFdOutputStream *self, UtObject *data,
 
   if (self->last_block != NULL) {
     self->last_block->next = block;
+    self->last_block = block;
   } else {
     self->blocks = self->last_block = block;
   }
