@@ -52,7 +52,18 @@ ut_sources = [
   'ut-utf8-decoder.c',
   'ut-utf8-encoder.c',
   'ut-utf8-string.c',
+  'ut-x11-button-press.c',
+  'ut-x11-button-release.c',
   'ut-x11-client.c',
+  'ut-x11-configure-notify.c',
+  'ut-x11-enter-notify.c',
+  'ut-x11-expose.c',
+  'ut-x11-key-press.c',
+  'ut-x11-key-release.c',
+  'ut-x11-leave-notify.c',
+  'ut-x11-motion-notify.c',
+  'ut-x11-property-notify.c',
+  'ut-x11-unknown-event.c',
   'ut-xml-document.c',
   'ut-xml-element.c'
 ]

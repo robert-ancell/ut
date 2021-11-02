@@ -4,6 +4,7 @@
 
 #pragma once
 
+typedef void (*UtX11ClientEventCallback)(void *user_data, UtObject *event);
 typedef void (*UtX11ClientConnectCallback)(void *user_data, UtObject *error);
 typedef void (*UtX11InternAtomCallback)(void *user_data, uint32_t atom,
                                         UtObject *error);
@@ -22,7 +23,8 @@ typedef void (*UtX11QueryExtensionCallback)(void *user_data, bool present,
 typedef void (*UtX11ListExtensionsCallback)(void *user_data, UtObject *names,
                                             UtObject *error);
 
-UtObject *ut_x11_client_new();
+UtObject *ut_x11_client_new(UtX11ClientEventCallback event_callback,
+                            void *user_data, UtObject *cancel);
 
 void ut_x11_client_connect(UtObject *object,
                            UtX11ClientConnectCallback callback, void *user_data,

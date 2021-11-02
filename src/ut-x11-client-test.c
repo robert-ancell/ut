@@ -5,6 +5,11 @@
 
 static UtObject *client = NULL;
 
+static void event_cb(void *user_data, UtObject *event) {
+  ut_cstring s = ut_object_to_string(event);
+  printf("%s\n", s);
+}
+
 static void intern_atom_cb(void *user_data, uint32_t atom, UtObject *error) {
   printf("Atom %08x\n", atom);
 }
@@ -43,7 +48,7 @@ static void connect_cb(void *user_data, UtObject *error) {
 }
 
 int main(int argc, char **argv) {
-  client = ut_x11_client_new();
+  client = ut_x11_client_new(event_cb, NULL, NULL);
   ut_x11_client_connect(client, connect_cb, NULL, NULL);
 
   ut_event_loop_run();

@@ -16,7 +16,18 @@
 #include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
 #include "ut-unix-domain-socket-client.h"
+#include "ut-x11-button-press.h"
+#include "ut-x11-button-release.h"
 #include "ut-x11-client.h"
+#include "ut-x11-configure-notify.h"
+#include "ut-x11-enter-notify.h"
+#include "ut-x11-expose.h"
+#include "ut-x11-key-press.h"
+#include "ut-x11-key-release.h"
+#include "ut-x11-leave-notify.h"
+#include "ut-x11-motion-notify.h"
+#include "ut-x11-property-notify.h"
+#include "ut-x11-unknown-event.h"
 
 typedef struct _UtX11Client UtX11Client;
 typedef struct _Request Request;
@@ -124,6 +135,10 @@ struct _UtX11Client {
   UtObject object;
   UtObject *socket;
   UtObject *read_cancel;
+
+  UtX11ClientEventCallback event_callback;
+  void *event_user_data;
+  UtObject *event_cancel;
 
   UtX11ClientConnectCallback connect_callback;
   void *connect_user_data;
@@ -655,7 +670,7 @@ static bool decode_reply(UtX11Client *self, UtObject *data, size_t *offset) {
   return true;
 }
 
-static void decode_key_press(UtObject *data, size_t *offset) {
+static UtObject *decode_key_press(UtObject *data, size_t *offset) {
   uint8_t keycode = read_card8(data, offset);
   read_card16(data, offset); // sequence_number
   read_card32(data, offset); // time
@@ -669,10 +684,11 @@ static void decode_key_press(UtObject *data, size_t *offset) {
   read_card16(data, offset); // state
   read_card8(data, offset);  // same_screen
   read_padding(data, offset, 1);
-  printf("XServer >> KeyPress %08x %d %d,%d\n", window, keycode, x, y);
+
+  return ut_x11_key_press_new(window, keycode, x, y);
 }
 
-static void decode_key_release(UtObject *data, size_t *offset) {
+static UtObject *decode_key_release(UtObject *data, size_t *offset) {
   uint8_t keycode = read_card8(data, offset);
   read_card16(data, offset); // sequence_number
   read_card32(data, offset); // time
@@ -686,10 +702,11 @@ static void decode_key_release(UtObject *data, size_t *offset) {
   read_card16(data, offset); // state
   read_card8(data, offset);  // same_screen
   read_padding(data, offset, 1);
-  printf("XServer >> KeyRelease %08x %d %d,%d\n", window, keycode, x, y);
+
+  return ut_x11_key_release_new(window, keycode, x, y);
 }
 
-static void decode_button_press(UtObject *data, size_t *offset) {
+static UtObject *decode_button_press(UtObject *data, size_t *offset) {
   uint8_t button = read_card8(data, offset);
   read_card16(data, offset); // sequence_number
   read_card32(data, offset); // time
@@ -703,10 +720,11 @@ static void decode_button_press(UtObject *data, size_t *offset) {
   read_card16(data, offset); // state
   read_card8(data, offset);  // same_screen
   read_padding(data, offset, 1);
-  printf("XServer >> ButtonPress %08x %d %d,%d\n", window, button, x, y);
+
+  return ut_x11_button_press_new(window, button, x, y);
 }
 
-static void decode_button_release(UtObject *data, size_t *offset) {
+static UtObject *decode_button_release(UtObject *data, size_t *offset) {
   uint8_t button = read_card8(data, offset);
   read_card16(data, offset); // sequence_number
   read_card32(data, offset); // time
@@ -720,10 +738,11 @@ static void decode_button_release(UtObject *data, size_t *offset) {
   read_card16(data, offset); // state
   read_card8(data, offset);  // same_screen
   read_padding(data, offset, 1);
-  printf("XServer >> ButtonRelease %08x %d %d,%d\n", window, button, x, y);
+
+  return ut_x11_button_release_new(window, button, x, y);
 }
 
-static void decode_motion_notify(UtObject *data, size_t *offset) {
+static UtObject *decode_motion_notify(UtObject *data, size_t *offset) {
   read_card8(data, offset);  // detail
   read_card16(data, offset); // sequence_number
   read_card32(data, offset); // time
@@ -737,10 +756,11 @@ static void decode_motion_notify(UtObject *data, size_t *offset) {
   read_card16(data, offset); // state
   read_card8(data, offset);  // same_screen
   read_padding(data, offset, 1);
-  printf("XServer >> MotionNotify %08x %d,%d\n", window, x, y);
+
+  return ut_x11_motion_notify_new(window, x, y);
 }
 
-static void decode_enter_notify(UtObject *data, size_t *offset) {
+static UtObject *decode_enter_notify(UtObject *data, size_t *offset) {
   read_card8(data, offset);  // detail
   read_card16(data, offset); // sequence_number
   read_card32(data, offset); // time
@@ -754,10 +774,11 @@ static void decode_enter_notify(UtObject *data, size_t *offset) {
   read_card16(data, offset); // state
   read_card8(data, offset);  // mode
   read_card8(data, offset);  // same_screen, focus
-  printf("XServer >> EnterNotify %08x %d,%d\n", window, x, y);
+
+  return ut_x11_enter_notify_new(window, x, y);
 }
 
-static void decode_leave_notify(UtObject *data, size_t *offset) {
+static UtObject *decode_leave_notify(UtObject *data, size_t *offset) {
   read_card8(data, offset);  // detail
   read_card16(data, offset); // sequence_number
   read_card32(data, offset); // time
@@ -771,10 +792,11 @@ static void decode_leave_notify(UtObject *data, size_t *offset) {
   read_card16(data, offset); // state
   read_card8(data, offset);  // mode
   read_card8(data, offset);  // same_screen, focus
-  printf("XServer >> LeaveNotify %08x %d,%d\n", window, x, y);
+
+  return ut_x11_leave_notify_new(window, x, y);
 }
 
-static void decode_expose(UtObject *data, size_t *offset) {
+static UtObject *decode_expose(UtObject *data, size_t *offset) {
   read_padding(data, offset, 1);
   read_card16(data, offset); // sequence_number
   uint32_t window = read_card32(data, offset);
@@ -784,10 +806,11 @@ static void decode_expose(UtObject *data, size_t *offset) {
   uint16_t height = read_card16(data, offset);
   read_card16(data, offset); // count
   read_padding(data, offset, 14);
-  printf("XServer >> Expose %08x %d,%d %dx%d\n", window, x, y, width, height);
+
+  return ut_x11_expose_new(window, x, y, width, height);
 }
 
-static void decode_configure_notify(UtObject *data, size_t *offset) {
+static UtObject *decode_configure_notify(UtObject *data, size_t *offset) {
   read_padding(data, offset, 1);
   read_card16(data, offset); // sequence_number
   read_card32(data, offset); // event
@@ -800,11 +823,11 @@ static void decode_configure_notify(UtObject *data, size_t *offset) {
   read_card16(data, offset); // border_width
   read_card8(data, offset);  // override_redirect
   read_padding(data, offset, 5);
-  printf("XServer >> ConfigureNotify %08x %d,%d %dx%d\n", window, x, y, width,
-         height);
+
+  return ut_x11_configure_notify_new(window, x, y, width, height);
 }
 
-static void decode_property_notify(UtObject *data, size_t *offset) {
+static UtObject *decode_property_notify(UtObject *data, size_t *offset) {
   read_padding(data, offset, 1);
   read_card16(data, offset); // sequence_number
   uint32_t window = read_card32(data, offset);
@@ -812,7 +835,8 @@ static void decode_property_notify(UtObject *data, size_t *offset) {
   read_card32(data, offset); // time
   read_card8(data, offset);  // state
   read_padding(data, offset, 15);
-  printf("XServer >> PropertyNotify %08x %08x\n", window, atom);
+
+  return ut_x11_property_notify_new(window, atom);
 }
 
 static bool decode_event(UtX11Client *self, UtObject *data, size_t *offset) {
@@ -821,29 +845,36 @@ static bool decode_event(UtX11Client *self, UtObject *data, size_t *offset) {
   }
 
   uint8_t code = read_card8(data, offset);
+  UtObjectRef event = NULL;
   if (code == 2) {
-    decode_key_press(data, offset);
+    event = decode_key_press(data, offset);
   } else if (code == 3) {
-    decode_key_release(data, offset);
+    event = decode_key_release(data, offset);
   } else if (code == 4) {
-    decode_button_press(data, offset);
+    event = decode_button_press(data, offset);
   } else if (code == 5) {
-    decode_button_release(data, offset);
+    event = decode_button_release(data, offset);
   } else if (code == 6) {
-    decode_motion_notify(data, offset);
+    event = decode_motion_notify(data, offset);
   } else if (code == 7) {
-    decode_enter_notify(data, offset);
+    event = decode_enter_notify(data, offset);
   } else if (code == 8) {
-    decode_leave_notify(data, offset);
+    event = decode_leave_notify(data, offset);
   } else if (code == 12) {
-    decode_expose(data, offset);
+    event = decode_expose(data, offset);
   } else if (code == 22) {
-    decode_configure_notify(data, offset);
+    event = decode_configure_notify(data, offset);
   } else if (code == 28) {
-    decode_property_notify(data, offset);
+    event = decode_property_notify(data, offset);
   } else {
     read_padding(data, offset, 31);
-    printf("XServer >> Event %d\n", code);
+    event = ut_x11_unknown_event_new(code);
+  }
+
+  if (self->event_callback != NULL &&
+      (self->event_cancel == NULL ||
+       !ut_cancel_is_active(self->event_cancel))) {
+    self->event_callback(self->event_user_data, event);
   }
 
   return true;
@@ -888,6 +919,9 @@ static void ut_x11_client_init(UtObject *object) {
   UtX11Client *self = (UtX11Client *)object;
   self->socket = NULL;
   self->read_cancel = ut_cancel_new();
+  self->event_callback = NULL;
+  self->event_user_data = NULL;
+  self->event_cancel = NULL;
   self->connect_callback = NULL;
   self->connect_user_data = NULL;
   self->connect_cancel = NULL;
@@ -912,6 +946,9 @@ static void ut_x11_client_cleanup(UtObject *object) {
     ut_object_unref(self->socket);
   }
   ut_object_unref(self->read_cancel);
+  if (self->event_cancel != NULL) {
+    ut_object_unref(self->event_cancel);
+  }
   if (self->connect_cancel != NULL) {
     ut_object_unref(self->connect_cancel);
   }
@@ -944,10 +981,14 @@ static UtObjectInterface object_interface = {.type_name = "UtX11Client",
                                              .cleanup = ut_x11_client_cleanup,
                                              .interfaces = {{NULL, NULL}}};
 
-UtObject *ut_x11_client_new(const char *path) {
+UtObject *ut_x11_client_new(UtX11ClientEventCallback event_callback,
+                            void *user_data, UtObject *cancel) {
   UtObject *object = ut_object_new(sizeof(UtX11Client), &object_interface);
   UtX11Client *self = (UtX11Client *)object;
   self->socket = ut_unix_domain_socket_client_new("/tmp/.X11-unix/X0");
+  self->event_callback = event_callback;
+  self->event_user_data = user_data;
+  self->event_cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
   return object;
 }
 
