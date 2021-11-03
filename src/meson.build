@@ -39,6 +39,7 @@ ut_sources = [
   'ut-uint8.c',
   'ut-uint8-array.c',
   'ut-uint8-list.c',
+  'ut-uint8-subarray.c',
   'ut-uint16.c',
   'ut-uint16-array.c',
   'ut-uint16-list.c',
