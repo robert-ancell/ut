@@ -84,11 +84,10 @@ static void write_cb(void *user_data) {
       allocated_buffer[i] =
           ut_uint8_list_get_element(block->data, block->n_written + i);
     }
+    buffer = allocated_buffer;
   }
   ssize_t n_written = write(self->fd, buffer, n_to_write);
-  if (allocated_buffer != NULL) {
-    free(allocated_buffer);
-  }
+  free(allocated_buffer);
   assert(n_written >= 0);
   block->n_written += n_written;
 
