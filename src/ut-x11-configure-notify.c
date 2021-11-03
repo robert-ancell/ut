@@ -2,6 +2,7 @@
 
 #include "ut-object-private.h"
 #include "ut-x11-configure-notify.h"
+#include "ut-x11-event.h"
 
 typedef struct {
   UtObject object;
@@ -21,10 +22,12 @@ static void ut_x11_configure_notify_init(UtObject *object) {
   self->height = 0;
 }
 
+static UtX11EventInterface x11_event_interface = {};
+
 static UtObjectInterface object_interface = {
     .type_name = "UtX11ConfigureNotify",
     .init = ut_x11_configure_notify_init,
-    .interfaces = {{NULL, NULL}}};
+    .interfaces = {{&ut_x11_event_id, &x11_event_interface}}};
 
 UtObject *ut_x11_configure_notify_new(uint32_t window, int16_t x, int16_t y,
                                       uint16_t width, uint16_t height) {

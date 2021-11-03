@@ -2,6 +2,7 @@
 
 #include "ut-object-private.h"
 #include "ut-x11-enter-notify.h"
+#include "ut-x11-event.h"
 
 typedef struct {
   UtObject object;
@@ -17,9 +18,12 @@ static void ut_x11_enter_notify_init(UtObject *object) {
   self->y = 0;
 }
 
-static UtObjectInterface object_interface = {.type_name = "UtX11EnterNotify",
-                                             .init = ut_x11_enter_notify_init,
-                                             .interfaces = {{NULL, NULL}}};
+static UtX11EventInterface x11_event_interface = {};
+
+static UtObjectInterface object_interface = {
+    .type_name = "UtX11EnterNotify",
+    .init = ut_x11_enter_notify_init,
+    .interfaces = {{&ut_x11_event_id, &x11_event_interface}}};
 
 UtObject *ut_x11_enter_notify_new(uint32_t window, int16_t x, int16_t y) {
   UtObject *object = ut_object_new(sizeof(UtX11EnterNotify), &object_interface);

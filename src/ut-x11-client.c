@@ -16,18 +16,30 @@
 #include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
 #include "ut-unix-domain-socket-client.h"
+#include "ut-x11-atom-error.h"
 #include "ut-x11-button-press.h"
 #include "ut-x11-button-release.h"
 #include "ut-x11-client.h"
 #include "ut-x11-configure-notify.h"
+#include "ut-x11-drawable-error.h"
 #include "ut-x11-enter-notify.h"
 #include "ut-x11-expose.h"
+#include "ut-x11-id-choice-error.h"
+#include "ut-x11-implementation-error.h"
 #include "ut-x11-key-press.h"
 #include "ut-x11-key-release.h"
 #include "ut-x11-leave-notify.h"
+#include "ut-x11-length-error.h"
+#include "ut-x11-match-error.h"
 #include "ut-x11-motion-notify.h"
+#include "ut-x11-name-error.h"
+#include "ut-x11-pixmap-error.h"
 #include "ut-x11-property-notify.h"
+#include "ut-x11-request-error.h"
+#include "ut-x11-unknown-error.h"
 #include "ut-x11-unknown-event.h"
+#include "ut-x11-value-error.h"
+#include "ut-x11-window-error.h"
 
 typedef struct _UtX11Client UtX11Client;
 typedef struct _Request Request;
@@ -35,6 +47,8 @@ typedef struct _Request Request;
 typedef void (*DecodeReplyFunction)(UtX11Client *self, Request *request,
                                     uint8_t data0, UtObject *data,
                                     size_t *offset);
+typedef void (*HandleErrorFunction)(UtX11Client *self, Request *request,
+                                    UtObject *error);
 
 typedef void (*RequestCallback)(void *user_data);
 
@@ -125,6 +139,7 @@ typedef struct {
 struct _Request {
   uint16_t sequence_number;
   DecodeReplyFunction decode_reply_function;
+  HandleErrorFunction handle_error_function;
   RequestCallback callback;
   void *user_data;
   UtObject *cancel;
@@ -159,8 +174,6 @@ struct _UtX11Client {
   uint16_t sequence_number;
   Request *requests;
 };
-
-#include <stdio.h> // FIXME: Remove
 
 static uint32_t create_resource_id(UtX11Client *self) {
   return self->resource_id_base | (self->next_resource_id++);
@@ -217,6 +230,7 @@ static void write_string8(UtObject *buffer, const char *value) {
 static void send_request_with_reply(UtX11Client *self, uint8_t opcode,
                                     uint8_t data0, UtObject *data,
                                     DecodeReplyFunction decode_reply_function,
+                                    HandleErrorFunction handle_error_function,
                                     RequestCallback callback, void *user_data,
                                     UtObject *cancel) {
   size_t data_length = ut_list_get_length(data);
@@ -235,6 +249,7 @@ static void send_request_with_reply(UtX11Client *self, uint8_t opcode,
     Request *request = malloc(sizeof(Request));
     request->sequence_number = self->sequence_number;
     request->decode_reply_function = decode_reply_function;
+    request->handle_error_function = handle_error_function;
     request->callback = callback;
     request->user_data = user_data;
     request->cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
@@ -247,7 +262,19 @@ static void send_request_with_reply(UtX11Client *self, uint8_t opcode,
 
 static void send_request(UtX11Client *self, uint8_t opcode, uint8_t data0,
                          UtObject *data) {
-  send_request_with_reply(self, opcode, data0, data, NULL, NULL, NULL, NULL);
+  send_request_with_reply(self, opcode, data0, data, NULL, NULL, NULL, NULL,
+                          NULL);
+}
+
+static Request *find_request(UtX11Client *self, uint16_t sequence_number) {
+  for (Request *request = self->requests; request != NULL;
+       request = request->next) {
+    if (request->sequence_number == sequence_number) {
+      return request;
+    }
+  }
+
+  return NULL;
 }
 
 static uint8_t peek_card8(UtObject *buffer, size_t *offset) {
@@ -468,41 +495,62 @@ static bool decode_error(UtX11Client *self, UtObject *data, size_t *offset) {
   assert(read_card8(data, offset) == 0);
   uint8_t code = read_card8(data, offset);
   uint16_t sequence_number = read_card16(data, offset);
+  uint32_t value = read_card32(data, offset);
+  uint16_t minor_opcode = read_card16(data, offset);
+  uint8_t major_opcode = read_card8(data, offset);
 
+  UtObjectRef error = NULL;
   if (code == 1) {
-    read_padding(data, offset, 4);
-    uint16_t minor_opcode = read_card16(data, offset);
-    uint8_t major_opcode = read_card8(data, offset);
     read_padding(data, offset, 21);
-    printf("XServer >> RequestError opcode %d.%d seq %d\n", major_opcode,
-           minor_opcode, sequence_number);
+    error = ut_x11_request_error_new();
+  } else if (code == 2) {
+    read_padding(data, offset, 21);
+    error = ut_x11_value_error_new(value);
   } else if (code == 3) {
-    uint32_t window = read_card32(data, offset);
-    uint16_t minor_opcode = read_card16(data, offset);
-    uint8_t major_opcode = read_card8(data, offset);
     read_padding(data, offset, 21);
-    printf("XServer >> WindowError opcode %d.%d window %08x seq %d\n",
-           major_opcode, minor_opcode, window, sequence_number);
+    error = ut_x11_window_error_new(value);
+  } else if (code == 4) {
+    read_padding(data, offset, 21);
+    error = ut_x11_pixmap_error_new(value);
+  } else if (code == 5) {
+    read_padding(data, offset, 21);
+    error = ut_x11_atom_error_new(value);
+  } else if (code == 8) {
+    read_padding(data, offset, 21);
+    error = ut_x11_match_error_new();
+  } else if (code == 9) {
+    read_padding(data, offset, 21);
+    error = ut_x11_drawable_error_new(value);
   } else if (code == 14) {
-    uint32_t resource = read_card32(data, offset);
-    uint16_t minor_opcode = read_card16(data, offset);
-    uint8_t major_opcode = read_card8(data, offset);
     read_padding(data, offset, 21);
-    printf("XServer >> IDChoiceError opcode %d.%d resource %08x seq %d\n",
-           major_opcode, minor_opcode, resource, sequence_number);
+    error = ut_x11_id_choice_error_new(value);
+  } else if (code == 15) {
+    read_padding(data, offset, 21);
+    error = ut_x11_name_error_new();
   } else if (code == 16) {
-    read_padding(data, offset, 4);
-    uint16_t minor_opcode = read_card16(data, offset);
-    uint8_t major_opcode = read_card8(data, offset);
     read_padding(data, offset, 21);
-    printf("XServer >> LengthError opcode %d.%d seq %d\n", major_opcode,
-           minor_opcode, sequence_number);
+    error = ut_x11_length_error_new(sequence_number);
+  } else if (code == 17) {
+    read_padding(data, offset, 21);
+    error = ut_x11_implementation_error_new();
   } else {
     read_padding(data, offset, 28);
-    printf("XServer >> Error %d seq %d\n", code, sequence_number);
+    error = ut_x11_unknown_error_new(code, major_opcode, minor_opcode);
   }
 
+  Request *request = find_request(self, sequence_number);
+  if (request != NULL) {
+    request->handle_error_function(self, request, error);
+  } /* else if (self->handle{
+      self->
+   }*/
+
   return true;
+}
+
+static bool request_has_callback(Request *request) {
+  return request->callback != NULL &&
+         (request->cancel == NULL || !ut_cancel_is_active(request->cancel));
 }
 
 static void decode_intern_atom_reply(UtX11Client *self, Request *request,
@@ -511,11 +559,19 @@ static void decode_intern_atom_reply(UtX11Client *self, Request *request,
   uint32_t atom = read_card32(data, offset);
   read_padding(data, offset, 20);
 
-  if (request->callback != NULL &&
-      (request->cancel == NULL || !ut_cancel_is_active(request->cancel))) {
+  if (request_has_callback(request)) {
     UtX11InternAtomCallback callback =
         (UtX11InternAtomCallback)request->callback;
     callback(request->user_data, atom, NULL);
+  }
+}
+
+static void handle_intern_atom_error(UtX11Client *self, Request *request,
+                                     UtObject *error) {
+  if (request_has_callback(request)) {
+    UtX11InternAtomCallback callback =
+        (UtX11InternAtomCallback)request->callback;
+    callback(request->user_data, 0, error);
   }
 }
 
@@ -527,11 +583,19 @@ static void decode_get_atom_name_reply(UtX11Client *self, Request *request,
   ut_cstring name = read_string8(data, offset, name_length);
   read_align_padding(data, offset, 4);
 
-  if (request->callback != NULL &&
-      (request->cancel == NULL || !ut_cancel_is_active(request->cancel))) {
+  if (request_has_callback(request)) {
     UtX11GetAtomNameCallback callback =
         (UtX11GetAtomNameCallback)request->callback;
     callback(request->user_data, name, NULL);
+  }
+}
+
+static void handle_get_atom_name_error(UtX11Client *self, Request *request,
+                                       UtObject *error) {
+  if (request_has_callback(request)) {
+    UtX11GetAtomNameCallback callback =
+        (UtX11GetAtomNameCallback)request->callback;
+    callback(request->user_data, NULL, error);
   }
 }
 
@@ -565,11 +629,19 @@ static void decode_get_property_reply(UtX11Client *self, Request *request,
   }
   read_align_padding(data, offset, 4);
 
-  if (request->callback != NULL &&
-      (request->cancel == NULL || !ut_cancel_is_active(request->cancel))) {
+  if (request_has_callback(request)) {
     UtX11GetPropertyCallback callback =
         (UtX11GetPropertyCallback)request->callback;
     callback(request->user_data, type, value, bytes_after, NULL);
+  }
+}
+
+static void handle_get_property_error(UtX11Client *self, Request *request,
+                                      UtObject *error) {
+  if (request_has_callback(request)) {
+    UtX11GetPropertyCallback callback =
+        (UtX11GetPropertyCallback)request->callback;
+    callback(request->user_data, 0, NULL, 0, error);
   }
 }
 
@@ -583,11 +655,45 @@ static void decode_list_properties_reply(UtX11Client *self, Request *request,
     ut_uint32_list_append(atoms, read_card32(data, offset));
   }
 
-  if (request->callback != NULL &&
-      (request->cancel == NULL || !ut_cancel_is_active(request->cancel))) {
+  if (request_has_callback(request)) {
     UtX11ListPropertiesCallback callback =
         (UtX11ListPropertiesCallback)request->callback;
     callback(request->user_data, atoms, NULL);
+  }
+}
+
+static void handle_list_properties_error(UtX11Client *self, Request *request,
+                                         UtObject *error) {
+  if (request_has_callback(request)) {
+    UtX11ListPropertiesCallback callback =
+        (UtX11ListPropertiesCallback)request->callback;
+    callback(request->user_data, NULL, error);
+  }
+}
+
+static void decode_query_extension_reply(UtX11Client *self, Request *request,
+                                         uint8_t data0, UtObject *data,
+                                         size_t *offset) {
+  uint8_t major_opcode = read_card8(data, offset);
+  bool present = read_bool(data, offset);
+  uint8_t first_event = read_card8(data, offset);
+  uint8_t first_error = read_card8(data, offset);
+  read_padding(data, offset, 20);
+
+  if (request_has_callback(request)) {
+    UtX11QueryExtensionCallback callback =
+        (UtX11QueryExtensionCallback)request->callback;
+    callback(request->user_data, present, major_opcode, first_event,
+             first_error, NULL);
+  }
+}
+
+static void handle_query_extension_error(UtX11Client *self, Request *request,
+                                         UtObject *error) {
+  if (request_has_callback(request)) {
+    UtX11QueryExtensionCallback callback =
+        (UtX11QueryExtensionCallback)request->callback;
+    callback(request->user_data, false, 0, 0, 0, error);
   }
 }
 
@@ -604,41 +710,20 @@ static void decode_list_extensions_reply(UtX11Client *self, Request *request,
   }
   read_align_padding(data, offset, 4);
 
-  if (request->callback != NULL &&
-      (request->cancel == NULL || !ut_cancel_is_active(request->cancel))) {
+  if (request_has_callback(request)) {
     UtX11ListExtensionsCallback callback =
         (UtX11ListExtensionsCallback)request->callback;
     callback(request->user_data, names, NULL);
   }
 }
 
-static void decode_query_extension_reply(UtX11Client *self, Request *request,
-                                         uint8_t data0, UtObject *data,
-                                         size_t *offset) {
-  uint8_t major_opcode = read_card8(data, offset);
-  bool present = read_bool(data, offset);
-  uint8_t first_event = read_card8(data, offset);
-  uint8_t first_error = read_card8(data, offset);
-  read_padding(data, offset, 20);
-
-  if (request->callback != NULL &&
-      (request->cancel == NULL || !ut_cancel_is_active(request->cancel))) {
-    UtX11QueryExtensionCallback callback =
-        (UtX11QueryExtensionCallback)request->callback;
-    callback(request->user_data, present, major_opcode, first_event,
-             first_error, NULL);
+static void handle_list_extensions_error(UtX11Client *self, Request *request,
+                                         UtObject *error) {
+  if (request_has_callback(request)) {
+    UtX11ListExtensionsCallback callback =
+        (UtX11ListExtensionsCallback)request->callback;
+    callback(request->user_data, NULL, error);
   }
-}
-
-static Request *find_request(UtX11Client *self, uint16_t sequence_number) {
-  for (Request *request = self->requests; request != NULL;
-       request = request->next) {
-    if (request->sequence_number == sequence_number) {
-      return request;
-    }
-  }
-
-  return NULL;
 }
 
 static bool decode_reply(UtX11Client *self, UtObject *data, size_t *offset) {
@@ -662,7 +747,7 @@ static bool decode_reply(UtX11Client *self, UtObject *data, size_t *offset) {
     size_t reply_offset = o;
     request->decode_reply_function(self, request, data0, data, &reply_offset);
   } else {
-    printf("XServer >> Reply seq %d\n", sequence_number);
+    // FIXME: Warn about unexpected reply.
   }
   read_padding(data, &o, payload_length);
 
@@ -1112,8 +1197,8 @@ void ut_x11_client_intern_atom(UtObject *object, const char *name,
   write_align_padding(request, 4);
 
   send_request_with_reply(self, 16, only_if_exists ? 1 : 0, request,
-                          decode_intern_atom_reply, (RequestCallback)callback,
-                          user_data, cancel);
+                          decode_intern_atom_reply, handle_intern_atom_error,
+                          (RequestCallback)callback, user_data, cancel);
 }
 
 void ut_x11_client_get_atom_name(UtObject *object, uint32_t atom,
@@ -1125,7 +1210,8 @@ void ut_x11_client_get_atom_name(UtObject *object, uint32_t atom,
   write_card32(request, atom);
 
   send_request_with_reply(self, 17, 0, request, decode_get_atom_name_reply,
-                          (RequestCallback)callback, user_data, cancel);
+                          handle_get_atom_name_error, (RequestCallback)callback,
+                          user_data, cancel);
 }
 
 void ut_x11_client_change_property(UtObject *object, uint32_t window,
@@ -1167,8 +1253,8 @@ void ut_x11_client_get_property_full(UtObject *object, uint32_t window,
   write_card32(request, long_length);
 
   send_request_with_reply(self, 31, delete ? 1 : 0, request,
-                          decode_get_property_reply, (RequestCallback)callback,
-                          user_data, cancel);
+                          decode_get_property_reply, handle_get_property_error,
+                          (RequestCallback)callback, user_data, cancel);
 }
 
 void ut_x11_client_list_properties(UtObject *object, uint32_t window,
@@ -1180,6 +1266,7 @@ void ut_x11_client_list_properties(UtObject *object, uint32_t window,
   write_card32(request, window);
 
   send_request_with_reply(self, 32, 0, request, decode_list_properties_reply,
+                          handle_list_properties_error,
                           (RequestCallback)callback, user_data, cancel);
 }
 
@@ -1222,6 +1309,7 @@ void ut_x11_client_query_extension(UtObject *object, const char *name,
   write_align_padding(request, 4);
 
   send_request_with_reply(self, 98, 0, request, decode_query_extension_reply,
+                          handle_query_extension_error,
                           (RequestCallback)callback, user_data, cancel);
 }
 
@@ -1232,6 +1320,7 @@ void ut_x11_client_list_extensions(UtObject *object,
 
   UtObjectRef request = ut_uint8_array_new();
   send_request_with_reply(self, 99, 0, request, decode_list_extensions_reply,
+                          handle_list_extensions_error,
                           (RequestCallback)callback, user_data, cancel);
 }
 

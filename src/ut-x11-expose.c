@@ -1,6 +1,7 @@
 #include <assert.h>
 
 #include "ut-object-private.h"
+#include "ut-x11-event.h"
 #include "ut-x11-expose.h"
 
 typedef struct {
@@ -21,9 +22,12 @@ static void ut_x11_expose_init(UtObject *object) {
   self->height = 0;
 }
 
-static UtObjectInterface object_interface = {.type_name = "UtX11Expose",
-                                             .init = ut_x11_expose_init,
-                                             .interfaces = {{NULL, NULL}}};
+static UtX11EventInterface x11_event_interface = {};
+
+static UtObjectInterface object_interface = {
+    .type_name = "UtX11Expose",
+    .init = ut_x11_expose_init,
+    .interfaces = {{&ut_x11_event_id, &x11_event_interface}}};
 
 UtObject *ut_x11_expose_new(uint32_t window, uint16_t x, uint16_t y,
                             uint16_t width, uint16_t height) {
