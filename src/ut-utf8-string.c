@@ -8,6 +8,7 @@
 #include "ut-string.h"
 #include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
+#include "ut-uint8-subarray.h"
 #include "ut-utf8-string.h"
 
 typedef struct {
@@ -62,8 +63,8 @@ static char *ut_utf8_string_take_text(UtObject *object) {
 
 static UtObject *ut_utf8_string_get_utf8(UtObject *object) {
   UtUtf8String *self = (UtUtf8String *)object;
-  return ut_constant_uint8_array_new(ut_uint8_array_get_data(self->data),
-                                     ut_list_get_length(self->data) - 1);
+  return ut_uint8_subarray_new(self->data, 0,
+                               ut_list_get_length(self->data) - 1);
 }
 
 static void ut_utf8_string_clear(UtObject *object) {
