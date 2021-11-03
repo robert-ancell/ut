@@ -46,9 +46,7 @@ static void ut_hash_table_item_init(UtObject *object) {
 static void ut_hash_table_item_cleanup(UtObject *object) {
   UtHashTableItem *self = (UtHashTableItem *)object;
   ut_object_unref(self->key);
-  self->key = NULL;
   ut_object_unref(self->value);
-  self->value = NULL;
   self->next = NULL;
 }
 

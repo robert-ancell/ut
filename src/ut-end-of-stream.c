@@ -15,9 +15,7 @@ static void ut_end_of_stream_init(UtObject *object) {
 
 static void ut_end_of_stream_cleanup(UtObject *object) {
   UtEndOfStream *self = (UtEndOfStream *)object;
-  if (self->unused_data != NULL) {
-    ut_object_unref(self->unused_data);
-  }
+  ut_object_unref(self->unused_data);
 }
 
 static UtObjectInterface object_interface = {.type_name = "UtEndOfStream",
@@ -29,7 +27,7 @@ static UtObjectInterface object_interface = {.type_name = "UtEndOfStream",
 UtObject *ut_end_of_stream_new(UtObject *unused_data) {
   UtObject *object = ut_object_new(sizeof(UtEndOfStream), &object_interface);
   UtEndOfStream *self = (UtEndOfStream *)object;
-  self->unused_data = unused_data != NULL ? ut_object_ref(unused_data) : NULL;
+  self->unused_data = ut_object_ref(unused_data);
   return object;
 }
 

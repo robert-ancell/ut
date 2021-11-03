@@ -13,8 +13,10 @@ bool ut_object_equal(UtObject *object, UtObject *other);
 
 int ut_object_get_hash(UtObject *object);
 
+// Returns NULL if [object] is NULL.
 UtObject *ut_object_ref(UtObject *object);
 
+// Does nothing if [object] is NULL.
 void ut_object_unref(UtObject *object);
 
 static inline void ut_object_clear(UtObject **object) {

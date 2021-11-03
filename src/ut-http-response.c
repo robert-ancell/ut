@@ -118,7 +118,7 @@ static void start_read(UtHttpResponse *self, bool read_all,
   self->read_cancel = ut_cancel_new();
   self->callback = callback;
   self->user_data = user_data;
-  self->cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
+  self->cancel = ut_object_ref(cancel);
 
   ut_input_stream_read(self->tcp_client, read_cb, self, self->read_cancel);
 }
@@ -141,9 +141,7 @@ static void ut_http_response_cleanup(UtObject *object) {
   free(self->reason_phrase);
   ut_object_unref(self->headers);
   ut_object_unref(self->tcp_client);
-  if (self->cancel != NULL) {
-    ut_object_unref(self->cancel);
-  }
+  ut_object_unref(self->cancel);
 }
 
 static void ut_http_response_read(UtObject *object,

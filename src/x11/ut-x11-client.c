@@ -252,7 +252,7 @@ static void send_request_with_reply(UtX11Client *self, uint8_t opcode,
     request->handle_error_function = handle_error_function;
     request->callback = callback;
     request->user_data = user_data;
-    request->cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
+    request->cancel = ut_object_ref(cancel);
     request->next = self->requests;
     self->requests = request;
   }
@@ -1021,16 +1021,10 @@ static void ut_x11_client_init(UtObject *object) {
 
 static void ut_x11_client_cleanup(UtObject *object) {
   UtX11Client *self = (UtX11Client *)object;
-  if (self->socket != NULL) {
-    ut_object_unref(self->socket);
-  }
+  ut_object_unref(self->socket);
   ut_object_unref(self->read_cancel);
-  if (self->event_cancel != NULL) {
-    ut_object_unref(self->event_cancel);
-  }
-  if (self->connect_cancel != NULL) {
-    ut_object_unref(self->connect_cancel);
-  }
+  ut_object_unref(self->event_cancel);
+  ut_object_unref(self->connect_cancel);
   free(self->vendor);
   for (size_t i = 0; i < self->pixmap_formats_length; i++) {
     free(self->pixmap_formats[i]);
@@ -1048,9 +1042,7 @@ static void ut_x11_client_cleanup(UtObject *object) {
   for (Request *request = self->requests; request != NULL;
        request = next_request) {
     next_request = request->next;
-    if (request->cancel != NULL) {
-      ut_object_unref(request->cancel);
-    }
+    ut_object_unref(request->cancel);
     free(request);
   }
 }
@@ -1067,7 +1059,7 @@ UtObject *ut_x11_client_new(UtX11ClientEventCallback event_callback,
   self->socket = ut_unix_domain_socket_client_new("/tmp/.X11-unix/X0");
   self->event_callback = event_callback;
   self->event_user_data = user_data;
-  self->event_cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
+  self->event_cancel = ut_object_ref(cancel);
   return object;
 }
 
@@ -1082,7 +1074,7 @@ void ut_x11_client_connect(UtObject *object,
   assert(self->connect_callback == NULL);
   self->connect_callback = callback;
   self->connect_user_data = user_data;
-  self->connect_cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
+  self->connect_cancel = ut_object_ref(cancel);
 
   ut_unix_domain_socket_client_connect(self->socket);
   ut_input_stream_read(self->socket, read_cb, self, self->read_cancel);

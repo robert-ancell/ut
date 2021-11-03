@@ -79,9 +79,7 @@ static void time_delta(struct timespec *a, struct timespec *b,
 }
 
 static void free_timeout(Timeout *timeout) {
-  if (timeout->cancel != NULL) {
-    ut_object_unref(timeout->cancel);
-  }
+  ut_object_unref(timeout->cancel);
   free(timeout);
 }
 
@@ -113,7 +111,7 @@ static void add_timeout(EventLoop *loop, time_t seconds, bool repeat,
   t->frequency.tv_nsec = 0;
   t->callback = callback;
   t->user_data = user_data;
-  t->cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
+  t->cancel = ut_object_ref(cancel);
   t->next = NULL;
 
   insert_timeout(loop, t);
@@ -125,15 +123,13 @@ static FdWatch *fd_watch_new(int fd, UtEventLoopCallback callback,
   watch->fd = fd;
   watch->callback = callback;
   watch->user_data = user_data;
-  watch->cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
+  watch->cancel = ut_object_ref(cancel);
   watch->next = NULL;
   return watch;
 }
 
 static void free_fd_watch(FdWatch *watch) {
-  if (watch->cancel != NULL) {
-    ut_object_unref(watch->cancel);
-  }
+  ut_object_unref(watch->cancel);
   free(watch);
 }
 
@@ -173,7 +169,7 @@ static WorkerThread *worker_thread_new(UtThreadCallback thread_callback,
   thread->thread_data_cleanup = thread_data_cleanup;
   thread->result_callback = result_callback;
   thread->user_data = user_data;
-  thread->cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
+  thread->cancel = ut_object_ref(cancel);
   thread->next = NULL;
   return thread;
 }
@@ -184,9 +180,7 @@ static void free_worker_thread(WorkerThread *thread) {
   if (thread->thread_data_cleanup != NULL) {
     thread->thread_data_cleanup(thread->thread_data);
   }
-  if (thread->cancel != NULL) {
-    ut_object_unref(thread->cancel);
-  }
+  ut_object_unref(thread->cancel);
   free(thread);
 }
 
@@ -262,7 +256,7 @@ void ut_event_loop_add_worker_thread(UtThreadCallback thread_callback,
 void ut_event_loop_return(UtObject *object) {
   EventLoop *loop = get_loop();
   assert(!loop->complete);
-  loop->return_value = object != NULL ? ut_object_ref(object) : NULL;
+  loop->return_value = ut_object_ref(object);
   loop->complete = true;
 }
 

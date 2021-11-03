@@ -43,14 +43,8 @@ static void ut_unix_domain_socket_client_init(UtObject *object) {
 static void ut_unix_domain_socket_client_cleanup(UtObject *object) {
   UtUnixDomainSocketClient *self = (UtUnixDomainSocketClient *)object;
   free(self->path);
-  if (self->input_stream != NULL) {
-    ut_object_unref(self->input_stream);
-    self->input_stream = NULL;
-  }
-  if (self->output_stream != NULL) {
-    ut_object_unref(self->output_stream);
-    self->output_stream = NULL;
-  }
+  ut_object_unref(self->input_stream);
+  ut_object_unref(self->output_stream);
   disconnect_client(self);
 }
 

@@ -51,16 +51,14 @@ static ConnectData *connect_data_new(UtTcpClient *self, const char *address,
   data->watch_cancel = ut_cancel_new();
   data->callback = callback;
   data->user_data = user_data;
-  data->cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
+  data->cancel = ut_object_ref(cancel);
   return data;
 }
 
 static void connect_data_free(ConnectData *data) {
   free(data->address);
   ut_object_unref(data->watch_cancel);
-  if (data->cancel) {
-    ut_object_unref(data->cancel);
-  }
+  ut_object_unref(data->cancel);
   free(data);
 }
 
@@ -136,14 +134,8 @@ static void ut_tcp_client_init(UtObject *object) {
 static void ut_tcp_client_cleanup(UtObject *object) {
   UtTcpClient *self = (UtTcpClient *)object;
   free(self->address);
-  if (self->input_stream != NULL) {
-    ut_object_unref(self->input_stream);
-    self->input_stream = NULL;
-  }
-  if (self->output_stream != NULL) {
-    ut_object_unref(self->output_stream);
-    self->output_stream = NULL;
-  }
+  ut_object_unref(self->input_stream);
+  ut_object_unref(self->output_stream);
   disconnect_client(self);
 }
 

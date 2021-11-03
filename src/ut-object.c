@@ -58,6 +58,10 @@ int ut_object_get_hash(UtObject *object) {
 }
 
 UtObject *ut_object_ref(UtObject *object) {
+  if (object == NULL) {
+    return NULL;
+  }
+
   assert(object->ref_count > 0);
 
   object->ref_count++;
@@ -65,6 +69,10 @@ UtObject *ut_object_ref(UtObject *object) {
 }
 
 void ut_object_unref(UtObject *object) {
+  if (object == NULL) {
+    return;
+  }
+
   assert(object->ref_count > 0);
 
   object->ref_count--;

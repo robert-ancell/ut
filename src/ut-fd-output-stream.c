@@ -44,7 +44,7 @@ static void add_block(UtFdOutputStream *self, UtObject *data,
   block->n_written = 0;
   block->callback = callback;
   block->user_data = user_data;
-  block->cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
+  block->cancel = ut_object_ref(cancel);
   block->next = NULL;
 
   if (self->last_block != NULL) {
@@ -57,9 +57,7 @@ static void add_block(UtFdOutputStream *self, UtObject *data,
 
 static void free_block(WriteBlock *block) {
   ut_object_unref(block->data);
-  if (block->cancel != NULL) {
-    ut_object_unref(block->cancel);
-  }
+  ut_object_unref(block->cancel);
   free(block);
 }
 
@@ -121,9 +119,7 @@ static void ut_fd_output_stream_init(UtObject *object) {
 
 static void ut_fd_output_stream_cleanup(UtObject *object) {
   UtFdOutputStream *self = (UtFdOutputStream *)object;
-  if (self->watch_cancel != NULL) {
-    ut_object_unref(self->watch_cancel);
-  }
+  ut_object_unref(self->watch_cancel);
   WriteBlock *next_block;
   for (WriteBlock *b = self->blocks; b != NULL; b = next_block) {
     next_block = b->next;

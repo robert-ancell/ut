@@ -109,7 +109,7 @@ static void start_read(UtFdInputStream *self, bool read_all,
   self->watch_cancel = ut_cancel_new();
   self->callback = callback;
   self->user_data = user_data;
-  self->cancel = cancel != NULL ? ut_object_ref(cancel) : NULL;
+  self->cancel = ut_object_ref(cancel);
 
   // If have buffered data, process that first.
   if (self->read_buffer_length > 0) {
@@ -135,12 +135,8 @@ static void ut_fd_input_stream_init(UtObject *object) {
 static void ut_fd_input_stream_cleanup(UtObject *object) {
   UtFdInputStream *self = (UtFdInputStream *)object;
   ut_object_unref(self->read_buffer);
-  if (self->watch_cancel != NULL) {
-    ut_object_unref(self->watch_cancel);
-  }
-  if (self->cancel != NULL) {
-    ut_object_unref(self->cancel);
-  }
+  ut_object_unref(self->watch_cancel);
+  ut_object_unref(self->cancel);
 }
 
 static void ut_fd_input_stream_read(UtObject *object,
