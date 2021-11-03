@@ -1111,6 +1111,7 @@ void ut_x11_client_connect(UtObject *object,
 
 uint32_t ut_x11_client_create_window(UtObject *object, int16_t x, int16_t y,
                                      uint16_t width, uint16_t height) {
+  assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
   uint32_t id = create_resource_id(self);
@@ -1141,6 +1142,7 @@ uint32_t ut_x11_client_create_window(UtObject *object, int16_t x, int16_t y,
 }
 
 void ut_x11_client_destroy_window(UtObject *object, uint32_t window) {
+  assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
   UtObjectRef request = ut_uint8_array_new();
@@ -1150,6 +1152,7 @@ void ut_x11_client_destroy_window(UtObject *object, uint32_t window) {
 }
 
 void ut_x11_client_map_window(UtObject *object, uint32_t window) {
+  assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
   UtObjectRef request = ut_uint8_array_new();
@@ -1159,6 +1162,7 @@ void ut_x11_client_map_window(UtObject *object, uint32_t window) {
 }
 
 void ut_x11_client_unmap_window(UtObject *object, uint32_t window) {
+  assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
   UtObjectRef request = ut_uint8_array_new();
@@ -1170,6 +1174,7 @@ void ut_x11_client_unmap_window(UtObject *object, uint32_t window) {
 void ut_x11_client_configure_window(UtObject *object, uint32_t window,
                                     int16_t x, int16_t y, uint16_t width,
                                     uint16_t height) {
+  assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
   UtObjectRef request = ut_uint8_array_new();
@@ -1188,6 +1193,7 @@ void ut_x11_client_intern_atom(UtObject *object, const char *name,
                                bool only_if_exists,
                                UtX11InternAtomCallback callback,
                                void *user_data, UtObject *cancel) {
+  assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
   UtObjectRef request = ut_uint8_array_new();
@@ -1204,6 +1210,7 @@ void ut_x11_client_intern_atom(UtObject *object, const char *name,
 void ut_x11_client_get_atom_name(UtObject *object, uint32_t atom,
                                  UtX11GetAtomNameCallback callback,
                                  void *user_data, UtObject *cancel) {
+  assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
   UtObjectRef request = ut_uint8_array_new();
@@ -1215,10 +1222,13 @@ void ut_x11_client_get_atom_name(UtObject *object, uint32_t atom,
 }
 
 void ut_x11_client_change_property(UtObject *object, uint32_t window,
-                                   uint32_t property, uint32_t type) {}
+                                   uint32_t property, uint32_t type) {
+  assert(ut_object_is_x11_client(object));
+}
 
 void ut_x11_client_delete_property(UtObject *object, uint32_t window,
                                    uint32_t property) {
+  assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
   UtObjectRef request = ut_uint8_array_new();
@@ -1243,6 +1253,7 @@ void ut_x11_client_get_property_full(UtObject *object, uint32_t window,
                                      bool delete,
                                      UtX11GetPropertyCallback callback,
                                      void *user_data, UtObject *cancel) {
+  assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
   UtObjectRef request = ut_uint8_array_new();
@@ -1260,6 +1271,7 @@ void ut_x11_client_get_property_full(UtObject *object, uint32_t window,
 void ut_x11_client_list_properties(UtObject *object, uint32_t window,
                                    UtX11ListPropertiesCallback callback,
                                    void *user_data, UtObject *cancel) {
+  assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
   UtObjectRef request = ut_uint8_array_new();
@@ -1273,6 +1285,7 @@ void ut_x11_client_list_properties(UtObject *object, uint32_t window,
 uint32_t ut_x11_client_create_pixmap(UtObject *object, uint32_t drawable,
                                      uint16_t width, uint16_t height,
                                      uint8_t depth) {
+  assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
   uint32_t id = create_resource_id(self);
@@ -1289,6 +1302,7 @@ uint32_t ut_x11_client_create_pixmap(UtObject *object, uint32_t drawable,
 }
 
 void ut_x11_client_free_pixmap(UtObject *object, uint32_t pixmap) {
+  assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
   UtObjectRef request = ut_uint8_array_new();
@@ -1300,6 +1314,7 @@ void ut_x11_client_free_pixmap(UtObject *object, uint32_t pixmap) {
 void ut_x11_client_query_extension(UtObject *object, const char *name,
                                    UtX11QueryExtensionCallback callback,
                                    void *user_data, UtObject *cancel) {
+  assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
   UtObjectRef request = ut_uint8_array_new();
@@ -1316,6 +1331,7 @@ void ut_x11_client_query_extension(UtObject *object, const char *name,
 void ut_x11_client_list_extensions(UtObject *object,
                                    UtX11ListExtensionsCallback callback,
                                    void *user_data, UtObject *cancel) {
+  assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
   UtObjectRef request = ut_uint8_array_new();
