@@ -13,8 +13,11 @@ char *ut_cstring_new_printf(const char *format, ...) {
 
 char *ut_cstring_new_vprintf(const char *format, va_list ap) {
   char empty = '\0';
-  int description_length = vsnprintf(&empty, 1, format, ap);
-  char *result = malloc(sizeof(char) * (description_length + 1));
-  vsnprintf(result, description_length + 1, format, ap);
+  va_list ap2;
+  va_copy(ap2, ap);
+  int length = vsnprintf(&empty, 1, format, ap2);
+  va_end(ap2);
+  char *result = malloc(sizeof(char) * (length + 1));
+  vsnprintf(result, length + 1, format, ap);
   return result;
 }
