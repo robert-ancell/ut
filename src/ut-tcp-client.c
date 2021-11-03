@@ -78,8 +78,7 @@ static void connect_cb(void *user_data) {
   getsockopt(self->fd, SOL_SOCKET, SO_ERROR, &error, &error_length);
   assert(error == 0);
 
-  bool is_cancelled = data->cancel != NULL && ut_cancel_is_active(data->cancel);
-  if (!is_cancelled && data->callback != NULL) {
+  if (!ut_cancel_is_active(data->cancel) && data->callback != NULL) {
     data->callback(data->user_data);
   }
 

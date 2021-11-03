@@ -40,7 +40,7 @@ static void report_read_data(UtFdInputStream *self) {
 static void read_cb(void *user_data) {
   UtFdInputStream *self = user_data;
 
-  if (self->cancel == NULL || !ut_cancel_is_active(self->cancel)) {
+  if (!ut_cancel_is_active(self->cancel)) {
     // Make space to read a new block.
     ut_list_resize(self->read_buffer,
                    self->read_buffer_length + self->block_size);
@@ -59,7 +59,7 @@ static void read_cb(void *user_data) {
       } else {
         UtObjectRef end_of_stream = ut_end_of_stream_new(
             self->read_buffer_length > 0 ? self->read_buffer : NULL);
-        if (self->cancel == NULL || !ut_cancel_is_active(self->cancel)) {
+        if (!ut_cancel_is_active(self->cancel)) {
           self->callback(self->user_data, end_of_stream);
         }
       }
@@ -69,7 +69,7 @@ static void read_cb(void *user_data) {
   }
 
   // Stop listening for read events when done.
-  if (self->cancel != NULL && ut_cancel_is_active(self->cancel)) {
+  if (ut_cancel_is_active(self->cancel)) {
     ut_cancel_activate(self->watch_cancel);
   }
 }
@@ -80,7 +80,7 @@ static void add_read_watch(UtFdInputStream *self) {
 
 static void buffered_read_cb(void *user_data) {
   UtFdInputStream *self = user_data;
-  if (self->cancel != NULL && ut_cancel_is_active(self->cancel)) {
+  if (ut_cancel_is_active(self->cancel)) {
     return;
   }
   report_read_data(self);

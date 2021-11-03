@@ -141,7 +141,7 @@ static FdWatch *remove_cancelled_watches(FdWatch *watches) {
   FdWatch *prev_watch = NULL, *next_watch;
   for (FdWatch *watch = watches; watch != NULL; watch = next_watch) {
     next_watch = watch->next;
-    if (watch->cancel != NULL && ut_cancel_is_active(watch->cancel)) {
+    if (ut_cancel_is_active(watch->cancel)) {
       if (prev_watch != NULL) {
         prev_watch->next = watch->next;
       } else {
@@ -278,7 +278,7 @@ UtObject *ut_event_loop_run() {
       struct timespec now;
       assert(clock_gettime(CLOCK_MONOTONIC, &now) == 0);
 
-      bool is_cancelled = t->cancel != NULL && ut_cancel_is_active(t->cancel);
+      bool is_cancelled = ut_cancel_is_active(t->cancel);
       if (is_cancelled || time_compare(&t->when, &now) <= 0) {
         if (!is_cancelled) {
           t->callback(t->user_data);
@@ -349,9 +349,7 @@ UtObject *ut_event_loop_run() {
       if (FD_ISSET(thread->complete_read_fd, &read_fds)) {
         void *result;
         assert(pthread_join(thread->thread_id, &result) == 0);
-        bool is_cancelled =
-            thread->cancel != NULL && ut_cancel_is_active(thread->cancel);
-        if (thread->result_callback && !is_cancelled) {
+        if (thread->result_callback && !ut_cancel_is_active(thread->cancel)) {
           thread->result_callback(thread->user_data, result);
         }
         if (prev_thread != NULL) {
@@ -371,17 +369,15 @@ UtObject *ut_event_loop_run() {
     // these callbacks.
     for (FdWatch *watch = loop->read_watches; watch != NULL;
          watch = watch->next) {
-      bool is_cancelled =
-          watch->cancel != NULL && ut_cancel_is_active(watch->cancel);
-      if (!is_cancelled && FD_ISSET(watch->fd, &read_fds)) {
+      if (!ut_cancel_is_active(watch->cancel) &&
+          FD_ISSET(watch->fd, &read_fds)) {
         watch->callback(watch->user_data);
       }
     }
     for (FdWatch *watch = loop->write_watches; watch != NULL;
          watch = watch->next) {
-      bool is_cancelled =
-          watch->cancel != NULL && ut_cancel_is_active(watch->cancel);
-      if (!is_cancelled && FD_ISSET(watch->fd, &write_fds)) {
+      if (!ut_cancel_is_active(watch->cancel) &&
+          FD_ISSET(watch->fd, &write_fds)) {
         watch->callback(watch->user_data);
       }
     }

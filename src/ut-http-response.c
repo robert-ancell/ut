@@ -52,7 +52,7 @@ static ssize_t get_content_length(UtHttpResponse *self) {
 static size_t read_cb(void *user_data, UtObject *data) {
   UtHttpResponse *self = user_data;
   size_t n_used = 0;
-  if (self->cancel == NULL || !ut_cancel_is_active(self->cancel)) {
+  if (!ut_cancel_is_active(self->cancel)) {
     if (ut_object_implements_error(data)) {
       self->callback(self->user_data, data);
     } else if (ut_object_is_end_of_stream(data)) {
@@ -78,7 +78,7 @@ static size_t read_cb(void *user_data, UtObject *data) {
           ut_list_remove(remaining, 0, n_used);
           UtObjectRef eos = ut_end_of_stream_new(
               ut_list_get_length(remaining) > 0 ? remaining : NULL);
-          if (self->cancel == NULL || !ut_cancel_is_active(self->cancel)) {
+          if (!ut_cancel_is_active(self->cancel)) {
             self->callback(self->user_data, eos);
           }
         }
@@ -92,7 +92,7 @@ static size_t read_cb(void *user_data, UtObject *data) {
   }
 
   // Stop listening for input when done.
-  if (self->cancel != NULL && ut_cancel_is_active(self->cancel)) {
+  if (ut_cancel_is_active(self->cancel)) {
     ut_cancel_activate(self->read_cancel);
   }
 
@@ -103,7 +103,7 @@ static void start_read(UtHttpResponse *self, bool read_all,
                        UtInputStreamCallback callback, void *user_data,
                        UtObject *cancel) {
   // Clean up after the previous read.
-  if (self->cancel != NULL && ut_cancel_is_active(self->cancel)) {
+  if (ut_cancel_is_active(self->cancel)) {
     self->read_all = false;
     ut_object_unref(self->read_cancel);
     self->callback = NULL;

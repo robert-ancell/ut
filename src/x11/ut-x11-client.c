@@ -548,18 +548,13 @@ static bool decode_error(UtX11Client *self, UtObject *data, size_t *offset) {
   return true;
 }
 
-static bool request_has_callback(Request *request) {
-  return request->callback != NULL &&
-         (request->cancel == NULL || !ut_cancel_is_active(request->cancel));
-}
-
 static void decode_intern_atom_reply(UtX11Client *self, Request *request,
                                      uint8_t data0, UtObject *data,
                                      size_t *offset) {
   uint32_t atom = read_card32(data, offset);
   read_padding(data, offset, 20);
 
-  if (request_has_callback(request)) {
+  if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11InternAtomCallback callback =
         (UtX11InternAtomCallback)request->callback;
     callback(request->user_data, atom, NULL);
@@ -568,7 +563,7 @@ static void decode_intern_atom_reply(UtX11Client *self, Request *request,
 
 static void handle_intern_atom_error(UtX11Client *self, Request *request,
                                      UtObject *error) {
-  if (request_has_callback(request)) {
+  if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11InternAtomCallback callback =
         (UtX11InternAtomCallback)request->callback;
     callback(request->user_data, 0, error);
@@ -583,7 +578,7 @@ static void decode_get_atom_name_reply(UtX11Client *self, Request *request,
   ut_cstring name = read_string8(data, offset, name_length);
   read_align_padding(data, offset, 4);
 
-  if (request_has_callback(request)) {
+  if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11GetAtomNameCallback callback =
         (UtX11GetAtomNameCallback)request->callback;
     callback(request->user_data, name, NULL);
@@ -592,7 +587,7 @@ static void decode_get_atom_name_reply(UtX11Client *self, Request *request,
 
 static void handle_get_atom_name_error(UtX11Client *self, Request *request,
                                        UtObject *error) {
-  if (request_has_callback(request)) {
+  if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11GetAtomNameCallback callback =
         (UtX11GetAtomNameCallback)request->callback;
     callback(request->user_data, NULL, error);
@@ -629,7 +624,7 @@ static void decode_get_property_reply(UtX11Client *self, Request *request,
   }
   read_align_padding(data, offset, 4);
 
-  if (request_has_callback(request)) {
+  if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11GetPropertyCallback callback =
         (UtX11GetPropertyCallback)request->callback;
     callback(request->user_data, type, value, bytes_after, NULL);
@@ -638,7 +633,7 @@ static void decode_get_property_reply(UtX11Client *self, Request *request,
 
 static void handle_get_property_error(UtX11Client *self, Request *request,
                                       UtObject *error) {
-  if (request_has_callback(request)) {
+  if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11GetPropertyCallback callback =
         (UtX11GetPropertyCallback)request->callback;
     callback(request->user_data, 0, NULL, 0, error);
@@ -655,7 +650,7 @@ static void decode_list_properties_reply(UtX11Client *self, Request *request,
     ut_uint32_list_append(atoms, read_card32(data, offset));
   }
 
-  if (request_has_callback(request)) {
+  if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11ListPropertiesCallback callback =
         (UtX11ListPropertiesCallback)request->callback;
     callback(request->user_data, atoms, NULL);
@@ -664,7 +659,7 @@ static void decode_list_properties_reply(UtX11Client *self, Request *request,
 
 static void handle_list_properties_error(UtX11Client *self, Request *request,
                                          UtObject *error) {
-  if (request_has_callback(request)) {
+  if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11ListPropertiesCallback callback =
         (UtX11ListPropertiesCallback)request->callback;
     callback(request->user_data, NULL, error);
@@ -680,7 +675,7 @@ static void decode_query_extension_reply(UtX11Client *self, Request *request,
   uint8_t first_error = read_card8(data, offset);
   read_padding(data, offset, 20);
 
-  if (request_has_callback(request)) {
+  if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11QueryExtensionCallback callback =
         (UtX11QueryExtensionCallback)request->callback;
     callback(request->user_data, present, major_opcode, first_event,
@@ -690,7 +685,7 @@ static void decode_query_extension_reply(UtX11Client *self, Request *request,
 
 static void handle_query_extension_error(UtX11Client *self, Request *request,
                                          UtObject *error) {
-  if (request_has_callback(request)) {
+  if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11QueryExtensionCallback callback =
         (UtX11QueryExtensionCallback)request->callback;
     callback(request->user_data, false, 0, 0, 0, error);
@@ -710,7 +705,7 @@ static void decode_list_extensions_reply(UtX11Client *self, Request *request,
   }
   read_align_padding(data, offset, 4);
 
-  if (request_has_callback(request)) {
+  if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11ListExtensionsCallback callback =
         (UtX11ListExtensionsCallback)request->callback;
     callback(request->user_data, names, NULL);
@@ -719,7 +714,7 @@ static void decode_list_extensions_reply(UtX11Client *self, Request *request,
 
 static void handle_list_extensions_error(UtX11Client *self, Request *request,
                                          UtObject *error) {
-  if (request_has_callback(request)) {
+  if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11ListExtensionsCallback callback =
         (UtX11ListExtensionsCallback)request->callback;
     callback(request->user_data, NULL, error);
@@ -957,8 +952,7 @@ static bool decode_event(UtX11Client *self, UtObject *data, size_t *offset) {
   }
 
   if (self->event_callback != NULL &&
-      (self->event_cancel == NULL ||
-       !ut_cancel_is_active(self->event_cancel))) {
+      !ut_cancel_is_active(self->event_cancel)) {
     self->event_callback(self->event_user_data, event);
   }
 

@@ -24,6 +24,9 @@ void ut_cancel_activate(UtObject *object) {
 }
 
 bool ut_cancel_is_active(UtObject *object) {
+  if (object == NULL) {
+    return false;
+  }
   UtCancel *self = (UtCancel *)object;
   return self->is_active;
 }
