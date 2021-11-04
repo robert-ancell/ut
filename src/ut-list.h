@@ -40,13 +40,19 @@ void ut_list_append(UtObject *object, UtObject *item);
 
 void ut_list_append_take(UtObject *object, UtObject *item);
 
+void ut_list_append_list(UtObject *object, UtObject *list);
+
 void ut_list_prepend(UtObject *object, UtObject *item);
 
 void ut_list_prepend_take(UtObject *object, UtObject *item);
 
+void ut_list_prepend_list(UtObject *object, UtObject *list);
+
 void ut_list_insert(UtObject *object, size_t index, UtObject *item);
 
 void ut_list_insert_take(UtObject *object, size_t index, UtObject *item);
+
+void ut_list_insert_list(UtObject *object, size_t index, UtObject *list);
 
 void ut_list_remove(UtObject *object, size_t index, size_t count);
 

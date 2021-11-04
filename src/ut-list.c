@@ -59,6 +59,13 @@ void ut_list_append_take(UtObject *object, UtObject *item) {
   ut_object_unref(item);
 }
 
+void ut_list_append_list(UtObject *object, UtObject *list) {
+  size_t length = ut_list_get_length(list);
+  for (size_t i = 0; i < length; i++) {
+    ut_list_append_take(object, ut_list_get_element(list, i));
+  }
+}
+
 void ut_list_prepend(UtObject *object, UtObject *item) {
   ut_list_insert(object, 0, item);
 }
@@ -66,6 +73,10 @@ void ut_list_prepend(UtObject *object, UtObject *item) {
 void ut_list_prepend_take(UtObject *object, UtObject *item) {
   ut_list_prepend(object, item);
   ut_object_unref(item);
+}
+
+void ut_list_prepend_list(UtObject *object, UtObject *list) {
+  ut_list_insert_list(object, 0, list);
 }
 
 void ut_list_insert(UtObject *object, size_t index, UtObject *item) {
@@ -79,6 +90,13 @@ void ut_list_insert(UtObject *object, size_t index, UtObject *item) {
 void ut_list_insert_take(UtObject *object, size_t index, UtObject *item) {
   ut_list_insert(object, index, item);
   ut_object_unref(item);
+}
+
+void ut_list_insert_list(UtObject *object, size_t index, UtObject *list) {
+  size_t length = ut_list_get_length(list);
+  for (size_t i = 0; i < length; i++) {
+    ut_list_insert_take(object, index + i, ut_list_get_element(list, i));
+  }
 }
 
 void ut_list_remove(UtObject *object, size_t index, size_t count) {
