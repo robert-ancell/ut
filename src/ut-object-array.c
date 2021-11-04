@@ -105,7 +105,7 @@ static void ut_object_array_init(UtObject *object) {
 
 static void ut_object_array_cleanup(UtObject *object) {
   UtObjectArray *self = (UtObjectArray *)object;
-  for (int i = 0; i < self->data_length; i++) {
+  for (size_t i = 0; i < self->data_length; i++) {
     ut_object_unref(self->data[i]);
   }
   free(self->data);

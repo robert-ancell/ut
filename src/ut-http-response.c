@@ -1,6 +1,8 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
+#include <sys/types.h>
 
 #include "ut-cancel.h"
 #include "ut-end-of-stream.h"
@@ -67,7 +69,8 @@ static size_t read_cb(void *user_data, UtObject *data) {
     } else {
       size_t data_length = ut_list_get_length(data);
       ssize_t content_length = get_content_length(self);
-      if (content_length >= 0 && self->n_read + data_length > content_length) {
+      if (content_length >= 0 &&
+          self->n_read + data_length > (size_t)content_length) {
         // Read no more data.
         ut_cancel_activate(self->read_cancel);
 

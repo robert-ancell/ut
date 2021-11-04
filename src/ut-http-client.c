@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 
 #include "ut-cancel.h"
 #include "ut-cstring.h"
@@ -286,7 +287,7 @@ static size_t read_cb(void *user_data, UtObject *data) {
     offset = line_end + 2;
 
     // Ends on empty line.
-    if (line_end == line_start) {
+    if ((size_t)line_end == line_start) {
       ut_event_loop_add_delay(0, response_cb, request, NULL); // FIXME: cancel
       ut_cancel_activate(request->header_read_cancel);
       break;
