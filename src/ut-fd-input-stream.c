@@ -83,10 +83,16 @@ static void buffered_read_cb(void *user_data) {
   if (ut_cancel_is_active(self->cancel)) {
     return;
   }
-  report_read_data(self);
-  if (self->cancel != NULL && ut_cancel_is_active(self->cancel)) {
-    return;
+
+  // If have buffered data, process that first.
+  if (self->read_buffer_length > 0) {
+    report_read_data(self);
+    if (self->cancel != NULL && ut_cancel_is_active(self->cancel)) {
+      return;
+    }
   }
+
+  // Now read more data from the file descriptor.
   add_read_watch(self);
 }
 
@@ -111,12 +117,9 @@ static void start_read(UtFdInputStream *self, bool read_all,
   self->user_data = user_data;
   self->cancel = ut_object_ref(cancel);
 
-  // If have buffered data, process that first.
-  if (self->read_buffer_length > 0) {
-    ut_event_loop_add_delay(0, buffered_read_cb, self, cancel);
-  } else {
-    add_read_watch(self);
-  }
+  // The read might have been started inside a callback, so wait for that to
+  // complete.
+  ut_event_loop_add_delay(0, buffered_read_cb, self, cancel);
 }
 
 static void ut_fd_input_stream_init(UtObject *object) {
