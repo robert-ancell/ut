@@ -54,6 +54,9 @@ static void read_cb(void *user_data) {
     self->read_buffer_length += n_read;
 
     if (n_read == 0) {
+      // No more data to read.
+      ut_cancel_activate(self->watch_cancel);
+
       if (self->read_all) {
         report_read_data(self);
       } else {
@@ -68,14 +71,10 @@ static void read_cb(void *user_data) {
     }
   }
 
-  // Stop listening for read events when done.
+  // Stop listening for read events when consumer no longer wants them.
   if (ut_cancel_is_active(self->cancel)) {
     ut_cancel_activate(self->watch_cancel);
   }
-}
-
-static void add_read_watch(UtFdInputStream *self) {
-  ut_event_loop_add_read_watch(self->fd, read_cb, self, self->watch_cancel);
 }
 
 static void buffered_read_cb(void *user_data) {
@@ -87,22 +86,26 @@ static void buffered_read_cb(void *user_data) {
   // If have buffered data, process that first.
   if (self->read_buffer_length > 0) {
     report_read_data(self);
-    if (self->cancel != NULL && ut_cancel_is_active(self->cancel)) {
+    if (ut_cancel_is_active(self->cancel)) {
       return;
     }
   }
 
   // Now read more data from the file descriptor.
-  add_read_watch(self);
+  if (self->watch_cancel != NULL) {
+    ut_cancel_activate(self->watch_cancel);
+    ut_object_unref(self->watch_cancel);
+  }
+  self->watch_cancel = ut_cancel_new();
+  ut_event_loop_add_read_watch(self->fd, read_cb, self, self->watch_cancel);
 }
 
 static void start_read(UtFdInputStream *self, bool read_all,
                        UtInputStreamCallback callback, void *user_data,
                        UtObject *cancel) {
   // Clean up after the previous read.
-  if (self->cancel != NULL && ut_cancel_is_active(self->cancel)) {
+  if (ut_cancel_is_active(self->cancel)) {
     self->read_all = false;
-    ut_object_unref(self->watch_cancel);
     self->callback = NULL;
     self->user_data = NULL;
     ut_object_unref(self->cancel);
@@ -112,7 +115,6 @@ static void start_read(UtFdInputStream *self, bool read_all,
   assert(self->callback == NULL);
 
   self->read_all = read_all;
-  self->watch_cancel = ut_cancel_new();
   self->callback = callback;
   self->user_data = user_data;
   self->cancel = ut_object_ref(cancel);
@@ -138,6 +140,9 @@ static void ut_fd_input_stream_init(UtObject *object) {
 static void ut_fd_input_stream_cleanup(UtObject *object) {
   UtFdInputStream *self = (UtFdInputStream *)object;
   ut_object_unref(self->read_buffer);
+  if (self->watch_cancel != NULL) {
+    ut_cancel_activate(self->watch_cancel);
+  }
   ut_object_unref(self->watch_cancel);
   ut_object_unref(self->cancel);
 }
