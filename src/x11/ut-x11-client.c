@@ -190,8 +190,7 @@ static void write_padding(UtObject *buffer, size_t count) {
 }
 
 static void write_align_padding(UtObject *buffer, size_t alignment) {
-  size_t buffer_length = ut_list_get_length(buffer);
-  size_t extra = buffer_length % alignment;
+  size_t extra = ut_list_get_length(buffer) % alignment;
   if (extra != 0) {
     write_padding(buffer, alignment - extra);
   }
