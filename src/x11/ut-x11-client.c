@@ -180,7 +180,7 @@ static uint32_t create_resource_id(UtX11Client *self) {
 }
 
 static void write_card8(UtObject *buffer, uint8_t value) {
-  ut_uint8_array_append(buffer, value);
+  ut_uint8_list_append(buffer, value);
 }
 
 static void write_padding(UtObject *buffer, size_t count) {
@@ -198,8 +198,7 @@ static void write_align_padding(UtObject *buffer, size_t alignment) {
 }
 
 static void write_card16(UtObject *buffer, uint16_t value) {
-  ut_uint8_array_append(buffer, value & 0xff);
-  ut_uint8_array_append(buffer, value >> 8);
+  ut_uint8_list_append_uint16_le(buffer, value);
 }
 
 static void write_int16(UtObject *buffer, int16_t value) {
@@ -207,10 +206,7 @@ static void write_int16(UtObject *buffer, int16_t value) {
 }
 
 static void write_card32(UtObject *buffer, uint32_t value) {
-  ut_uint8_array_append(buffer, value & 0xff);
-  ut_uint8_array_append(buffer, (value >> 8) & 0xff);
-  ut_uint8_array_append(buffer, (value >> 16) & 0xff);
-  ut_uint8_array_append(buffer, value >> 24);
+  ut_uint8_list_append_uint32_le(buffer, value);
 }
 
 static void write_value_card16(UtObject *buffer, uint16_t value) {
@@ -240,8 +236,8 @@ static void send_request_with_reply(UtX11Client *self, uint8_t opcode,
   write_card8(request, opcode);
   write_card8(request, data0);
   write_card16(request, 1 + data_length / 4);
-  ut_uint8_array_append_block(request, ut_uint8_array_get_data(data),
-                              data_length);
+  ut_uint8_list_append_block(request, ut_uint8_array_get_data(data),
+                             data_length);
 
   self->sequence_number++;
 
@@ -607,7 +603,7 @@ static void decode_get_property_reply(UtX11Client *self, Request *request,
   } else if (format == 8) {
     value = ut_uint8_array_new();
     for (size_t i = 0; i < length; i++) {
-      ut_uint8_array_append(value, read_card8(data, offset));
+      ut_uint8_list_append(value, read_card8(data, offset));
     }
   } else if (format == 16) {
     value = ut_uint16_list_new();

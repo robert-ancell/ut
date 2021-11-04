@@ -35,7 +35,7 @@ static UtObject *ut_constant_uint8_array_get_element_object(UtObject *object,
 static UtObject *ut_constant_uint8_array_copy(UtObject *object) {
   UtConstantUint8Array *self = (UtConstantUint8Array *)object;
   UtObject *copy = ut_uint8_array_new();
-  ut_uint8_array_append_block(copy, self->data, self->data_length);
+  ut_uint8_list_append_block(copy, self->data, self->data_length);
   return copy;
 }
 

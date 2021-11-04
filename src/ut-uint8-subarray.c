@@ -57,7 +57,7 @@ static UtObject *ut_uint8_subarray_copy(UtObject *object) {
   UtUint8Subarray *self = (UtUint8Subarray *)object;
   UtObject *copy = ut_uint8_array_new();
   uint8_t *data = get_data(self);
-  ut_uint8_array_append_block(copy, data, self->length);
+  ut_uint8_list_append_block(copy, data, self->length);
   return copy;
 }
 
@@ -70,8 +70,8 @@ static void ut_uint8_subarray_read(UtObject *object,
   if (n_used != self->length) {
     unused_data = ut_uint8_array_new();
     uint8_t *data = get_data(self);
-    ut_uint8_array_append_block(unused_data, data + n_used,
-                                self->length - n_used);
+    ut_uint8_list_append_block(unused_data, data + n_used,
+                               self->length - n_used);
   }
   UtObjectRef eos = ut_end_of_stream_new(unused_data);
   callback(user_data, eos);
