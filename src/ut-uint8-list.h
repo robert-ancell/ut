@@ -46,6 +46,14 @@ void ut_uint8_list_append_int32_le(UtObject *object, int32_t value);
 
 void ut_uint8_list_append_int32_be(UtObject *object, int32_t value);
 
+void ut_uint8_list_append_uint64_le(UtObject *object, uint64_t value);
+
+void ut_uint8_list_append_uint64_be(UtObject *object, uint64_t value);
+
+void ut_uint8_list_append_int64_le(UtObject *object, int64_t value);
+
+void ut_uint8_list_append_int64_be(UtObject *object, int64_t value);
+
 void ut_uint8_list_prepend(UtObject *object, uint8_t value);
 
 void ut_uint8_list_prepend_block(UtObject *object, const uint8_t *data,

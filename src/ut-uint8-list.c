@@ -88,6 +88,30 @@ void ut_uint8_list_append_int32_be(UtObject *object, int32_t value) {
   ut_uint8_list_append_int32_be(object, (uint32_t)value);
 }
 
+void ut_uint8_list_append_uint64_le(UtObject *object, uint64_t value) {
+  uint8_t data[8] = {value & 0xff,         (value >> 8) & 0xff,
+                     (value >> 16) & 0xff, (value >> 24) & 0xff,
+                     (value >> 32) & 0xff, (value >> 48) & 0xff,
+                     value >> 56};
+  ut_uint8_list_append_block(object, data, 8);
+}
+
+void ut_uint8_list_append_uint64_be(UtObject *object, uint64_t value) {
+  uint8_t data[8] = {value >> 56,          (value >> 48) & 0xff,
+                     (value >> 40) & 0xff, (value >> 32) & 0xff,
+                     (value >> 24) & 0xff, (value >> 16) & 0xff,
+                     (value >> 8) & 0xff,  value & 0xff};
+  ut_uint8_list_append_block(object, data, 8);
+}
+
+void ut_uint8_list_append_int64_le(UtObject *object, int64_t value) {
+  ut_uint8_list_append_int64_le(object, (uint64_t)value);
+}
+
+void ut_uint8_list_append_int64_be(UtObject *object, int64_t value) {
+  ut_uint8_list_append_int64_be(object, (uint64_t)value);
+}
+
 void ut_uint8_list_prepend(UtObject *object, uint8_t value) {
   ut_uint8_list_prepend_block(object, &value, 1);
 }
