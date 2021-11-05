@@ -21,6 +21,8 @@ ut_sources = [
   'ut-http-header.c',
   'ut-http-response.c',
   'ut-input-stream.c',
+  'ut-int16.c',
+  'ut-int32.c',
   'ut-int64.c',
   'ut-json.c',
   'ut-list.c',

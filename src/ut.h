@@ -15,6 +15,8 @@
 #include "ut-http-header.h"
 #include "ut-http-response.h"
 #include "ut-input-stream.h"
+#include "ut-int16.h"
+#include "ut-int32.h"
 #include "ut-int64.h"
 #include "ut-json.h"
 #include "ut-list.h"
