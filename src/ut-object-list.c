@@ -1,9 +1,12 @@
 #include <assert.h>
 
+#include "ut-object-array.h"
 #include "ut-object-list.h"
 #include "ut-object-private.h"
 
 int ut_object_list_id = 0;
+
+UtObject *ut_object_list_new() { return ut_object_array_new(); }
 
 UtObject *ut_object_list_get_element(UtObject *object, size_t index) {
   UtObjectListInterface *object_list_interface =
