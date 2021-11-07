@@ -21,6 +21,32 @@ UtObject *ut_uint8_list_new_with_data(size_t length, ...);
 
 uint8_t ut_uint8_list_get_element(UtObject *object, size_t index);
 
+int8_t ut_uint8_list_get_int8(UtObject *object, size_t index);
+
+uint16_t ut_uint8_list_get_uint16_le(UtObject *object, size_t index);
+
+uint16_t ut_uint8_list_get_uint16_be(UtObject *object, size_t index);
+
+int16_t ut_uint8_list_get_int16_le(UtObject *object, size_t index);
+
+int16_t ut_uint8_list_get_int16_be(UtObject *object, size_t index);
+
+uint32_t ut_uint8_list_get_uint32_le(UtObject *object, size_t index);
+
+uint32_t ut_uint8_list_get_uint32_be(UtObject *object, size_t index);
+
+int32_t ut_uint8_list_get_int32_le(UtObject *object, size_t index);
+
+int32_t ut_uint8_list_get_int32_be(UtObject *object, size_t index);
+
+uint64_t ut_uint8_list_get_uint64_le(UtObject *object, size_t index);
+
+uint64_t ut_uint8_list_get_uint64_be(UtObject *object, size_t index);
+
+int64_t ut_uint8_list_get_int64_le(UtObject *object, size_t index);
+
+int64_t ut_uint8_list_get_int64_be(UtObject *object, size_t index);
+
 uint8_t *ut_uint8_list_take_data(UtObject *object);
 
 void ut_uint8_list_append(UtObject *object, uint8_t value);

@@ -26,6 +26,80 @@ uint8_t ut_uint8_list_get_element(UtObject *object, size_t index) {
   return uint8_list_interface->get_element(object, index);
 }
 
+int8_t ut_uint8_list_get_int8(UtObject *object, size_t index) {
+  return (int8_t)ut_uint8_list_get_element(object, index);
+}
+
+uint16_t ut_uint8_list_get_uint16_le(UtObject *object, size_t index) {
+  return (uint16_t)ut_uint8_list_get_element(object, index) |
+         (uint16_t)ut_uint8_list_get_element(object, index + 1) << 8;
+}
+
+uint16_t ut_uint8_list_get_uint16_be(UtObject *object, size_t index) {
+  return (uint16_t)ut_uint8_list_get_element(object, index) << 8 |
+         (uint16_t)ut_uint8_list_get_element(object, index + 1);
+}
+
+int16_t ut_uint8_list_get_int16_le(UtObject *object, size_t index) {
+  return (int16_t)ut_uint8_list_get_uint16_le(object, index);
+}
+
+int16_t ut_uint8_list_get_int16_be(UtObject *object, size_t index) {
+  return (int16_t)ut_uint8_list_get_uint16_be(object, index);
+}
+
+uint32_t ut_uint8_list_get_uint32_le(UtObject *object, size_t index) {
+  return (uint32_t)ut_uint8_list_get_element(object, index) |
+         (uint32_t)ut_uint8_list_get_element(object, index + 1) << 8 |
+         (uint32_t)ut_uint8_list_get_element(object, index + 2) << 16 |
+         (uint32_t)ut_uint8_list_get_element(object, index + 3) << 24;
+}
+
+uint32_t ut_uint8_list_get_uint32_be(UtObject *object, size_t index) {
+  return (uint32_t)ut_uint8_list_get_element(object, index) << 24 |
+         (uint32_t)ut_uint8_list_get_element(object, index + 1) << 16 |
+         (uint32_t)ut_uint8_list_get_element(object, index + 2) << 16 |
+         (uint32_t)ut_uint8_list_get_element(object, index + 3);
+}
+
+int32_t ut_uint8_list_get_int32_le(UtObject *object, size_t index) {
+  return (int32_t)ut_uint8_list_get_uint32_le(object, index);
+}
+
+int32_t ut_uint8_list_get_int32_be(UtObject *object, size_t index) {
+  return (int32_t)ut_uint8_list_get_uint32_be(object, index);
+}
+
+uint64_t ut_uint8_list_get_uint64_le(UtObject *object, size_t index) {
+  return (uint64_t)ut_uint8_list_get_element(object, index) |
+         (uint64_t)ut_uint8_list_get_element(object, index + 1) << 8 |
+         (uint64_t)ut_uint8_list_get_element(object, index + 2) << 16 |
+         (uint64_t)ut_uint8_list_get_element(object, index + 3) << 24 |
+         (uint64_t)ut_uint8_list_get_element(object, index + 4) << 32 |
+         (uint64_t)ut_uint8_list_get_element(object, index + 5) << 40 |
+         (uint64_t)ut_uint8_list_get_element(object, index + 6) << 48 |
+         (uint64_t)ut_uint8_list_get_element(object, index + 7) << 56;
+}
+
+uint64_t ut_uint8_list_get_uint64_be(UtObject *object, size_t index) {
+  return (uint64_t)ut_uint8_list_get_element(object, index) << 56 |
+         (uint64_t)ut_uint8_list_get_element(object, index + 1) << 48 |
+         (uint64_t)ut_uint8_list_get_element(object, index + 2) << 40 |
+         (uint64_t)ut_uint8_list_get_element(object, index + 3) << 32 |
+         (uint64_t)ut_uint8_list_get_element(object, index + 4) << 24 |
+         (uint64_t)ut_uint8_list_get_element(object, index + 5) << 16 |
+         (uint64_t)ut_uint8_list_get_element(object, index + 6) << 8 |
+         (uint64_t)ut_uint8_list_get_element(object, index + 7);
+}
+
+int64_t ut_uint8_list_get_int64_le(UtObject *object, size_t index) {
+  return (int64_t)ut_uint8_list_get_uint64_le(object, index);
+}
+
+int64_t ut_uint8_list_get_int64_be(UtObject *object, size_t index) {
+  return (int64_t)ut_uint8_list_get_uint64_be(object, index);
+}
+
 uint8_t *ut_uint8_list_take_data(UtObject *object) {
   UtUint8ListInterface *uint8_list_interface =
       ut_object_get_interface(object, &ut_uint8_list_id);
