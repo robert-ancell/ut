@@ -87,6 +87,11 @@ ut_sources = [
 
 ut_lib = static_library('ut', ut_sources, dependencies: thread_dep)
 
+cstring_test = executable('ut-cstring-test',
+                          'ut-cstring-test.c',
+                          link_with: ut_lib)
+test('C String', cstring_test)
+
 uint8_array_test = executable('ut-uint8-array-test',
                               'ut-uint8-array-test.c',
                               link_with: ut_lib)
