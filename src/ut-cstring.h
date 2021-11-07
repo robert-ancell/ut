@@ -31,3 +31,5 @@ bool ut_cstring_starts_with(const char *value, const char *prefix);
 bool ut_cstring_ends_with(const char *value, const char *suffix);
 
 char *ut_cstring_join(const char *separator, const char *value0, ...);
+
+char *ut_cstring_substring(const char *value, size_t start, size_t end);

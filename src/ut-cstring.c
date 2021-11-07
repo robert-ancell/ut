@@ -95,3 +95,8 @@ char *ut_cstring_join(const char *separator, const char *value0, ...) {
 
   return result;
 }
+
+char *ut_cstring_substring(const char *value, size_t start, size_t end) {
+  assert(end > start);
+  return strndup(value + start, end - start);
+}
