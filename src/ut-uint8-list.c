@@ -100,6 +100,18 @@ int64_t ut_uint8_list_get_int64_be(UtObject *object, size_t index) {
   return (int64_t)ut_uint8_list_get_uint64_be(object, index);
 }
 
+double ut_uint8_list_get_float64_le(UtObject *object, size_t index) {
+  uint64_t value = ut_uint8_list_get_uint64_le(object, index);
+  double *value_pointer = (double *)&value;
+  return *value_pointer;
+}
+
+double ut_uint8_list_get_float64_be(UtObject *object, size_t index) {
+  uint64_t value = ut_uint8_list_get_uint64_be(object, index);
+  double *value_pointer = (double *)&value;
+  return *value_pointer;
+}
+
 uint8_t *ut_uint8_list_take_data(UtObject *object) {
   UtUint8ListInterface *uint8_list_interface =
       ut_object_get_interface(object, &ut_uint8_list_id);
@@ -184,6 +196,16 @@ void ut_uint8_list_append_int64_le(UtObject *object, int64_t value) {
 
 void ut_uint8_list_append_int64_be(UtObject *object, int64_t value) {
   ut_uint8_list_append_int64_be(object, (uint64_t)value);
+}
+
+void ut_uint8_list_append_float64_le(UtObject *object, double value) {
+  uint64_t *value_pointer = (uint64_t *)&value;
+  ut_uint8_list_append_uint64_le(object, *value_pointer);
+}
+
+void ut_uint8_list_append_float64_be(UtObject *object, double value) {
+  uint64_t *value_pointer = (uint64_t *)&value;
+  ut_uint8_list_append_uint64_be(object, *value_pointer);
 }
 
 void ut_uint8_list_prepend(UtObject *object, uint8_t value) {
