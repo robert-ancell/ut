@@ -115,6 +115,7 @@ static void ut_fd_output_stream_init(UtObject *object) {
   self->fd = -1;
   self->watch_cancel = NULL;
   self->blocks = NULL;
+  self->last_block = NULL;
 }
 
 static void ut_fd_output_stream_cleanup(UtObject *object) {
