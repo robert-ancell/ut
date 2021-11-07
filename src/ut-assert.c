@@ -57,9 +57,9 @@ void _ut_assert_equal(const char *file, int line, const char *a_name,
     return;
   }
 
-  ut_cstring a_value_string =
+  ut_cstring_ref a_value_string =
       a_value != NULL ? ut_object_to_string(a_value) : strdup("NULL");
-  ut_cstring b_value_string =
+  ut_cstring_ref b_value_string =
       b_value != NULL ? ut_object_to_string(b_value) : strdup("NULL");
   fprintf(stderr,
           "%s:%d Strings %s and %s are not equal:\n"
@@ -76,7 +76,7 @@ void _ut_assert_is_error(const char *file, int line, const char *name,
     return;
   }
 
-  ut_cstring value_string = ut_object_to_string(value);
+  ut_cstring_ref value_string = ut_object_to_string(value);
   fprintf(stderr,
           "%s:%d Object %s is not an error:\n"
           "  %s\n",
@@ -91,7 +91,7 @@ void _ut_assert_is_not_error(const char *file, int line, const char *name,
     return;
   }
 
-  ut_cstring value_string = ut_object_to_string(value);
+  ut_cstring_ref value_string = ut_object_to_string(value);
   fprintf(stderr,
           "%s:%d Object %s is an error:\n"
           "  %s\n",
@@ -110,8 +110,8 @@ void _ut_assert_cstring_equal(const char *file, int line, const char *a_name,
     return;
   }
 
-  ut_cstring escaped_a_value = escape_string(a_value);
-  ut_cstring escaped_b_value = escape_string(b_value);
+  ut_cstring_ref escaped_a_value = escape_string(a_value);
+  ut_cstring_ref escaped_b_value = escape_string(b_value);
   fprintf(stderr,
           "%s:%d Strings %s and %s are not equal:\n"
           "  %s\n"

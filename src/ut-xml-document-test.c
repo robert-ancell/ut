@@ -8,7 +8,7 @@
 static void test_encode() {
   UtObjectRef empty_element_root = ut_xml_element_new("tag", NULL, NULL);
   UtObjectRef empty_element_document = ut_xml_document_new(empty_element_root);
-  ut_cstring empty_element_text =
+  ut_cstring_ref empty_element_text =
       ut_xml_document_to_text(empty_element_document);
   ut_assert_cstring_equal(empty_element_text, "<tag/>");
 
@@ -18,7 +18,7 @@ static void test_encode() {
   UtObjectRef attribute_root =
       ut_xml_element_new("tag", attribute_attributes, NULL);
   UtObjectRef attribute_document = ut_xml_document_new(attribute_root);
-  ut_cstring attribute_text = ut_xml_document_to_text(attribute_document);
+  ut_cstring_ref attribute_text = ut_xml_document_to_text(attribute_document);
   ut_assert_cstring_equal(attribute_text, "<tag name=\"value\"/>");
 
   UtObjectRef multiple_attribute_attributes = ut_map_new();
@@ -30,7 +30,7 @@ static void test_encode() {
       ut_xml_element_new("tag", multiple_attribute_attributes, NULL);
   UtObjectRef multiple_attribute_document =
       ut_xml_document_new(multiple_attribute_root);
-  ut_cstring multiple_attribute_text =
+  ut_cstring_ref multiple_attribute_text =
       ut_xml_document_to_text(multiple_attribute_document);
   ut_assert_cstring_equal(multiple_attribute_text,
                           "<tag name1=\"'value1'\" name2='\"value2\"'/>");
@@ -39,7 +39,7 @@ static void test_encode() {
   ut_list_append_take(content_content, ut_string_new("Hello World!"));
   UtObjectRef content_root = ut_xml_element_new("tag", NULL, content_content);
   UtObjectRef content_document = ut_xml_document_new(content_root);
-  ut_cstring content_text = ut_xml_document_to_text(content_document);
+  ut_cstring_ref content_text = ut_xml_document_to_text(content_document);
   ut_assert_cstring_equal(content_text, "<tag>Hello World!</tag>");
 
   UtObjectRef escaped_content = ut_list_new();
@@ -47,7 +47,7 @@ static void test_encode() {
                       ut_string_new("<\"Fast\" & 'Efficient'>"));
   UtObjectRef escaped_root = ut_xml_element_new("tag", NULL, escaped_content);
   UtObjectRef escaped_document = ut_xml_document_new(escaped_root);
-  ut_cstring escaped_text = ut_xml_document_to_text(escaped_document);
+  ut_cstring_ref escaped_text = ut_xml_document_to_text(escaped_document);
   ut_assert_cstring_equal(escaped_text,
                           "<tag>&lt;\"Fast\" &amp; 'Efficient'&gt;</tag>");
 }

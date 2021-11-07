@@ -345,7 +345,7 @@ static bool decode_setup_failed(UtX11Client *self, UtObject *data,
   if (data_length < message_length) {
     return false;
   }
-  ut_cstring reason = read_string8(data, &o, reason_length);
+  ut_cstring_ref reason = read_string8(data, &o, reason_length);
 
   UtObjectRef error =
       ut_general_error_new("Failed to connect to X server: %s", reason);
@@ -570,7 +570,7 @@ static void decode_get_atom_name_reply(UtX11Client *self, Request *request,
                                        size_t *offset) {
   uint16_t name_length = read_card16(data, offset);
   read_padding(data, offset, 22);
-  ut_cstring name = read_string8(data, offset, name_length);
+  ut_cstring_ref name = read_string8(data, offset, name_length);
   read_align_padding(data, offset, 4);
 
   if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
@@ -695,7 +695,7 @@ static void decode_list_extensions_reply(UtX11Client *self, Request *request,
   UtObjectRef names = ut_string_list_new();
   for (size_t i = 0; i < names_length; i++) {
     uint8_t name_length = read_card8(data, offset);
-    ut_cstring name = read_string8(data, offset, name_length);
+    ut_cstring_ref name = read_string8(data, offset, name_length);
     ut_string_list_append(names, name);
   }
   read_align_padding(data, offset, 4);

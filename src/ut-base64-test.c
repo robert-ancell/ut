@@ -7,24 +7,24 @@
 
 static void test_encode() {
   UtObjectRef empty_list = ut_uint8_array_new();
-  ut_cstring empty_text = ut_base64_encode(empty_list);
+  ut_cstring_ref empty_text = ut_base64_encode(empty_list);
   ut_assert_cstring_equal(empty_text, "");
 
   UtObjectRef short1_list = ut_uint8_list_new_with_data(1, 'M');
-  ut_cstring short1_text = ut_base64_encode(short1_list);
+  ut_cstring_ref short1_text = ut_base64_encode(short1_list);
   ut_assert_cstring_equal(short1_text, "TQ==");
 
   UtObjectRef short2_list = ut_uint8_list_new_with_data(2, 'M', 'a');
-  ut_cstring short2_text = ut_base64_encode(short2_list);
+  ut_cstring_ref short2_text = ut_base64_encode(short2_list);
   ut_assert_cstring_equal(short2_text, "TWE=");
 
   UtObjectRef short3_list = ut_uint8_list_new_with_data(3, 'M', 'a', 'n');
-  ut_cstring short3_text = ut_base64_encode(short3_list);
+  ut_cstring_ref short3_text = ut_base64_encode(short3_list);
   ut_assert_cstring_equal(short3_text, "TWFu");
 
   UtObjectRef sentence = ut_string_new("Many hands make light work.");
   UtObjectRef sentence_list = ut_string_get_utf8(sentence);
-  ut_cstring sentence_text = ut_base64_encode(sentence_list);
+  ut_cstring_ref sentence_text = ut_base64_encode(sentence_list);
   ut_assert_cstring_equal(sentence_text,
                           "TWFueSBoYW5kcyBtYWtlIGxpZ2h0IHdvcmsu");
 
@@ -32,7 +32,7 @@ static void test_encode() {
   for (size_t i = 0; i < 256; i++) {
     ut_uint8_list_append(binary_list, i);
   }
-  ut_cstring binary_text = ut_base64_encode(binary_list);
+  ut_cstring_ref binary_text = ut_base64_encode(binary_list);
   ut_assert_cstring_equal(
       binary_text,
       "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vM"

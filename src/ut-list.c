@@ -126,7 +126,7 @@ char *ut_list_to_string(UtObject *object) {
       ut_string_append(string, ", ");
     }
 
-    ut_cstring value_string = ut_object_to_string(item);
+    ut_cstring_ref value_string = ut_object_to_string(item);
     ut_string_append(string, value_string);
 
     ut_object_unref(item);

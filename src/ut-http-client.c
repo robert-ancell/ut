@@ -118,7 +118,7 @@ static bool parse_uri(const char *uri, char **scheme, char **user_info,
     if (*host_end == ':') {
       const char *port_start = host_end + 1, *port_end = authority_end;
       if (port != NULL) {
-        ut_cstring port_string = strndup(port_start, port_end - port_start);
+        ut_cstring_ref port_string = strndup(port_start, port_end - port_start);
         *port = atoi(port_string);
       }
     } else {
@@ -232,7 +232,7 @@ static bool parse_status_line(HttpRequest *request, const uint8_t *data,
   size_t reason_phrase_start = response_status_code_end + 1;
   size_t reason_phrase_end = data_length;
 
-  ut_cstring response_status_code =
+  ut_cstring_ref response_status_code =
       get_string(data, response_status_code_start, response_status_code_end);
   request->response_status_code = atoi(response_status_code);
   request->reason_phrase =
@@ -252,8 +252,8 @@ static bool parse_header(HttpRequest *request, const uint8_t *data,
   size_t value_start = name_end + 1;
   size_t value_end = data_length;
 
-  ut_cstring name = get_string(data, name_start, name_end);
-  ut_cstring value = get_string(data, value_start, value_end);
+  ut_cstring_ref name = get_string(data, name_start, name_end);
+  ut_cstring_ref value = get_string(data, value_start, value_end);
   UtObjectRef header = ut_http_header_new(name, value);
 
   ut_list_append(request->response_headers, header);
@@ -334,9 +334,9 @@ void ut_http_client_send_request(UtObject *object, const char *method,
   assert(ut_object_is_http_client(object));
   // UtHttpClient *self = (UtHttpClient *)object;
 
-  ut_cstring scheme = NULL;
-  ut_cstring host = NULL;
-  ut_cstring path = NULL;
+  ut_cstring_ref scheme = NULL;
+  ut_cstring_ref host = NULL;
+  ut_cstring_ref path = NULL;
   uint16_t port;
   assert(parse_uri(uri, &scheme, NULL, &host, &port, &path, NULL, NULL));
   assert(strcmp(scheme, "http") == 0);

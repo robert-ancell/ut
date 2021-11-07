@@ -83,7 +83,7 @@ static char *decode_reference(const char *text, size_t *offset) {
   }
   end++;
 
-  ut_cstring name = decode_name(text, &end);
+  ut_cstring_ref name = decode_name(text, &end);
 
   if (text[end] != ';') {
     return NULL;
@@ -133,7 +133,7 @@ static UtObject *decode_content(const char *text, size_t *offset) {
     if (text[end] == '<') {
       child = decode_element(text, &end);
     } else if (text[end] == '&') {
-      ut_cstring name = decode_reference(text, &end);
+      ut_cstring_ref name = decode_reference(text, &end);
       if (name != NULL) {
         child = reference_to_character_data(name);
       }
@@ -175,7 +175,7 @@ static char *decode_attribute_value(const char *text, size_t *offset) {
 static bool decode_attribute(const char *text, size_t *offset, char **name,
                              char **value) {
   size_t end = *offset;
-  ut_cstring name_ = decode_name(text, &end);
+  ut_cstring_ref name_ = decode_name(text, &end);
   if (name_ == NULL) {
     return false;
   }
@@ -186,7 +186,7 @@ static bool decode_attribute(const char *text, size_t *offset, char **name,
   }
   end++;
   decode_whitespace(text, &end);
-  ut_cstring value_ = decode_attribute_value(text, &end);
+  ut_cstring_ref value_ = decode_attribute_value(text, &end);
   if (value_ == NULL) {
     return false;
   }
@@ -205,7 +205,7 @@ static char *decode_start_tag(const char *text, size_t *offset,
   }
   end++;
 
-  ut_cstring tag_name = decode_name(text, &end);
+  ut_cstring_ref tag_name = decode_name(text, &end);
   if (tag_name == NULL) {
     return NULL;
   }
@@ -214,8 +214,8 @@ static char *decode_start_tag(const char *text, size_t *offset,
   while (true) {
     decode_whitespace(text, &end);
 
-    ut_cstring name = NULL;
-    ut_cstring value = NULL;
+    ut_cstring_ref name = NULL;
+    ut_cstring_ref value = NULL;
     if (!decode_attribute(text, &end, &name, &value)) {
       break;
     }
@@ -249,7 +249,7 @@ static char *decode_end_tag(const char *text, size_t *offset) {
   }
   end += 2;
 
-  ut_cstring name = decode_name(text, &end);
+  ut_cstring_ref name = decode_name(text, &end);
   if (name == NULL) {
     return NULL;
   }
@@ -268,14 +268,14 @@ static UtObject *decode_element(const char *text, size_t *offset) {
   size_t end = *offset;
   UtObjectRef attributes = NULL;
   bool is_empty = false;
-  ut_cstring name = decode_start_tag(text, &end, &attributes, &is_empty);
+  ut_cstring_ref name = decode_start_tag(text, &end, &attributes, &is_empty);
   if (name == NULL) {
     return NULL;
   }
   UtObjectRef content = NULL;
   if (!is_empty) {
     content = decode_content(text, &end);
-    ut_cstring end_name = decode_end_tag(text, &end);
+    ut_cstring_ref end_name = decode_end_tag(text, &end);
     if (!end_name) {
       return NULL;
     }

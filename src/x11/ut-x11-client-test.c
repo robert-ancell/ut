@@ -6,7 +6,7 @@
 static UtObject *client = NULL;
 
 static void event_cb(void *user_data, UtObject *event) {
-  ut_cstring s = ut_object_to_string(event);
+  ut_cstring_ref s = ut_object_to_string(event);
   printf("%s\n", s);
 }
 
@@ -29,7 +29,7 @@ static void list_extensions_cb(void *user_data, UtObject *names,
 
 static void connect_cb(void *user_data, UtObject *error) {
   if (error != NULL) {
-    ut_cstring description = ut_error_get_description(error);
+    ut_cstring_ref description = ut_error_get_description(error);
     printf("Error connecting: %s", description);
     return;
   }

@@ -21,4 +21,4 @@ static inline char *ut_cstring_take(char **string) {
   return result;
 }
 
-#define ut_cstring char *__attribute__((__cleanup__(ut_cstring_clear)))
+#define ut_cstring_ref char *__attribute__((__cleanup__(ut_cstring_clear)))
