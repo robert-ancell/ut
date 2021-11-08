@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ut-cstring.h"
 #include "ut-list.h"
 #include "ut-object-private.h"
 #include "ut-string-array.h"
@@ -38,8 +39,24 @@ void ut_string_list_append(UtObject *object, const char *item) {
   ut_string_list_insert(object, length, item);
 }
 
+void ut_string_list_append_printf(UtObject *object, const char *format, ...) {
+  va_list ap;
+  va_start(ap, format);
+  ut_cstring_ref text = ut_cstring_new_vprintf(format, ap);
+  va_end(ap);
+  ut_string_list_append(object, text);
+}
+
 void ut_string_list_prepend(UtObject *object, const char *item) {
   ut_string_list_insert(object, 0, item);
+}
+
+void ut_string_list_prepend_printf(UtObject *object, const char *format, ...) {
+  va_list ap;
+  va_start(ap, format);
+  ut_cstring_ref text = ut_cstring_new_vprintf(format, ap);
+  va_end(ap);
+  ut_string_list_prepend(object, text);
 }
 
 void ut_string_list_insert(UtObject *object, size_t index, const char *item) {
