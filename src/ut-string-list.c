@@ -8,6 +8,7 @@
 #include "ut-object-private.h"
 #include "ut-string-array.h"
 #include "ut-string-list.h"
+#include "ut-string.h"
 
 int ut_string_list_id = 0;
 
@@ -65,6 +66,22 @@ void ut_string_list_insert(UtObject *object, size_t index, const char *item) {
   assert(string_list_interface != NULL);
   assert(ut_list_is_mutable(object));
   string_list_interface->insert(object, index, item);
+}
+
+char *ut_string_list_join(UtObject *object, const char *separator) {
+  UtStringListInterface *string_list_interface =
+      ut_object_get_interface(object, &ut_string_list_id);
+  assert(string_list_interface != NULL);
+
+  UtObjectRef result = ut_string_new("");
+  size_t length = ut_list_get_length(object);
+  for (size_t i = 0; i < length; i++) {
+    if (i != 0) {
+      ut_string_append(result, separator);
+    }
+    ut_string_append(result, string_list_interface->get_element(object, i));
+  }
+  return ut_string_take_text(result);
 }
 
 bool ut_object_implements_string_list(UtObject *object) {

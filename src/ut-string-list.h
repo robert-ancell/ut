@@ -33,4 +33,6 @@ void ut_string_list_prepend_printf(UtObject *object, const char *format, ...)
 
 void ut_string_list_insert(UtObject *object, size_t index, const char *item);
 
+char *ut_string_list_join(UtObject *object, const char *separator);
+
 bool ut_object_implements_string_list(UtObject *object);
