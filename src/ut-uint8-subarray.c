@@ -133,8 +133,13 @@ static UtObjectInterface object_interface = {
 UtObject *ut_uint8_subarray_new(UtObject *parent, size_t start, size_t length) {
   UtObject *object = ut_object_new(sizeof(UtUint8Subarray), &object_interface);
   UtUint8Subarray *self = (UtUint8Subarray *)object;
+
+  assert(parent != NULL && ut_object_is_uint8_array(parent));
+  size_t parent_length = ut_list_get_length(parent);
+  assert(start + length <= parent_length);
+
   self->parent = ut_object_ref(parent);
-  self->parent_length = ut_list_get_length(parent);
+  self->parent_length = parent_length;
   self->start = start;
   self->length = length;
   return object;
