@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "ut-constant-utf8-string.h"
+#include "ut-cstring.h"
 #include "ut-general-error.h"
 #include "ut-list.h"
 #include "ut-object-private.h"
@@ -15,6 +16,14 @@
 int ut_string_id = 0;
 
 UtObject *ut_string_new(const char *text) { return ut_utf8_string_new(text); }
+
+UtObject *ut_string_new_printf(const char *format, ...) {
+  va_list ap;
+  va_start(ap, format);
+  ut_cstring_ref text = ut_cstring_new_vprintf(format, ap);
+  va_end(ap);
+  return ut_string_new(text);
+}
 
 UtObject *ut_string_new_constant(const char *text) {
   return ut_constant_utf8_string_new(text);
@@ -155,6 +164,14 @@ void ut_string_prepend(UtObject *object, const char *text) {
   string_interface->prepend(object, text);
 }
 
+void ut_string_prepend_printf(UtObject *object, const char *format, ...) {
+  va_list ap;
+  va_start(ap, format);
+  ut_cstring_ref text = ut_cstring_new_vprintf(format, ap);
+  va_end(ap);
+  ut_string_prepend(object, text);
+}
+
 void ut_string_prepend_code_point(UtObject *object, uint32_t code_point) {
   UtStringInterface *string_interface =
       ut_object_get_interface(object, &ut_string_id);
@@ -169,6 +186,14 @@ void ut_string_append(UtObject *object, const char *text) {
   assert(string_interface != NULL);
   assert(string_interface->is_mutable);
   string_interface->append(object, text);
+}
+
+void ut_string_append_printf(UtObject *object, const char *format, ...) {
+  va_list ap;
+  va_start(ap, format);
+  ut_cstring_ref text = ut_cstring_new_vprintf(format, ap);
+  va_end(ap);
+  ut_string_append(object, text);
 }
 
 void ut_string_append_code_point(UtObject *object, uint32_t code_point) {
