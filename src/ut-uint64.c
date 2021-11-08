@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
-#include <string.h>
 
+#include "ut-cstring.h"
 #include "ut-object-private.h"
 #include "ut-uint64.h"
 
@@ -12,9 +12,7 @@ typedef struct {
 
 static char *ut_uint64_to_string(UtObject *object) {
   UtUint64 *self = (UtUint64 *)object;
-  char string[11];
-  snprintf(string, 11, "%lu", self->value);
-  return strdup(string);
+  return ut_cstring_new_printf("<uint32>(%lu)", self->value);
 }
 
 static bool ut_uint64_equal(UtObject *object, UtObject *other) {

@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
-#include <string.h>
 
+#include "ut-cstring.h"
 #include "ut-float64.h"
 #include "ut-object-private.h"
 
@@ -10,11 +10,9 @@ typedef struct {
   double value;
 } UtFloat64;
 
-static char *ut_doubleo_string(UtObject *object) {
+static char *ut_float64_to_string(UtObject *object) {
   UtFloat64 *self = (UtFloat64 *)object;
-  char string[1024];
-  snprintf(string, 1024, "%g", self->value);
-  return strdup(string);
+  return ut_cstring_new_printf("<float64>(%g)", self->value);
 }
 
 static bool ut_float64_equal(UtObject *object, UtObject *other) {
@@ -32,7 +30,7 @@ static int ut_float64_hash(UtObject *object) {
 }
 
 static UtObjectInterface object_interface = {.type_name = "UtFloat64",
-                                             .to_string = ut_doubleo_string,
+                                             .to_string = ut_float64_to_string,
                                              .equal = ut_float64_equal,
                                              .hash = ut_float64_hash};
 

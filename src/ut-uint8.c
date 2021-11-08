@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
-#include <string.h>
 
+#include "ut-cstring.h"
 #include "ut-object-private.h"
 #include "ut-uint8.h"
 
@@ -12,9 +12,7 @@ typedef struct {
 
 static char *ut_uint8_to_string(UtObject *object) {
   UtUint8 *self = (UtUint8 *)object;
-  char string[4];
-  snprintf(string, 4, "%d", self->value);
-  return strdup(string);
+  return ut_cstring_new_printf("<uint8>(%u)", self->value);
 }
 
 static bool ut_uint8_equal(UtObject *object, UtObject *other) {

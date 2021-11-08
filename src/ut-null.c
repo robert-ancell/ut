@@ -7,18 +7,14 @@ typedef struct {
   UtObject object;
 } UtNull;
 
-static char *ut_null_to_string(UtObject *object) { return strdup("null"); }
-
 static bool ut_null_equal(UtObject *object, UtObject *other) {
   return ut_object_is_null(other);
 }
 
 static int ut_null_hash(UtObject *object) { return 0; }
 
-static UtObjectInterface object_interface = {.type_name = "UtNull",
-                                             .to_string = ut_null_to_string,
-                                             .equal = ut_null_equal,
-                                             .hash = ut_null_hash};
+static UtObjectInterface object_interface = {
+    .type_name = "UtNull", .equal = ut_null_equal, .hash = ut_null_hash};
 
 UtObject *ut_null_new() {
   return ut_object_new(sizeof(UtNull), &object_interface);
