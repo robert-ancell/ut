@@ -14,7 +14,7 @@ ut_sources = [
   'http/ut-http-client.c',
   'http/ut-http-header.c',
   'http/ut-http-response.c',
-  'json/ut-json.c',
+  'json/ut-json-decoder.c',
   'json/ut-json-encoder.c',
   'ut-assert.c',
   'ut-base64.c',

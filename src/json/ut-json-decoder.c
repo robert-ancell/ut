@@ -1,19 +1,25 @@
-#include <stddef.h>
-#include <stdint.h>
+#include <assert.h>
 #include <stdio.h>
-#include <string.h>
 
 #include "ut-boolean.h"
 #include "ut-float64.h"
 #include "ut-hash-table.h"
+#include "ut-input-stream.h"
 #include "ut-int64.h"
-#include "ut-json.h"
+#include "ut-json-decoder.h"
 #include "ut-list.h"
-#include "ut-map-item.h"
 #include "ut-map.h"
 #include "ut-null.h"
 #include "ut-object-array.h"
 #include "ut-string.h"
+#include "ut-utf8-decoder.h"
+
+typedef struct {
+  UtObject object;
+  UtObject *utf8_decoder;
+  UtInputStreamCallback callback;
+  void *user_data;
+} UtJsonDecoder;
 
 static UtObject *decode_value(const char *text, size_t *offset);
 
@@ -438,7 +444,72 @@ static UtObject *decode_value(const char *text, size_t *offset) {
   return value;
 }
 
+static void ut_json_decoder_init(UtObject *object) {
+  UtJsonDecoder *self = (UtJsonDecoder *)object;
+  self->utf8_decoder = NULL;
+  self->callback = NULL;
+  self->user_data = NULL;
+}
+
+static void ut_json_decoder_cleanup(UtObject *object) {
+  UtJsonDecoder *self = (UtJsonDecoder *)object;
+  ut_object_unref(self->utf8_decoder);
+}
+
+static void ut_json_decoder_input_stream_read(UtObject *object,
+                                              UtInputStreamCallback callback,
+                                              void *user_data,
+                                              UtObject *cancel) {
+  UtJsonDecoder *self = (UtJsonDecoder *)object;
+  assert(callback != NULL);
+
+  assert(self->callback == NULL);
+  self->callback = callback;
+  self->user_data = user_data;
+  // ut_input_stream_read(self->utf8_decoder, read_cb, self, cancel);
+}
+
+static void
+ut_json_decoder_input_stream_read_all(UtObject *object,
+                                      UtInputStreamCallback callback,
+                                      void *user_data, UtObject *cancel) {
+  UtJsonDecoder *self = (UtJsonDecoder *)object;
+  assert(callback != NULL);
+
+  assert(self->callback == NULL);
+  self->callback = callback;
+  self->user_data = user_data;
+  // ut_input_stream_read_all(self->utf8_decoder, read_cb, self, cancel);
+}
+
+static UtInputStreamInterface input_stream_interface = {
+    .read = ut_json_decoder_input_stream_read,
+    .read_all = ut_json_decoder_input_stream_read_all};
+
+static UtObjectInterface object_interface = {
+    .type_name = "UtJsonDecoder",
+    .init = ut_json_decoder_init,
+    .cleanup = ut_json_decoder_cleanup,
+    .interfaces = {{
+                       &ut_input_stream_id,
+                       &input_stream_interface,
+                   },
+                   {NULL, NULL}}};
+
+UtObject *ut_json_decoder_new(UtObject *input_stream) {
+  assert(input_stream != NULL);
+
+  UtObject *object = ut_object_new(sizeof(UtJsonDecoder), &object_interface);
+  UtJsonDecoder *self = (UtJsonDecoder *)object;
+  self->utf8_decoder = ut_utf8_decoder_new(input_stream);
+  return object;
+}
+
 UtObject *ut_json_decode(const char *text) {
   size_t offset = 0;
   return decode_value(text, &offset);
+}
+
+bool ut_object_is_json_decoder(UtObject *object) {
+  return ut_object_is_type(object, &object_interface);
 }
