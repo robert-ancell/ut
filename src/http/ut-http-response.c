@@ -107,11 +107,10 @@ static void start_read(UtHttpResponse *self, bool read_all,
   // Clean up after the previous read.
   if (ut_cancel_is_active(self->cancel)) {
     self->read_all = false;
-    ut_object_unref(self->read_cancel);
+    ut_object_clear(&self->read_cancel);
     self->callback = NULL;
     self->user_data = NULL;
-    ut_object_unref(self->cancel);
-    self->cancel = NULL;
+    ut_object_clear(&self->cancel);
   }
 
   assert(self->callback == NULL);

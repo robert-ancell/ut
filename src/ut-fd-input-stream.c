@@ -107,8 +107,7 @@ static void start_read(UtFdInputStream *self, bool read_all,
     self->read_all = false;
     self->callback = NULL;
     self->user_data = NULL;
-    ut_object_unref(self->cancel);
-    self->cancel = NULL;
+    ut_object_clear(&self->cancel);
   }
 
   assert(self->callback == NULL);

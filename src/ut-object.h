@@ -48,10 +48,8 @@ static inline void ut_object_set(UtObject **object, UtObject *value) {
 }
 
 static inline void ut_object_clear(UtObject **object) {
-  if (*object != NULL) {
-    ut_object_unref(*object);
-    *object = NULL;
-  }
+  ut_object_unref(*object);
+  *object = NULL;
 }
 
 #define UtObjectRef UtObject *__attribute__((__cleanup__(ut_object_clear)))
