@@ -26,6 +26,26 @@ char *ut_cstring_new_vprintf(const char *format, va_list ap) {
   return result;
 }
 
+void ut_cstring_set(char **string, const char *value) {
+  if (*string != NULL) {
+    free(*string);
+  }
+  *string = strdup(value);
+}
+
+void ut_cstring_clear(char **string) {
+  if (*string != NULL) {
+    free(*string);
+    *string = NULL;
+  }
+}
+
+char *ut_cstring_take(char **string) {
+  char *result = *string;
+  *string = NULL;
+  return result;
+}
+
 bool ut_cstring_starts_with(const char *value, const char *prefix) {
   assert(value != NULL);
   assert(prefix != NULL);

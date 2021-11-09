@@ -11,18 +11,11 @@ char *ut_cstring_new_printf(const char *format, ...)
 
 char *ut_cstring_new_vprintf(const char *format, va_list ap);
 
-static inline void ut_cstring_clear(char **string) {
-  if (*string != NULL) {
-    free(*string);
-    *string = NULL;
-  }
-}
+void ut_cstring_set(char **string, const char *value);
 
-static inline char *ut_cstring_take(char **string) {
-  char *result = *string;
-  *string = NULL;
-  return result;
-}
+void ut_cstring_clear(char **string);
+
+char *ut_cstring_take(char **string);
 
 #define ut_cstring_ref char *__attribute__((__cleanup__(ut_cstring_clear)))
 

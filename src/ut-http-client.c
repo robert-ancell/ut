@@ -341,8 +341,7 @@ void ut_http_client_send_request(UtObject *object, const char *method,
   assert(strcmp(scheme, "http") == 0);
   assert(host != NULL);
   if (strcmp(path, "") == 0) {
-    free(path);
-    path = strdup("/");
+    ut_cstring_set(&path, "/");
   }
   if (port == 0) {
     port = 80;
