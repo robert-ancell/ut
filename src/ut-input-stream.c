@@ -4,7 +4,6 @@
 #include "ut-general-error.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
-#include "ut-object-private.h"
 
 int ut_input_stream_id = 0;
 

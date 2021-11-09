@@ -3,7 +3,6 @@
 
 #include "ut-cstring.h"
 #include "ut-float64.h"
-#include "ut-object-private.h"
 
 typedef struct {
   UtObject object;

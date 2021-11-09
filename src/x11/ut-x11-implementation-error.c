@@ -1,6 +1,5 @@
 #include <assert.h>
 
-#include "ut-object-private.h"
 #include "ut-x11-error.h"
 #include "ut-x11-implementation-error.h"
 

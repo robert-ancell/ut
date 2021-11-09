@@ -12,7 +12,6 @@
 #include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-local-file.h"
-#include "ut-object-private.h"
 #include "ut-output-stream.h"
 #include "ut-uint8-array.h"
 #include "ut-uint8-list.h"

@@ -7,7 +7,6 @@
 #include "ut-list.h"
 #include "ut-map-item.h"
 #include "ut-map.h"
-#include "ut-object-private.h"
 #include "ut-string.h"
 
 int ut_map_id = 0;

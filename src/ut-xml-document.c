@@ -6,7 +6,6 @@
 #include "ut-list.h"
 #include "ut-map-item.h"
 #include "ut-map.h"
-#include "ut-object-private.h"
 #include "ut-string.h"
 #include "ut-xml-document.h"
 #include "ut-xml-element.h"

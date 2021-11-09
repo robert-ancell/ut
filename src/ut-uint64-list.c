@@ -1,6 +1,5 @@
 #include <assert.h>
 
-#include "ut-object-private.h"
 #include "ut-uint64-list.h"
 
 int ut_uint64_list_id = 0;

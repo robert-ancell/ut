@@ -1,6 +1,5 @@
 #include <assert.h>
 
-#include "ut-object-private.h"
 #include "ut-x11-event.h"
 #include "ut-x11-unknown-event.h"
 

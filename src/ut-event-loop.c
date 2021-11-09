@@ -9,7 +9,6 @@
 
 #include "ut-cancel.h"
 #include "ut-event-loop.h"
-#include "ut-object-private.h"
 
 typedef struct _Timeout Timeout;
 struct _Timeout {

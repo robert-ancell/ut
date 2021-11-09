@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ut-object-private.h"
 #include "ut-object.h"
 #include "ut-string.h"
 

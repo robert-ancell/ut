@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ut-object-private.h"
 #include "ut-xml-element.h"
 
 typedef struct {

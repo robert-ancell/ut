@@ -5,7 +5,6 @@
 #include "ut-cstring.h"
 #include "ut-list.h"
 #include "ut-object-array.h"
-#include "ut-object-private.h"
 #include "ut-string.h"
 
 int ut_list_id = 0;

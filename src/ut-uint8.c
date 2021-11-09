@@ -2,7 +2,6 @@
 #include <stdio.h>
 
 #include "ut-cstring.h"
-#include "ut-object-private.h"
 #include "ut-uint8.h"
 
 typedef struct {

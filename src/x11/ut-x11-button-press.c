@@ -1,6 +1,5 @@
 #include <assert.h>
 
-#include "ut-object-private.h"
 #include "ut-x11-button-press.h"
 #include "ut-x11-event.h"
 

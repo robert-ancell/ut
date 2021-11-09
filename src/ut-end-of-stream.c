@@ -1,7 +1,6 @@
 #include <assert.h>
 
 #include "ut-end-of-stream.h"
-#include "ut-object-private.h"
 
 typedef struct {
   UtObject object;

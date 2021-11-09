@@ -1,7 +1,6 @@
 #include <string.h>
 
 #include "ut-null.h"
-#include "ut-object-private.h"
 
 typedef struct {
   UtObject object;

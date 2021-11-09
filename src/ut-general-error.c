@@ -5,7 +5,6 @@
 #include "ut-cstring.h"
 #include "ut-error.h"
 #include "ut-general-error.h"
-#include "ut-object-private.h"
 
 typedef struct {
   UtObject object;

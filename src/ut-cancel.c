@@ -1,5 +1,4 @@
 #include "ut-cancel.h"
-#include "ut-object-private.h"
 
 typedef struct {
   UtObject object;

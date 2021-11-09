@@ -5,7 +5,6 @@
 #include "ut-constant-uint8-array.h"
 #include "ut-constant-utf8-string.h"
 #include "ut-list.h"
-#include "ut-object-private.h"
 #include "ut-string.h"
 #include "ut-uint8-list.h"
 

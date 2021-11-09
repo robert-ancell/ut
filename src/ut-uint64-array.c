@@ -5,7 +5,6 @@
 #include "ut-end-of-stream.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
-#include "ut-object-private.h"
 #include "ut-uint64-array.h"
 #include "ut-uint64-list.h"
 #include "ut-uint64.h"

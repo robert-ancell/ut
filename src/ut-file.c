@@ -1,7 +1,6 @@
 #include <assert.h>
 
 #include "ut-file.h"
-#include "ut-object-private.h"
 
 int ut_file_id = 0;
 

@@ -12,7 +12,6 @@
 #include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-object-array.h"
-#include "ut-object-private.h"
 #include "ut-output-stream.h"
 #include "ut-string.h"
 #include "ut-tcp-client.h"

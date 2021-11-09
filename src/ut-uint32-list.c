@@ -1,7 +1,6 @@
 #include <assert.h>
 
 #include "ut-list.h"
-#include "ut-object-private.h"
 #include "ut-uint32-array.h"
 #include "ut-uint32-list.h"
 

@@ -1,5 +1,4 @@
 #include "ut-x11-name-error.h"
-#include "ut-object-private.h"
 #include "ut-x11-error.h"
 
 typedef struct {

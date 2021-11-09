@@ -6,7 +6,6 @@
 #include "ut-end-of-stream.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
-#include "ut-object-private.h"
 #include "ut-string-array.h"
 #include "ut-string-list.h"
 #include "ut-string.h"

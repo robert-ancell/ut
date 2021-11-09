@@ -9,7 +9,6 @@
 #include "ut-float64.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
-#include "ut-object-private.h"
 #include "ut-string.h"
 
 typedef struct {

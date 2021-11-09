@@ -7,7 +7,6 @@
 #include "ut-general-error.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
-#include "ut-object-private.h"
 #include "ut-output-stream.h"
 #include "ut-string-list.h"
 #include "ut-string.h"

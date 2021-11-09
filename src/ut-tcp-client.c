@@ -15,7 +15,6 @@
 #include "ut-fd-input-stream.h"
 #include "ut-fd-output-stream.h"
 #include "ut-input-stream.h"
-#include "ut-object-private.h"
 #include "ut-output-stream.h"
 #include "ut-tcp-client.h"
 

@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "ut-boolean.h"
-#include "ut-object-private.h"
 
 typedef struct {
   UtObject object;

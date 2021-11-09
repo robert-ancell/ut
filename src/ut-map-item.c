@@ -1,7 +1,6 @@
 #include <assert.h>
 
 #include "ut-map-item.h"
-#include "ut-object-private.h"
 
 int ut_map_item_id = 0;
 

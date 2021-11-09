@@ -1,6 +1,5 @@
 #include <assert.h>
 
-#include "ut-object-private.h"
 #include "ut-output-stream.h"
 
 int ut_output_stream_id = 0;
