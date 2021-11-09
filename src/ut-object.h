@@ -42,6 +42,11 @@ UtObject *ut_object_ref(UtObject *object);
 // Does nothing if [object] is NULL.
 void ut_object_unref(UtObject *object);
 
+static inline void ut_object_set(UtObject **object, UtObject *value) {
+  ut_object_unref(*object);
+  *object = ut_object_ref(value);
+}
+
 static inline void ut_object_clear(UtObject **object) {
   if (*object != NULL) {
     ut_object_unref(*object);
