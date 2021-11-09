@@ -55,8 +55,6 @@ ut_sources = [
   'ut-utf8-decoder.c',
   'ut-utf8-encoder.c',
   'ut-utf8-string.c',
-  'ut-xml-document.c',
-  'ut-xml-element.c',
   'x11/ut-x11-atom-error.c',
   'x11/ut-x11-button-press.c',
   'x11/ut-x11-button-release.c',
@@ -82,7 +80,9 @@ ut_sources = [
   'x11/ut-x11-unknown-error.c',
   'x11/ut-x11-unknown-event.c',
   'x11/ut-x11-value-error.c',
-  'x11/ut-x11-window-error.c'
+  'x11/ut-x11-window-error.c',
+  'xml/ut-xml-document.c',
+  'xml/ut-xml-element.c'
 ]
 
 ut_lib = static_library('ut', ut_sources, dependencies: thread_dep)
@@ -128,7 +128,7 @@ utf8_encoder_test = executable('ut-utf8-encoder-test',
 test('UTF-8 Encoder', utf8_encoder_test)
 
 xml_document_test = executable('ut-xml-document-test',
-                               'ut-xml-document-test.c',
+                               'xml/ut-xml-document-test.c',
                                link_with: ut_lib)
 test('XML', xml_document_test)
 
