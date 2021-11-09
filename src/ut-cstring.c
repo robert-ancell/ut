@@ -30,7 +30,7 @@ void ut_cstring_set(char **string, const char *value) {
   if (*string != NULL) {
     free(*string);
   }
-  *string = strdup(value);
+  *string = value != NULL ? strdup(value) : NULL;
 }
 
 void ut_cstring_clear(char **string) {
