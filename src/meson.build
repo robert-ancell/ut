@@ -1,4 +1,7 @@
 ut_sources = [
+  'http/ut-http-client.c',
+  'http/ut-http-header.c',
+  'http/ut-http-response.c',
   'ut-assert.c',
   'ut-base64.c',
   'ut-boolean.c',
@@ -17,9 +20,6 @@ ut_sources = [
   'ut-float64-list.c',
   'ut-general-error.c',
   'ut-hash-table.c',
-  'ut-http-client.c',
-  'ut-http-header.c',
-  'ut-http-response.c',
   'ut-input-stream.c',
   'ut-int16.c',
   'ut-int32.c',
@@ -158,7 +158,7 @@ unix_domain_socket_client_test = executable('ut-unix-domain-socket-client-test',
 #test('Unix Domain Socket Client', unix_domain_socket_client_test)
 
 http_client_test = executable('ut-http-client-test',
-                              'ut-http-client-test.c',
+                              'http/ut-http-client-test.c',
                               link_with: ut_lib)
 #test('HTTP Client', http_client_test)
 
