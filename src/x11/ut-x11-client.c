@@ -7,6 +7,7 @@
 #include "ut-general-error.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
+#include "ut-object-list.h"
 #include "ut-output-stream.h"
 #include "ut-string-list.h"
 #include "ut-string.h"
@@ -50,6 +51,42 @@ typedef void (*HandleErrorFunction)(UtX11Client *self, Request *request,
                                     UtObject *error);
 
 typedef void (*RequestCallback)(void *user_data);
+
+struct _Request {
+  UtObject object;
+  uint16_t sequence_number;
+  DecodeReplyFunction decode_reply_function;
+  HandleErrorFunction handle_error_function;
+  RequestCallback callback;
+  void *user_data;
+  UtObject *cancel;
+};
+
+static void request_cleanup(UtObject *object) {
+  Request *self = (Request *)object;
+  ut_object_unref(self->cancel);
+}
+
+static UtObjectInterface request_object_interface = {
+    .type_name = "Request",
+    .cleanup = request_cleanup,
+    .interfaces = {{NULL, NULL}}};
+
+static UtObject *request_new(uint16_t sequence_number,
+                             DecodeReplyFunction decode_reply_function,
+                             HandleErrorFunction handle_error_function,
+                             RequestCallback callback, void *user_data,
+                             UtObject *cancel) {
+  UtObject *object = ut_object_new(sizeof(Request), &request_object_interface);
+  Request *self = (Request *)object;
+  self->sequence_number = sequence_number;
+  self->decode_reply_function = decode_reply_function;
+  self->handle_error_function = handle_error_function;
+  self->callback = callback;
+  self->user_data = user_data;
+  self->cancel = ut_object_ref(cancel);
+  return object;
+}
 
 typedef enum {
   WINDOW_CLASS_INHERIT_FROM_PARENT = 0,
@@ -135,16 +172,6 @@ typedef struct {
   size_t visuals_length;
 } X11Screen;
 
-struct _Request {
-  uint16_t sequence_number;
-  DecodeReplyFunction decode_reply_function;
-  HandleErrorFunction handle_error_function;
-  RequestCallback callback;
-  void *user_data;
-  UtObject *cancel;
-  Request *next;
-};
-
 struct _UtX11Client {
   UtObject object;
   UtObject *socket;
@@ -171,7 +198,7 @@ struct _UtX11Client {
 
   uint32_t next_resource_id;
   uint16_t sequence_number;
-  Request *requests;
+  UtObject *requests;
 };
 
 static uint32_t create_resource_id(UtX11Client *self) {
@@ -240,15 +267,10 @@ static void send_request_with_reply(UtX11Client *self, uint8_t opcode,
   self->sequence_number++;
 
   if (decode_reply_function != NULL) {
-    Request *request = malloc(sizeof(Request));
-    request->sequence_number = self->sequence_number;
-    request->decode_reply_function = decode_reply_function;
-    request->handle_error_function = handle_error_function;
-    request->callback = callback;
-    request->user_data = user_data;
-    request->cancel = ut_object_ref(cancel);
-    request->next = self->requests;
-    self->requests = request;
+    UtObjectRef request =
+        request_new(self->sequence_number, decode_reply_function,
+                    handle_error_function, callback, user_data, cancel);
+    ut_list_append(self->requests, request);
   }
 
   ut_output_stream_write(self->socket, request);
@@ -261,8 +283,9 @@ static void send_request(UtX11Client *self, uint8_t opcode, uint8_t data0,
 }
 
 static Request *find_request(UtX11Client *self, uint16_t sequence_number) {
-  for (Request *request = self->requests; request != NULL;
-       request = request->next) {
+  size_t requests_length = ut_list_get_length(self->requests);
+  for (size_t i = 0; i < requests_length; i++) {
+    Request *request = (Request *)ut_object_list_get_element(self->requests, i);
     if (request->sequence_number == sequence_number) {
       return request;
     }
@@ -1010,7 +1033,7 @@ static void ut_x11_client_init(UtObject *object) {
   self->screens_length = 0;
   self->next_resource_id = 0;
   self->sequence_number = 0;
-  self->requests = NULL;
+  self->requests = ut_object_list_new();
 }
 
 static void ut_x11_client_cleanup(UtObject *object) {
@@ -1032,13 +1055,7 @@ static void ut_x11_client_cleanup(UtObject *object) {
     free(screen);
   }
   free(self->screens);
-  Request *next_request;
-  for (Request *request = self->requests; request != NULL;
-       request = next_request) {
-    next_request = request->next;
-    ut_object_unref(request->cancel);
-    free(request);
-  }
+  ut_object_unref(self->requests);
 }
 
 static UtObjectInterface object_interface = {.type_name = "UtX11Client",
