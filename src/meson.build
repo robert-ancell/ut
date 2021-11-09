@@ -14,6 +14,7 @@ ut_sources = [
   'http/ut-http-client.c',
   'http/ut-http-header.c',
   'http/ut-http-response.c',
+  'json/ut-json.c',
   'ut-assert.c',
   'ut-base64.c',
   'ut-boolean.c',
@@ -36,7 +37,6 @@ ut_sources = [
   'ut-int16.c',
   'ut-int32.c',
   'ut-int64.c',
-  'ut-json.c',
   'ut-list.c',
   'ut-local-file.c',
   'ut-map.c',
@@ -145,7 +145,7 @@ xml_document_test = executable('ut-xml-document-test',
 test('XML', xml_document_test)
 
 json_test = executable('ut-json-test',
-                       'ut-json-test.c',
+                       'json/ut-json-test.c',
                        link_with: ut_lib)
 test('JSON', json_test)
 

@@ -23,7 +23,6 @@
 #include "ut-int16.h"
 #include "ut-int32.h"
 #include "ut-int64.h"
-#include "ut-json.h"
 #include "ut-list.h"
 #include "ut-local-file.h"
 #include "ut-map-item.h"
@@ -81,3 +80,4 @@
 #include "x11/ut-x11-window-error.h"
 #include "xml/ut-xml-document.h"
 #include "xml/ut-xml-element.h"
+#include "json/ut-json.h"
