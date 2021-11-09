@@ -6,98 +6,113 @@
 #include "ut.h"
 
 static void test_encode() {
+  UtObjectRef encoder = ut_json_encoder_new();
+
   UtObjectRef null = ut_null_new();
-  ut_cstring_ref null_text = ut_json_encode(null);
+  ut_cstring_ref null_text = ut_json_encoder_encode(encoder, null);
   ut_assert_cstring_equal(null_text, "null");
 
   UtObjectRef boolean_true = ut_boolean_new(true);
-  ut_cstring_ref boolean_true_text = ut_json_encode(boolean_true);
+  ut_cstring_ref boolean_true_text =
+      ut_json_encoder_encode(encoder, boolean_true);
   ut_assert_cstring_equal(boolean_true_text, "true");
 
   UtObjectRef boolean_false = ut_boolean_new(false);
-  ut_cstring_ref boolean_false_text = ut_json_encode(boolean_false);
+  ut_cstring_ref boolean_false_text =
+      ut_json_encoder_encode(encoder, boolean_false);
   ut_assert_cstring_equal(boolean_false_text, "false");
 
   UtObjectRef zero = ut_int64_new(0);
-  ut_cstring_ref zero_text = ut_json_encode(zero);
+  ut_cstring_ref zero_text = ut_json_encoder_encode(encoder, zero);
   ut_assert_cstring_equal(zero_text, "0");
 
   UtObjectRef one = ut_int64_new(1);
-  ut_cstring_ref one_text = ut_json_encode(one);
+  ut_cstring_ref one_text = ut_json_encoder_encode(encoder, one);
   ut_assert_cstring_equal(one_text, "1");
 
   UtObjectRef minus_one = ut_int64_new(-1);
-  ut_cstring_ref minus_one_text = ut_json_encode(minus_one);
+  ut_cstring_ref minus_one_text = ut_json_encoder_encode(encoder, minus_one);
   ut_assert_cstring_equal(minus_one_text, "-1");
 
   UtObjectRef one_k = ut_int64_new(1024);
-  ut_cstring_ref one_k_text = ut_json_encode(one_k);
+  ut_cstring_ref one_k_text = ut_json_encoder_encode(encoder, one_k);
   ut_assert_cstring_equal(one_k_text, "1024");
 
   UtObjectRef one_point_one = ut_float64_new(1.1);
-  ut_cstring_ref one_point_one_text = ut_json_encode(one_point_one);
+  ut_cstring_ref one_point_one_text =
+      ut_json_encoder_encode(encoder, one_point_one);
   ut_assert_cstring_equal(one_point_one_text, "1.100000e+00");
 
   UtObjectRef minus_one_point_one = ut_float64_new(-1.1);
-  ut_cstring_ref minus_one_point_one_text = ut_json_encode(minus_one_point_one);
+  ut_cstring_ref minus_one_point_one_text =
+      ut_json_encoder_encode(encoder, minus_one_point_one);
   ut_assert_cstring_equal(minus_one_point_one_text, "-1.100000e+00");
 
   UtObjectRef scientific_number = ut_float64_new(1024);
-  ut_cstring_ref scientific_number_text = ut_json_encode(scientific_number);
+  ut_cstring_ref scientific_number_text =
+      ut_json_encoder_encode(encoder, scientific_number);
   ut_assert_cstring_equal(scientific_number_text, "1.024000e+03");
 
   UtObjectRef one_M = ut_float64_new(1000000);
-  ut_cstring_ref one_M_text = ut_json_encode(one_M);
+  ut_cstring_ref one_M_text = ut_json_encoder_encode(encoder, one_M);
   ut_assert_cstring_equal(one_M_text, "1.000000e+06");
 
   UtObjectRef one_u = ut_float64_new(0.000001);
-  ut_cstring_ref one_u_text = ut_json_encode(one_u);
+  ut_cstring_ref one_u_text = ut_json_encoder_encode(encoder, one_u);
   ut_assert_cstring_equal(one_u_text, "1.000000e-06");
 
   UtObjectRef empty_string = ut_string_new("");
-  ut_cstring_ref empty_string_text = ut_json_encode(empty_string);
+  ut_cstring_ref empty_string_text =
+      ut_json_encoder_encode(encoder, empty_string);
   ut_assert_cstring_equal(empty_string_text, "\"\"");
 
   UtObjectRef string = ut_string_new("Hello World!");
-  ut_cstring_ref string_text = ut_json_encode(string);
+  ut_cstring_ref string_text = ut_json_encoder_encode(encoder, string);
   ut_assert_cstring_equal(string_text, "\"Hello World!\"");
 
   UtObjectRef escaped_string = ut_string_new("\"\\/\b\f\n\r\t\x12");
-  ut_cstring_ref escaped_string_text = ut_json_encode(escaped_string);
+  ut_cstring_ref escaped_string_text =
+      ut_json_encoder_encode(encoder, escaped_string);
   ut_assert_cstring_equal(escaped_string_text,
                           "\"\\\"\\\\/\\b\\f\\n\\r\\t\\u0012\"");
 
   UtObjectRef emoji_string = ut_string_new("😀");
-  ut_cstring_ref emoji_string_text = ut_json_encode(emoji_string);
+  ut_cstring_ref emoji_string_text =
+      ut_json_encoder_encode(encoder, emoji_string);
   ut_assert_cstring_equal(emoji_string_text, "\"😀\"");
 
   UtObjectRef empty_array = ut_list_new();
-  ut_cstring_ref empty_array_text = ut_json_encode(empty_array);
+  ut_cstring_ref empty_array_text =
+      ut_json_encoder_encode(encoder, empty_array);
   ut_assert_cstring_equal(empty_array_text, "[]");
 
   UtObjectRef number_array = ut_list_new();
   ut_list_append_take(number_array, ut_int64_new(1));
   ut_list_append_take(number_array, ut_int64_new(2));
   ut_list_append_take(number_array, ut_int64_new(3));
-  ut_cstring_ref number_array_text = ut_json_encode(number_array);
+  ut_cstring_ref number_array_text =
+      ut_json_encoder_encode(encoder, number_array);
   ut_assert_cstring_equal(number_array_text, "[1,2,3]");
 
   UtObjectRef mixed_array = ut_list_new();
   ut_list_append_take(mixed_array, ut_boolean_new(false));
   ut_list_append_take(mixed_array, ut_string_new("two"));
   ut_list_append_take(mixed_array, ut_float64_new(3.1));
-  ut_cstring_ref mixed_array_text = ut_json_encode(mixed_array);
+  ut_cstring_ref mixed_array_text =
+      ut_json_encoder_encode(encoder, mixed_array);
   ut_assert_cstring_equal(mixed_array_text, "[false,\"two\",3.100000e+00]");
 
   UtObjectRef empty_object = ut_map_new();
-  ut_cstring_ref empty_object_text = ut_json_encode(empty_object);
+  ut_cstring_ref empty_object_text =
+      ut_json_encoder_encode(encoder, empty_object);
   ut_assert_cstring_equal(empty_object_text, "{}");
 
   UtObjectRef number_object = ut_map_new();
   ut_map_insert_take(number_object, ut_string_new("one"), ut_int64_new(1));
   ut_map_insert_take(number_object, ut_string_new("two"), ut_int64_new(2));
   ut_map_insert_take(number_object, ut_string_new("three"), ut_int64_new(3));
-  ut_cstring_ref number_object_text = ut_json_encode(number_object);
+  ut_cstring_ref number_object_text =
+      ut_json_encoder_encode(encoder, number_object);
   ut_assert_cstring_equal(number_object_text,
                           "{\"one\":1,\"two\":2,\"three\":3}");
 
@@ -107,7 +122,8 @@ static void test_encode() {
   ut_map_insert_take(mixed_object, ut_string_new("number"), ut_int64_new(42));
   ut_map_insert_take(mixed_object, ut_string_new("string"),
                      ut_string_new("foo"));
-  ut_cstring_ref mixed_object_text = ut_json_encode(mixed_object);
+  ut_cstring_ref mixed_object_text =
+      ut_json_encoder_encode(encoder, mixed_object);
   ut_assert_cstring_equal(
       mixed_object_text, "{\"boolean\":true,\"number\":42,\"string\":\"foo\"}");
 }

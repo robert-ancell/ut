@@ -80,4 +80,5 @@
 #include "x11/ut-x11-window-error.h"
 #include "xml/ut-xml-document.h"
 #include "xml/ut-xml-element.h"
+#include "json/ut-json-encoder.h"
 #include "json/ut-json.h"
