@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "ut-constant-uint8-array.h"
 #include "ut-end-of-stream.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
@@ -115,9 +116,8 @@ static void ut_uint8_array_read(UtObject *object,
   size_t n_used = callback(user_data, object);
   UtObjectRef unused_data = NULL;
   if (n_used != self->data_length) {
-    unused_data = ut_uint8_array_new();
-    ut_uint8_array_append(unused_data, self->data + n_used,
-                          self->data_length - n_used);
+    unused_data = ut_constant_uint8_array_new(self->data + n_used,
+                                              self->data_length - n_used);
   }
   UtObjectRef eos = ut_end_of_stream_new(unused_data);
   callback(user_data, eos);
