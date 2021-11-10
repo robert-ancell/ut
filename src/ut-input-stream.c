@@ -30,7 +30,7 @@ void ut_input_stream_read_all(UtObject *object, UtInputStreamCallback callback,
 }
 
 UtObject *ut_input_stream_read_sync(UtObject *object) {
-  UtObject *result;
+  UtObject *result = NULL;
   UtObjectRef cancel = ut_cancel_new();
   ut_input_stream_read_all(object, sync_cb, &result, cancel);
   ut_cancel_activate(cancel);
