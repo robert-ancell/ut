@@ -11,15 +11,30 @@
 #include "ut-map.h"
 #include "ut-null.h"
 #include "ut-object-array.h"
+#include "ut-object-list.h"
 #include "ut-string.h"
 #include "ut-uint32-list.h"
 #include "ut-utf8-decoder.h"
+
+typedef enum {
+  DECODER_STATE_VALUE,
+  DECODER_STATE_STRING,
+  DECODER_STATE_NUMBER,
+  DECODER_STATE_OBJECT_KEY,
+  DECODER_STATE_OBJECT_VALUE,
+  DECODER_STATE_ARRAY_VALUE,
+  DECODER_STATE_TRUE,
+  DECODER_STATE_FALSE,
+  DECODER_STATE_NULL
+} DecoderState;
 
 typedef struct {
   UtObject object;
   UtObject *utf8_decoder;
   UtInputStreamCallback callback;
   void *user_data;
+  DecoderState state;
+  UtObject *value_stack;
 } UtJsonDecoder;
 
 static UtObject *decode_value(UtObject *text, size_t *offset,
@@ -453,18 +468,26 @@ static void ut_json_decoder_init(UtObject *object) {
   self->utf8_decoder = NULL;
   self->callback = NULL;
   self->user_data = NULL;
+  self->state = DECODER_STATE_VALUE;
+  self->value_stack = ut_object_list_new();
 }
 
 static void ut_json_decoder_cleanup(UtObject *object) {
   UtJsonDecoder *self = (UtJsonDecoder *)object;
   ut_object_unref(self->utf8_decoder);
+  ut_object_unref(self->value_stack);
 }
 
 static size_t read_cb(void *user_data, UtObject *data) {
-  // UtJsonDecoder *self = user_data;
+  UtJsonDecoder *self = user_data;
 
   size_t offset = 0;
+  UtObjectRef values = ut_list_new();
   UtObjectRef value = decode_value(data, &offset, true);
+  if (value != NULL) {
+    ut_list_append(values, value);
+  }
+  self->callback(self->user_data, values);
 
   return offset;
 }
@@ -520,9 +543,11 @@ UtObject *ut_json_decoder_new(UtObject *input_stream) {
 
 UtObject *ut_json_decode(const char *text) {
   UtObjectRef string = ut_string_new_constant(text);
-  UtObjectRef code_points = ut_string_get_code_points(string);
-  size_t offset = 0;
-  return decode_value(code_points, &offset, true);
+  UtObjectRef utf8 = ut_string_get_utf8(string);
+  UtObjectRef decoder = ut_json_decoder_new(utf8);
+  UtObjectRef objects = ut_input_stream_read_sync(decoder);
+  return ut_list_get_length(objects) > 0 ? ut_list_get_element(objects, 0)
+                                         : NULL;
 }
 
 bool ut_object_is_json_decoder(UtObject *object) {
