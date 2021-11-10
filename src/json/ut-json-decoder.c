@@ -14,6 +14,7 @@
 #include "ut-object-list.h"
 #include "ut-string.h"
 #include "ut-uint32-list.h"
+#include "ut-uint8-list.h"
 #include "ut-utf8-decoder.h"
 
 typedef enum {
@@ -21,8 +22,11 @@ typedef enum {
   DECODER_STATE_STRING,
   DECODER_STATE_NUMBER,
   DECODER_STATE_OBJECT_KEY,
+  DECODER_STATE_OBJECT_KEY_DIVIDER,
   DECODER_STATE_OBJECT_VALUE,
+  DECODER_STATE_OBJECT_DIVIDER,
   DECODER_STATE_ARRAY_VALUE,
+  DECODER_STATE_ARRAY_DIVIDER,
   DECODER_STATE_TRUE,
   DECODER_STATE_FALSE,
   DECODER_STATE_NULL
@@ -33,9 +37,13 @@ typedef struct {
   UtObject *utf8_decoder;
   UtInputStreamCallback callback;
   void *user_data;
-  DecoderState state;
+  UtObject *state_stack;
   UtObject *value_stack;
 } UtJsonDecoder;
+
+static void push_state(UtJsonDecoder *self, DecoderState state) {
+  ut_uint8_list_append(self->state_stack, state);
+}
 
 static UtObject *decode_value(UtObject *text, size_t *offset,
                               bool complete_data);
@@ -72,7 +80,7 @@ static void decode_whitespace(UtObject *text, size_t *offset) {
   }
 }
 
-static UtObject *decode_string(UtObject *text, size_t *offset) {
+static void decode_string(UtJsonDecoder *self) {
   size_t end = *offset;
   uint32_t c = ut_uint32_list_get_element(text, end);
   if (c != '\"') {
@@ -153,8 +161,7 @@ static UtObject *decode_string(UtObject *text, size_t *offset) {
   return NULL;
 }
 
-static UtObject *decode_number(UtObject *text, size_t *offset,
-                               bool complete_data) {
+static void decode_number(UtJsonDecoder *self) {
   size_t text_length = ut_list_get_length(text);
   size_t end = *offset;
 
@@ -256,7 +263,9 @@ static UtObject *decode_number(UtObject *text, size_t *offset,
   }
 }
 
-static UtObject *decode_object(UtObject *text, size_t *offset) {
+static void decode_object_key(UtJsonDecoder *self) {}
+
+static void decode_object_value(UtJsonDecoder *self) {
   size_t text_length = ut_list_get_length(text);
 
   size_t end = *offset;
@@ -322,7 +331,7 @@ static UtObject *decode_object(UtObject *text, size_t *offset) {
   }
 }
 
-static UtObject *decode_array(UtObject *text, size_t *offset) {
+static void decode_array(UtJsonDecoder *self) {
   size_t text_length = ut_list_get_length(text);
 
   size_t end = *offset;
@@ -371,8 +380,7 @@ static UtObject *decode_array(UtObject *text, size_t *offset) {
   }
 }
 
-static UtObject *decode_value(UtObject *text, size_t *offset,
-                              bool complete_data) {
+static void decode_value(UtJsonDecoder *decoder) {
   size_t text_length = ut_list_get_length(text);
 
   size_t end = *offset;
@@ -382,10 +390,9 @@ static UtObject *decode_value(UtObject *text, size_t *offset,
     return NULL;
   }
 
-  UtObject *value;
   switch (ut_uint32_list_get_element(text, end)) {
   case '"':
-    value = decode_string(text, &end);
+    push_state(self, DECODER_STATE_STRING);
     break;
   case '-':
   case '0':
@@ -398,15 +405,16 @@ static UtObject *decode_value(UtObject *text, size_t *offset,
   case '7':
   case '8':
   case '9':
-    value = decode_number(text, &end, complete_data);
+    push_state(self, DECODER_STATE_NUMBER);
     break;
   case '{':
-    value = decode_object(text, &end);
+    push_state(self, DECODER_STATE_OBJECT);
     break;
   case '[':
-    value = decode_array(text, &end);
+    push_state(self, DECODER_STATE_ARRAY);
     break;
   case 't':
+    push_state(self, DECODER_STATE_TRUE);
     if (end + 3 >= text_length) {
       return NULL;
     }
@@ -421,6 +429,7 @@ static UtObject *decode_value(UtObject *text, size_t *offset,
     value = ut_boolean_new(true);
     break;
   case 'f':
+    push_state(self, DECODER_STATE_FALSE);
     if (end + 4 >= text_length) {
       return NULL;
     }
@@ -435,6 +444,7 @@ static UtObject *decode_value(UtObject *text, size_t *offset,
     value = ut_boolean_new(false);
     break;
   case 'n':
+    push_state(self, DECODER_STATE_NULL);
     if (end + 3 >= text_length) {
       return NULL;
     }
@@ -447,8 +457,6 @@ static UtObject *decode_value(UtObject *text, size_t *offset,
     end += 4;
     value = ut_null_new();
     break;
-  case '\0':
-    return NULL;
   default:
     // FIXME: Throw an error (unknown value)
     return NULL;
@@ -468,13 +476,15 @@ static void ut_json_decoder_init(UtObject *object) {
   self->utf8_decoder = NULL;
   self->callback = NULL;
   self->user_data = NULL;
-  self->state = DECODER_STATE_VALUE;
+  self->state_stack = ut_uint8_list_new();
   self->value_stack = ut_object_list_new();
+  push_state(self, DECODER_STATE_VALUE);
 }
 
 static void ut_json_decoder_cleanup(UtObject *object) {
   UtJsonDecoder *self = (UtJsonDecoder *)object;
   ut_object_unref(self->utf8_decoder);
+  ut_object_unref(self->state_stack);
   ut_object_unref(self->value_stack);
 }
 
@@ -482,12 +492,45 @@ static size_t read_cb(void *user_data, UtObject *data) {
   UtJsonDecoder *self = user_data;
 
   size_t offset = 0;
-  UtObjectRef values = ut_list_new();
-  UtObjectRef value = decode_value(data, &offset, true);
-  if (value != NULL) {
-    ut_list_append(values, value);
+  while (true) {
+    if (ut_list_get_length(self->state_stack) == 0) {
+      self->callback(self->user_data, self->value_stack);
+      return;
+    }
+
+    switch (ut_uint8_list_get_element(self->state_stack, 0)) {
+    case DECODER_STATE_VALUE:
+      decode_value(self);
+      break;
+    case DECODER_STATE_STRING:
+      decode_string(self);
+      break;
+    case DECODER_STATE_NUMBER:
+      decode_number(self);
+      break;
+    case DECODER_STATE_OBJECT_KEY:
+      decode_object_key(self);
+      break;
+    case DECODER_STATE_OBJECT_VALUE:
+      decode_object_value(self);
+      break;
+    case DECODER_STATE_ARRAY_VALUE:
+      decode_array_value(self);
+      break;
+    case DECODER_STATE_ARRAY_DIVIDER:
+      decode_array_divider(self);
+      break;
+    case DECODER_STATE_TRUE:
+      decode_true(self);
+      break;
+    case DECODER_STATE_FALSE:
+      decode_false(self);
+      break;
+    case DECODER_STATE_NULL:
+      decode_null(self);
+      break;
+    }
   }
-  self->callback(self->user_data, values);
 
   return offset;
 }
