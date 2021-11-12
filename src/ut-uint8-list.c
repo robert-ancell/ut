@@ -57,7 +57,7 @@ uint32_t ut_uint8_list_get_uint32_le(UtObject *object, size_t index) {
 uint32_t ut_uint8_list_get_uint32_be(UtObject *object, size_t index) {
   return (uint32_t)ut_uint8_list_get_element(object, index) << 24 |
          (uint32_t)ut_uint8_list_get_element(object, index + 1) << 16 |
-         (uint32_t)ut_uint8_list_get_element(object, index + 2) << 16 |
+         (uint32_t)ut_uint8_list_get_element(object, index + 2) << 8 |
          (uint32_t)ut_uint8_list_get_element(object, index + 3);
 }
 
