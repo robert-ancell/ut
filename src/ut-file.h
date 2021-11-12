@@ -12,8 +12,6 @@ typedef struct {
 
 extern int ut_file_id;
 
-UtObject *ut_file_new(const char *description);
-
 void ut_file_open_read(UtObject *object);
 
 void ut_file_open_write(UtObject *object, bool create);
