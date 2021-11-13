@@ -13,6 +13,8 @@ ut_sources = [
   'dbus/ut-dbus-signature.c',
   'dbus/ut-dbus-struct.c',
   'dbus/ut-dbus-variant.c',
+  'gzip/ut-gzip-decoder.c',
+  'gzip/ut-gzip-error.c',
   'http/ut-http-client.c',
   'http/ut-http-header.c',
   'http/ut-http-response.c',
@@ -161,6 +163,11 @@ deflate_decoder_test = executable('ut-deflate-decoder-test',
                                   'deflate/ut-deflate-decoder-test.c',
                                   link_with: ut_lib)
 test('Deflate', deflate_decoder_test)
+
+gzip_decoder_test = executable('ut-gzip-decoder-test',
+                               'gzip/ut-gzip-decoder-test.c',
+                               link_with: ut_lib)
+test('GZip', gzip_decoder_test)
 
 event_loop_test = executable('ut-event-loop-test',
                              'ut-event-loop-test.c',

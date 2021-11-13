@@ -5,6 +5,8 @@
 #include "dbus/ut-dbus-signature.h"
 #include "deflate/ut-deflate-decoder.h"
 #include "deflate/ut-deflate-error.h"
+#include "gzip/ut-gzip-decoder.h"
+#include "gzip/ut-gzip-error.h"
 #include "http/ut-http-client.h"
 #include "http/ut-http-header.h"
 #include "http/ut-http-response.h"
