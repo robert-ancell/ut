@@ -1,4 +1,6 @@
 ut_sources = [
+  'deflate/ut-deflate-decoder.c',
+  'deflate/ut-deflate-error.c',
   'dbus/ut-dbus-array.c',
   'dbus/ut-dbus-auth-client.c',
   'dbus/ut-dbus-client.c',
@@ -154,6 +156,11 @@ json_test = executable('ut-json-test',
                        'json/ut-json-test.c',
                        link_with: ut_lib)
 test('JSON', json_test)
+
+deflate_decoder_test = executable('ut-deflate-decoder-test',
+                                  'deflate/ut-deflate-decoder-test.c',
+                                  link_with: ut_lib)
+test('Deflate', deflate_decoder_test)
 
 event_loop_test = executable('ut-event-loop-test',
                              'ut-event-loop-test.c',
