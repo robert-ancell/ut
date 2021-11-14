@@ -4,6 +4,7 @@
 #include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-uint32-array.h"
+#include "ut-uint32-list.h"
 #include "ut-uint8-list.h"
 #include "ut-utf8-decoder.h"
 
@@ -101,7 +102,7 @@ static size_t read_cb(void *user_data, UtObject *data) {
       offset++;
     }
 
-    ut_uint32_array_append(self->buffer, code_point);
+    ut_uint32_list_append(self->buffer, code_point);
   }
 
   if (!self->read_all) {
