@@ -3,8 +3,6 @@
 #include <stdlib.h>
 
 #include "ut-constant-uint8-array.h"
-#include "ut-end-of-stream.h"
-#include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-string.h"
 #include "ut-uint8-array.h"
@@ -47,20 +45,6 @@ static UtObject *ut_constant_uint8_array_copy(UtObject *object) {
   return copy;
 }
 
-static void ut_constant_uint8_array_read(UtObject *object,
-                                         UtInputStreamCallback callback,
-                                         void *user_data, UtObject *cancel) {
-  UtConstantUint8Array *self = (UtConstantUint8Array *)object;
-  size_t n_used = callback(user_data, object);
-  UtObjectRef unused_data = NULL;
-  if (n_used != self->data_length) {
-    unused_data = ut_constant_uint8_array_new(self->data + n_used,
-                                              self->data_length - n_used);
-  }
-  UtObjectRef eos = ut_end_of_stream_new(unused_data);
-  callback(user_data, eos);
-}
-
 static void ut_constant_uint8_array_init(UtObject *object) {
   UtConstantUint8Array *self = (UtConstantUint8Array *)object;
   self->data = NULL;
@@ -92,17 +76,12 @@ static UtListInterface list_interface = {
     .get_sublist = ut_constant_uint8_array_get_sublist,
     .copy = ut_constant_uint8_array_copy};
 
-static UtInputStreamInterface input_stream_interface = {
-    .read = ut_constant_uint8_array_read,
-    .read_all = ut_constant_uint8_array_read};
-
 static UtObjectInterface object_interface = {
     .type_name = "UtConstantUint8Array",
     .init = ut_constant_uint8_array_init,
     .to_string = ut_constant_uint8_array_to_string,
     .interfaces = {{&ut_uint8_list_id, &uint8_list_interface},
                    {&ut_list_id, &list_interface},
-                   {&ut_input_stream_id, &input_stream_interface},
                    {NULL, NULL}}};
 
 UtObject *ut_constant_uint8_array_new(const uint8_t *data, size_t data_length) {

@@ -39,6 +39,7 @@ ut_sources = [
   'ut-int32.c',
   'ut-int64.c',
   'ut-list.c',
+  'ut-list-input-stream.c',
   'ut-local-file.c',
   'ut-map.c',
   'ut-map-item.c',

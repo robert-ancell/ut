@@ -23,6 +23,7 @@
 #include "ut-int16.h"
 #include "ut-int32.h"
 #include "ut-int64.h"
+#include "ut-list-input-stream.h"
 #include "ut-list.h"
 #include "ut-local-file.h"
 #include "ut-map-item.h"

@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ut-end-of-stream.h"
-#include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-string-array.h"
 #include "ut-string-list.h"
@@ -98,22 +96,6 @@ static char **ut_string_array_take_data(UtObject *object) {
   return value;
 }
 
-static void ut_string_array_read(UtObject *object,
-                                 UtInputStreamCallback callback,
-                                 void *user_data, UtObject *cancel) {
-  UtStringArray *self = (UtStringArray *)object;
-  size_t n_used = callback(user_data, object);
-  UtObjectRef unused_data = NULL;
-  if (n_used != self->data_length) {
-    unused_data = ut_string_array_new();
-    for (size_t i = n_used; i < self->data_length; i++) {
-      ut_string_array_append(unused_data, self->data[i]);
-    }
-  }
-  UtObjectRef eos = ut_end_of_stream_new(unused_data);
-  callback(user_data, eos);
-}
-
 static void ut_string_array_init(UtObject *object) {
   UtStringArray *self = (UtStringArray *)object;
   self->data = malloc(sizeof(char *) * 1);
@@ -140,9 +122,6 @@ static UtStringListInterface string_list_interface = {
     .take_data = ut_string_array_take_data,
     .insert = ut_string_array_insert};
 
-static UtInputStreamInterface input_stream_interface = {
-    .read = ut_string_array_read, .read_all = ut_string_array_read};
-
 static UtObjectInterface object_interface = {
     .type_name = "UtStringArray",
     .init = ut_string_array_init,
@@ -150,7 +129,6 @@ static UtObjectInterface object_interface = {
     .cleanup = ut_string_array_cleanup,
     .interfaces = {{&ut_list_id, &list_interface},
                    {&ut_string_list_id, &string_list_interface},
-                   {&ut_input_stream_id, &input_stream_interface},
                    {NULL, NULL}}};
 
 UtObject *ut_string_array_new() {

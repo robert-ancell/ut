@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ut-end-of-stream.h"
-#include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-string.h"
 #include "ut-uint8-array.h"
@@ -66,22 +64,6 @@ static UtObject *ut_uint8_subarray_copy(UtObject *object) {
   return copy;
 }
 
-static void ut_uint8_subarray_read(UtObject *object,
-                                   UtInputStreamCallback callback,
-                                   void *user_data, UtObject *cancel) {
-  UtUint8Subarray *self = (UtUint8Subarray *)object;
-  size_t n_used = callback(user_data, object);
-  UtObjectRef unused_data = NULL;
-  if (n_used != self->length) {
-    unused_data = ut_uint8_array_new();
-    uint8_t *data = get_data(self);
-    ut_uint8_list_append_block(unused_data, data + n_used,
-                               self->length - n_used);
-  }
-  UtObjectRef eos = ut_end_of_stream_new(unused_data);
-  callback(user_data, eos);
-}
-
 static void ut_uint8_subarray_init(UtObject *object) {
   UtUint8Subarray *self = (UtUint8Subarray *)object;
   self->parent = NULL;
@@ -123,9 +105,6 @@ static UtListInterface list_interface = {
     .get_sublist = ut_uint8_subarray_get_sublist,
     .copy = ut_uint8_subarray_copy};
 
-static UtInputStreamInterface input_stream_interface = {
-    .read = ut_uint8_subarray_read, .read_all = ut_uint8_subarray_read};
-
 static UtObjectInterface object_interface = {
     .type_name = "UtUint8Subarray",
     .init = ut_uint8_subarray_init,
@@ -133,7 +112,6 @@ static UtObjectInterface object_interface = {
     .cleanup = ut_uint8_subarray_cleanup,
     .interfaces = {{&ut_uint8_list_id, &uint8_list_interface},
                    {&ut_list_id, &list_interface},
-                   {&ut_input_stream_id, &input_stream_interface},
                    {NULL, NULL}}};
 
 UtObject *ut_uint8_subarray_new(UtObject *parent, size_t start, size_t length) {

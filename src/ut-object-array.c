@@ -2,8 +2,6 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-#include "ut-end-of-stream.h"
-#include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-object-array.h"
 #include "ut-object-list.h"
@@ -80,22 +78,6 @@ static UtObject *ut_object_array_copy(UtObject *object) {
   return (UtObject *)copy;
 }
 
-static void ut_object_array_read(UtObject *object,
-                                 UtInputStreamCallback callback,
-                                 void *user_data, UtObject *cancel) {
-  UtObjectArray *self = (UtObjectArray *)object;
-  size_t n_used = callback(user_data, object);
-  UtObjectRef unused_data = NULL;
-  if (n_used != self->data_length) {
-    unused_data = ut_object_array_new();
-    for (size_t i = n_used; i < self->data_length; i++) {
-      ut_list_append(unused_data, self->data[i]);
-    }
-  }
-  UtObjectRef eos = ut_end_of_stream_new(unused_data);
-  callback(user_data, eos);
-}
-
 static void ut_object_array_init(UtObject *object) {
   UtObjectArray *self = (UtObjectArray *)object;
   self->data = NULL;
@@ -123,9 +105,6 @@ static UtListInterface list_interface = {
     .remove = ut_object_array_remove,
     .resize = ut_object_array_resize};
 
-static UtInputStreamInterface input_stream_interface = {
-    .read = ut_object_array_read, .read_all = ut_object_array_read};
-
 static UtObjectInterface object_interface = {
     .type_name = "UtObjectArray",
     .init = ut_object_array_init,
@@ -133,7 +112,6 @@ static UtObjectInterface object_interface = {
     .cleanup = ut_object_array_cleanup,
     .interfaces = {{&ut_object_list_id, &object_list_interface},
                    {&ut_list_id, &list_interface},
-                   {&ut_input_stream_id, &input_stream_interface},
                    {NULL, NULL}}};
 
 UtObject *ut_object_array_new() {

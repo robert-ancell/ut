@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "ut-end-of-stream.h"
-#include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-string.h"
 #include "ut-uint16-array.h"
@@ -106,21 +104,6 @@ static UtObject *ut_uint16_array_copy(UtObject *object) {
   return copy;
 }
 
-static void ut_uint16_array_read(UtObject *object,
-                                 UtInputStreamCallback callback,
-                                 void *user_data, UtObject *cancel) {
-  UtUint16Array *self = (UtUint16Array *)object;
-  size_t n_used = callback(user_data, object);
-  UtObjectRef unused_data = NULL;
-  if (n_used != self->data_length) {
-    unused_data = ut_uint16_array_new();
-    ut_uint16_array_insert(unused_data, 0, self->data + n_used,
-                           self->data_length - n_used);
-  }
-  UtObjectRef eos = ut_end_of_stream_new(unused_data);
-  callback(user_data, eos);
-}
-
 static void ut_uint16_array_init(UtObject *object) {
   UtUint16Array *self = (UtUint16Array *)object;
   self->data = NULL;
@@ -163,9 +146,6 @@ static UtListInterface list_interface = {
     .remove = ut_uint16_array_remove,
     .resize = ut_uint16_array_resize};
 
-static UtInputStreamInterface input_stream_interface = {
-    .read = ut_uint16_array_read, .read_all = ut_uint16_array_read};
-
 static UtObjectInterface object_interface = {
     .type_name = "UtUint16Array",
     .init = ut_uint16_array_init,
@@ -173,7 +153,6 @@ static UtObjectInterface object_interface = {
     .cleanup = ut_uint16_array_cleanup,
     .interfaces = {{&ut_uint16_list_id, &uint16_list_interface},
                    {&ut_list_id, &list_interface},
-                   {&ut_input_stream_id, &input_stream_interface},
                    {NULL, NULL}}};
 
 UtObject *ut_uint16_array_new() {
