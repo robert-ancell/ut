@@ -16,22 +16,15 @@ static void ut_list_input_stream_read(UtObject *object,
                                       void *user_data, UtObject *cancel) {
   UtListInputStream *self = (UtListInputStream *)object;
   size_t data_length = ut_list_get_length(self->data);
-  size_t offset = 0;
-  while (offset < data_length) {
-    UtObjectRef data = offset == 0 ? ut_object_ref(self->data)
-                                   : ut_list_get_sublist(self->data, offset,
-                                                         data_length - offset);
-    size_t n_used = callback(user_data, data);
-    if (ut_cancel_is_active(cancel)) {
-      return;
-    }
-    offset += n_used;
+  size_t n_used = callback(user_data, self->data);
+  if (ut_cancel_is_active(cancel)) {
+    return;
   }
 
   UtObjectRef unused_data =
-      offset == 0
+      n_used == 0
           ? ut_object_ref(self->data)
-          : ut_list_get_sublist(self->data, offset, data_length - offset);
+          : ut_list_get_sublist(self->data, n_used, data_length - n_used);
   UtObjectRef eos = ut_end_of_stream_new(unused_data);
   callback(user_data, eos);
 }
