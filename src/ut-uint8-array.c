@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "ut-cancel.h"
 #include "ut-constant-uint8-array.h"
 #include "ut-list.h"
 #include "ut-output-stream.h"

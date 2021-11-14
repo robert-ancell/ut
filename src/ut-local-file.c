@@ -81,15 +81,6 @@ static void ut_local_file_read(UtObject *object, UtInputStreamCallback callback,
   ut_input_stream_read(self->input_stream, callback, user_data, cancel);
 }
 
-static void ut_local_file_read_all(UtObject *object,
-                                   UtInputStreamCallback callback,
-                                   void *user_data, UtObject *cancel) {
-  UtLocalFile *self = (UtLocalFile *)object;
-  assert(self->input_stream != NULL);
-
-  ut_input_stream_read_all(self->input_stream, callback, user_data, cancel);
-}
-
 static void ut_local_file_write(UtObject *object, UtObject *data,
                                 UtOutputStreamCallback callback,
                                 void *user_data, UtObject *cancel) {
@@ -104,8 +95,8 @@ static UtFileInterface file_interface = {.open_read = ut_local_file_open_read,
                                          .open_write = ut_local_file_open_write,
                                          .close = ut_local_file_close};
 
-static UtInputStreamInterface input_stream_interface = {
-    .read = ut_local_file_read, .read_all = ut_local_file_read_all};
+static UtInputStreamInterface input_stream_interface = {.read =
+                                                            ut_local_file_read};
 
 static UtOutputStreamInterface output_stream_interface = {
     .write = ut_local_file_write};

@@ -486,21 +486,8 @@ ut_dbus_message_decoder_input_stream_read(UtObject *object,
   ut_input_stream_read(self->input_stream, read_cb, self, cancel);
 }
 
-static void ut_dbus_message_decoder_input_stream_read_all(
-    UtObject *object, UtInputStreamCallback callback, void *user_data,
-    UtObject *cancel) {
-  UtDBusMessageDecoder *self = (UtDBusMessageDecoder *)object;
-  assert(callback != NULL);
-
-  assert(self->callback == NULL);
-  self->callback = callback;
-  self->user_data = user_data;
-  ut_input_stream_read_all(self->input_stream, read_cb, self, cancel);
-}
-
 static UtInputStreamInterface input_stream_interface = {
-    .read = ut_dbus_message_decoder_input_stream_read,
-    .read_all = ut_dbus_message_decoder_input_stream_read_all};
+    .read = ut_dbus_message_decoder_input_stream_read};
 
 static UtObjectInterface object_interface = {
     .type_name = "UtDBusMessageDecoder",

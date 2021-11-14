@@ -15,7 +15,6 @@ typedef struct {
 
   UtInputStreamCallback callback;
   void *user_data;
-  bool read_all;
 } UtUtf8Decoder;
 
 static void ut_utf8_decoder_init(UtObject *object) {
@@ -24,7 +23,6 @@ static void ut_utf8_decoder_init(UtObject *object) {
   self->buffer = ut_uint32_array_new();
   self->callback = NULL;
   self->user_data = NULL;
-  self->read_all = false;
 }
 
 static void ut_utf8_decoder_cleanup(UtObject *object) {
@@ -37,13 +35,9 @@ static size_t read_cb(void *user_data, UtObject *data) {
   UtUtf8Decoder *self = user_data;
 
   if (ut_object_is_end_of_stream(data)) {
-    if (self->read_all) {
-      self->callback(self->user_data, self->buffer);
-    } else {
-      UtObjectRef eos = ut_end_of_stream_new(
-          ut_list_get_length(self->buffer) > 0 ? self->buffer : NULL);
-      self->callback(self->user_data, eos);
-    }
+    UtObjectRef eos = ut_end_of_stream_new(
+        ut_list_get_length(self->buffer) > 0 ? self->buffer : NULL);
+    self->callback(self->user_data, eos);
     self->callback = NULL;
     self->user_data = NULL;
     return 0;
@@ -105,10 +99,8 @@ static size_t read_cb(void *user_data, UtObject *data) {
     ut_uint32_list_append(self->buffer, code_point);
   }
 
-  if (!self->read_all) {
-    size_t n_used = self->callback(self->user_data, self->buffer);
-    ut_list_remove(self->buffer, 0, n_used);
-  }
+  size_t n_used = self->callback(self->user_data, self->buffer);
+  ut_list_remove(self->buffer, 0, n_used);
 
   return offset;
 }
@@ -121,24 +113,11 @@ static void ut_utf8_decoder_read(UtObject *object,
   assert(self->callback == NULL);
   self->callback = callback;
   self->user_data = user_data;
-  self->read_all = false;
-  ut_input_stream_read(self->input, read_cb, self, cancel);
-}
-
-static void ut_utf8_decoder_read_all(UtObject *object,
-                                     UtInputStreamCallback callback,
-                                     void *user_data, UtObject *cancel) {
-  UtUtf8Decoder *self = (UtUtf8Decoder *)object;
-  assert(callback != NULL);
-  assert(self->callback == NULL);
-  self->callback = callback;
-  self->user_data = user_data;
-  self->read_all = true;
   ut_input_stream_read(self->input, read_cb, self, cancel);
 }
 
 static UtInputStreamInterface input_stream_interface = {
-    .read = ut_utf8_decoder_read, .read_all = ut_utf8_decoder_read_all};
+    .read = ut_utf8_decoder_read};
 
 static UtObjectInterface object_interface = {
     .type_name = "UtUtf8Decoder",

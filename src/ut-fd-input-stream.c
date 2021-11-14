@@ -20,7 +20,6 @@ typedef struct {
   UtObject *read_buffer;
   size_t read_buffer_length;
   size_t block_size;
-  bool read_all;
   UtObject *watch_cancel;
   UtInputStreamCallback callback;
   void *user_data;
@@ -56,16 +55,12 @@ static void read_cb(void *user_data) {
       // No more data to read.
       ut_cancel_activate(self->watch_cancel);
 
-      if (self->read_all) {
-        report_read_data(self);
-      } else {
-        UtObjectRef end_of_stream = ut_end_of_stream_new(
-            self->read_buffer_length > 0 ? self->read_buffer : NULL);
-        if (!ut_cancel_is_active(self->cancel)) {
-          self->callback(self->user_data, end_of_stream);
-        }
+      UtObjectRef end_of_stream = ut_end_of_stream_new(
+          self->read_buffer_length > 0 ? self->read_buffer : NULL);
+      if (!ut_cancel_is_active(self->cancel)) {
+        self->callback(self->user_data, end_of_stream);
       }
-    } else if (!self->read_all) {
+    } else {
       report_read_data(self);
     }
   }
@@ -99,12 +94,10 @@ static void buffered_read_cb(void *user_data) {
   ut_event_loop_add_read_watch(self->fd, read_cb, self, self->watch_cancel);
 }
 
-static void start_read(UtFdInputStream *self, bool read_all,
-                       UtInputStreamCallback callback, void *user_data,
-                       UtObject *cancel) {
+static void start_read(UtFdInputStream *self, UtInputStreamCallback callback,
+                       void *user_data, UtObject *cancel) {
   // Clean up after the previous read.
   if (ut_cancel_is_active(self->cancel)) {
-    self->read_all = false;
     self->callback = NULL;
     self->user_data = NULL;
     ut_object_clear(&self->cancel);
@@ -112,7 +105,6 @@ static void start_read(UtFdInputStream *self, bool read_all,
 
   assert(self->callback == NULL);
 
-  self->read_all = read_all;
   self->callback = callback;
   self->user_data = user_data;
   self->cancel = ut_object_ref(cancel);
@@ -128,7 +120,6 @@ static void ut_fd_input_stream_init(UtObject *object) {
   self->read_buffer = ut_uint8_array_new();
   self->read_buffer_length = 0;
   self->block_size = 4096;
-  self->read_all = false;
   self->watch_cancel = NULL;
   self->callback = NULL;
   self->user_data = NULL;
@@ -152,21 +143,11 @@ static void ut_fd_input_stream_read(UtObject *object,
   assert(self->fd >= 0);
   assert(callback != NULL);
 
-  start_read(self, false, callback, user_data, cancel);
-}
-
-static void ut_fd_input_stream_read_all(UtObject *object,
-                                        UtInputStreamCallback callback,
-                                        void *user_data, UtObject *cancel) {
-  UtFdInputStream *self = (UtFdInputStream *)object;
-  assert(self->fd >= 0);
-  assert(callback != NULL);
-
-  start_read(self, true, callback, user_data, cancel);
+  start_read(self, callback, user_data, cancel);
 }
 
 static UtInputStreamInterface input_stream_interface = {
-    .read = ut_fd_input_stream_read, .read_all = ut_fd_input_stream_read_all};
+    .read = ut_fd_input_stream_read};
 
 static UtObjectInterface object_interface = {
     .type_name = "UtFdInputStream",

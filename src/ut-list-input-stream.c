@@ -40,7 +40,7 @@ static void ut_list_input_stream_cleanup(UtObject *object) {
 }
 
 static UtInputStreamInterface input_stream_interface = {
-    .read = ut_list_input_stream_read, .read_all = ut_list_input_stream_read};
+    .read = ut_list_input_stream_read};
 
 static UtObjectInterface object_interface = {
     .type_name = "UtListInputStream",
