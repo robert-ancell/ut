@@ -2,7 +2,7 @@
 
 #include "ut.h"
 
-static size_t read_cb(void *user_data, UtObject *data) {
+static size_t read_cb(void *user_data, UtObject *data, bool complete) {
   UtObjectRef text = ut_string_new_from_utf8(data);
   printf("http read:\n%s'\n", ut_string_get_text(text));
   ut_event_loop_return(NULL);

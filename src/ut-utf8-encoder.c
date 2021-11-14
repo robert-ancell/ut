@@ -1,6 +1,5 @@
 #include <assert.h>
 
-#include "ut-end-of-stream.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-uint32-list.h"
@@ -30,17 +29,8 @@ static void ut_utf8_encoder_cleanup(UtObject *object) {
   ut_object_unref(self->buffer);
 }
 
-static size_t read_cb(void *user_data, UtObject *data) {
+static size_t read_cb(void *user_data, UtObject *data, bool complete) {
   UtUtf8Encoder *self = user_data;
-
-  if (ut_object_is_end_of_stream(data)) {
-    UtObjectRef eos = ut_end_of_stream_new(
-        ut_list_get_length(self->buffer) > 0 ? self->buffer : NULL);
-    self->callback(self->user_data, eos);
-    self->callback = NULL;
-    self->user_data = NULL;
-    return 0;
-  }
 
   size_t code_points_length = ut_list_get_length(data);
   for (size_t i = 0; i < code_points_length; i++) {
@@ -64,7 +54,7 @@ static size_t read_cb(void *user_data, UtObject *data) {
     }
   }
 
-  size_t n_used = self->callback(self->user_data, self->buffer);
+  size_t n_used = self->callback(self->user_data, self->buffer, complete);
   ut_list_remove(self->buffer, 0, n_used);
 
   return code_points_length;

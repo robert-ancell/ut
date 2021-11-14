@@ -271,7 +271,7 @@ static void response_cb(void *user_data) {
   }
 }
 
-static size_t read_cb(void *user_data, UtObject *data) {
+static size_t read_cb(void *user_data, UtObject *data, bool complete) {
   HttpRequest *request = user_data;
 
   const uint8_t *buffer = ut_uint8_array_get_data(data);

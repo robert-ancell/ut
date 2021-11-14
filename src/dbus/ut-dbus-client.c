@@ -11,7 +11,6 @@
 #include "ut-dbus-message-decoder.h"
 #include "ut-dbus-message-encoder.h"
 #include "ut-dbus-message.h"
-#include "ut-end-of-stream.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-object-list.h"
@@ -123,7 +122,7 @@ static void process_message(UtDBusClient *self, UtObject *message) {
   }
 }
 
-static size_t messages_cb(void *user_data, UtObject *messages) {
+static size_t messages_cb(void *user_data, UtObject *messages, bool complete) {
   UtDBusClient *self = user_data;
 
   size_t messages_length = ut_list_get_length(messages);

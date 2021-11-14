@@ -3,7 +3,7 @@
 
 #include "ut.h"
 
-static size_t read_cb(void *user_data, UtObject *data) {
+static size_t read_cb(void *user_data, UtObject *data, bool complete) {
   assert(ut_list_get_length(data) == 6);
   assert(ut_uint8_list_get_element(data, 0) == 72);
   assert(ut_uint8_list_get_element(data, 1) == 105);

@@ -5,7 +5,6 @@
 #include "ut-cancel.h"
 #include "ut-cstring.h"
 #include "ut-dbus-auth-client.h"
-#include "ut-end-of-stream.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-output-stream.h"
@@ -106,13 +105,8 @@ static char *read_line(UtObject *data, size_t *offset) {
   return NULL;
 }
 
-static size_t read_cb(void *user_data, UtObject *data) {
+static size_t read_cb(void *user_data, UtObject *data, bool complete) {
   UtDBusAuthClient *self = user_data;
-
-  if (ut_object_is_end_of_stream(data)) {
-    ut_cancel_activate(self->read_cancel);
-    return 0;
-  }
 
   size_t offset = 0;
   while (self->state != AUTH_STATE_DONE) {

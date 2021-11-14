@@ -5,7 +5,6 @@
 #include <sys/types.h>
 
 #include "ut-cancel.h"
-#include "ut-end-of-stream.h"
 #include "ut-error.h"
 #include "ut-general-error.h"
 #include "ut-http-header.h"
@@ -49,44 +48,50 @@ static ssize_t get_content_length(UtHttpResponse *self) {
   return atoi(value);
 }
 
-static size_t read_cb(void *user_data, UtObject *data) {
+static size_t read_cb(void *user_data, UtObject *data, bool complete) {
   UtHttpResponse *self = user_data;
-  size_t n_used = 0;
-  if (!ut_cancel_is_active(self->cancel)) {
-    if (ut_object_implements_error(data)) {
-      self->callback(self->user_data, data);
-    } else if (ut_object_is_end_of_stream(data)) {
-      ssize_t content_length = get_content_length(self);
-      if (content_length >= 0) {
-        UtObjectRef error =
-            ut_general_error_new("Connection closed before end of content");
-        self->callback(self->user_data, error);
-      } else {
-        self->callback(self->user_data, data);
-      }
-    } else {
-      size_t data_length = ut_list_get_length(data);
-      ssize_t content_length = get_content_length(self);
-      if (content_length >= 0 &&
-          self->n_read + data_length >= (size_t)content_length) {
-        // Read no more data.
-        ut_cancel_activate(self->read_cancel);
 
-        UtObjectRef remaining = ut_list_copy(data);
-        ut_list_resize(remaining, content_length - self->n_read);
-        n_used = self->callback(self->user_data, remaining);
-        ut_list_remove(remaining, 0, n_used);
-        UtObjectRef eos = ut_end_of_stream_new(
-            ut_list_get_length(remaining) > 0 ? remaining : NULL);
-        if (!ut_cancel_is_active(self->cancel)) {
-          self->callback(self->user_data, eos);
-        }
-      } else {
-        n_used = self->callback(self->user_data, data);
-      }
-      self->n_read += n_used;
-    }
+  // Stop listening for input when done.
+  if (ut_cancel_is_active(self->cancel)) {
+    ut_cancel_activate(self->read_cancel);
+    return 0;
   }
+
+  if (ut_object_implements_error(data)) {
+    self->callback(self->user_data, data, true);
+    return 0;
+  }
+
+  size_t n_used = 0;
+  size_t data_length = ut_list_get_length(data);
+  ssize_t content_length = get_content_length(self);
+  if (content_length >= 0) {
+    bool have_all_data = self->n_read + data_length >= (size_t)content_length;
+
+    // Read no more data.
+    ut_cancel_activate(self->read_cancel);
+
+    UtObjectRef last_block =
+        ut_list_get_sublist(data, 0, content_length - self->n_read);
+    n_used = self->callback(self->user_data, last_block, have_all_data);
+
+    // All data consumed!
+    if (self->n_read + n_used >= content_length) {
+      ut_cancel_activate(self->read_cancel);
+    }
+
+    // Generate error if didn't receive enough data.
+    if (!have_all_data && complete && !ut_cancel_is_active(self->cancel)) {
+      UtObjectRef error =
+          ut_general_error_new("Connection closed before end of content");
+      self->callback(self->user_data, error, true);
+      ut_cancel_activate(self->read_cancel);
+    }
+  } else {
+    n_used = self->callback(self->user_data, data, complete);
+  }
+
+  self->n_read += n_used;
 
   // Stop listening for input when done.
   if (ut_cancel_is_active(self->cancel)) {

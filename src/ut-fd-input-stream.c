@@ -6,7 +6,6 @@
 
 #include "ut-cancel.h"
 #include "ut-constant-uint8-array.h"
-#include "ut-end-of-stream.h"
 #include "ut-event-loop.h"
 #include "ut-fd-input-stream.h"
 #include "ut-input-stream.h"
@@ -26,15 +25,6 @@ typedef struct {
   UtObject *cancel;
 } UtFdInputStream;
 
-static void report_read_data(UtFdInputStream *self) {
-  // FIXME: Can report more data than requested in a single read - trim buffer
-  // in this case.
-  ut_list_resize(self->read_buffer, self->read_buffer_length);
-  size_t n_used = self->callback(self->user_data, self->read_buffer);
-  ut_list_remove(self->read_buffer, 0, n_used);
-  self->read_buffer_length -= n_used;
-}
-
 static void read_cb(void *user_data) {
   UtFdInputStream *self = user_data;
 
@@ -49,19 +39,27 @@ static void read_cb(void *user_data) {
                               self->read_buffer_length,
                           self->block_size);
     assert(n_read >= 0);
-    self->read_buffer_length += n_read;
+    self->read_buffer_length += n_read; // FIXME: No longer required, just use
+                                        // ut_list_get_length(self->read_buffer)
+    ut_list_resize(self->read_buffer, self->read_buffer_length);
 
+    // No more data to read.
+    bool complete = false;
     if (n_read == 0) {
-      // No more data to read.
       ut_cancel_activate(self->watch_cancel);
+      complete = true;
+    }
 
-      UtObjectRef end_of_stream = ut_end_of_stream_new(
-          self->read_buffer_length > 0 ? self->read_buffer : NULL);
-      if (!ut_cancel_is_active(self->cancel)) {
-        self->callback(self->user_data, end_of_stream);
+    while (true) {
+      size_t n_used =
+          self->callback(self->user_data, self->read_buffer, complete);
+      ut_list_remove(self->read_buffer, 0, n_used);
+      self->read_buffer_length -= n_used;
+
+      if (ut_cancel_is_active(self->cancel) || self->read_buffer_length == 0 ||
+          !complete) {
+        break;
       }
-    } else {
-      report_read_data(self);
     }
   }
 
@@ -79,7 +77,10 @@ static void buffered_read_cb(void *user_data) {
 
   // If have buffered data, process that first.
   if (self->read_buffer_length > 0) {
-    report_read_data(self);
+    size_t n_used = self->callback(self->user_data, self->read_buffer, false);
+    ut_list_remove(self->read_buffer, 0, n_used);
+    self->read_buffer_length -= n_used;
+
     if (ut_cancel_is_active(self->cancel)) {
       return;
     }

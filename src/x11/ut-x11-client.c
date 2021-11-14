@@ -3,7 +3,6 @@
 
 #include "ut-cancel.h"
 #include "ut-cstring.h"
-#include "ut-end-of-stream.h"
 #include "ut-general-error.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
@@ -987,13 +986,8 @@ static bool decode_message(UtX11Client *self, UtObject *data, size_t *offset) {
   }
 }
 
-static size_t read_cb(void *user_data, UtObject *data) {
+static size_t read_cb(void *user_data, UtObject *data, bool complete) {
   UtX11Client *self = user_data;
-
-  if (ut_object_is_end_of_stream(data)) {
-    ut_cancel_activate(self->read_cancel);
-    return 0;
-  }
 
   size_t offset = 0;
   while (!self->connected) {
@@ -1006,6 +1000,10 @@ static size_t read_cb(void *user_data, UtObject *data) {
     if (!decode_message(self, data, &offset)) {
       return offset;
     }
+  }
+
+  if (complete) {
+    ut_cancel_activate(self->read_cancel);
   }
 
   return offset;

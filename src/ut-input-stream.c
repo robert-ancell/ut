@@ -2,7 +2,6 @@
 #include <stdlib.h>
 
 #include "ut-cancel.h"
-#include "ut-end-of-stream.h"
 #include "ut-error.h"
 #include "ut-general-error.h"
 #include "ut-input-stream.h"
@@ -33,7 +32,7 @@ static void read_all_data_free(ReadAllData *d) {
   free(d);
 }
 
-static size_t read_all_cb(void *user_data, UtObject *data) {
+static size_t read_all_cb(void *user_data, UtObject *data, bool complete) {
   ReadAllData *d = user_data;
 
   if (ut_cancel_is_active(d->cancel)) {
@@ -42,31 +41,29 @@ static size_t read_all_cb(void *user_data, UtObject *data) {
     return 0;
   }
 
-  if (ut_object_is_end_of_stream(data)) {
-    UtObject *full_data = ut_end_of_stream_get_unused_data(data);
-    d->callback(d->user_data, full_data);
-    read_all_data_free(d);
-    return ut_list_get_length(full_data);
-  } else if (ut_object_implements_error(data)) {
-    d->callback(d->user_data, data);
+  if (ut_object_implements_error(data)) {
+    d->callback(d->user_data, data, true);
     ut_cancel_activate(d->read_cancel);
     read_all_data_free(d);
     return 0;
+  } else if (complete) {
+    d->callback(d->user_data, data, true);
+    read_all_data_free(d);
+    return ut_list_get_length(data);
   } else {
     // Wait for all data.
     return 0;
   }
 }
 
-static size_t sync_cb(void *user_data, UtObject *data) {
+static size_t sync_cb(void *user_data, UtObject *data, bool complete) {
   UtObject **result = user_data;
-  if (ut_object_is_end_of_stream(data)) {
-    UtObject *unused_data = ut_end_of_stream_get_unused_data(data);
-    *result = ut_list_copy(unused_data);
-    return ut_list_get_length(unused_data);
-  } else if (ut_object_implements_error(data)) {
+  if (ut_object_implements_error(data)) {
     *result = ut_object_ref(data);
     return 0;
+  } else if (complete) {
+    *result = ut_list_copy(data);
+    return ut_list_get_length(data);
   } else {
     // Wait for all data.
     return 0;

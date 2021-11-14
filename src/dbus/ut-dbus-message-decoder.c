@@ -10,7 +10,6 @@
 #include "ut-dbus-signature.h"
 #include "ut-dbus-struct.h"
 #include "ut-dbus-variant.h"
-#include "ut-end-of-stream.h"
 #include "ut-float64.h"
 #include "ut-input-stream.h"
 #include "ut-int16.h"
@@ -427,14 +426,8 @@ static UtObject *read_message(UtObject *data, size_t *offset) {
   return message;
 }
 
-static size_t read_cb(void *user_data, UtObject *data) {
+static size_t read_cb(void *user_data, UtObject *data, bool complete) {
   UtDBusMessageDecoder *self = user_data;
-
-  if (ut_object_is_end_of_stream(data)) {
-    UtObjectRef eos = ut_end_of_stream_new(self->messages);
-    self->callback(self->user_data, eos);
-    return 0;
-  }
 
   size_t offset = 0;
   size_t data_length = ut_list_get_length(data);
@@ -452,7 +445,7 @@ static size_t read_cb(void *user_data, UtObject *data) {
   }
 
   if (ut_list_get_length(self->messages) > 0) {
-    size_t n_used = self->callback(self->user_data, self->messages);
+    size_t n_used = self->callback(self->user_data, self->messages, complete);
     ut_list_remove(self->messages, 0, n_used);
   }
 

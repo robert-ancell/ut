@@ -5,7 +5,8 @@
 
 #pragma once
 
-typedef size_t (*UtInputStreamCallback)(void *user_data, UtObject *data);
+typedef size_t (*UtInputStreamCallback)(void *user_data, UtObject *data,
+                                        bool complete);
 
 typedef struct {
   void (*read)(UtObject *object, UtInputStreamCallback callback,

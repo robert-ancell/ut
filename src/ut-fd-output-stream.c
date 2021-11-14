@@ -6,7 +6,6 @@
 
 #include "ut-cancel.h"
 #include "ut-constant-uint8-array.h"
-#include "ut-end-of-stream.h"
 #include "ut-event-loop.h"
 #include "ut-fd-output-stream.h"
 #include "ut-list.h"
