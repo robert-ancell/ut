@@ -42,7 +42,7 @@ static size_t read_cb(void *user_data, UtObject *data) {
     } else {
       UtObjectRef eos = ut_end_of_stream_new(
           ut_list_get_length(self->buffer) > 0 ? self->buffer : NULL);
-      self->callback(self->user_data, self->buffer);
+      self->callback(self->user_data, eos);
     }
     self->callback = NULL;
     self->user_data = NULL;
