@@ -38,10 +38,32 @@ static uint16_t *ut_uint16_array_take_data(UtObject *object) {
   return result;
 }
 
+static void ut_uint16_array_insert(UtObject *object, size_t index,
+                                   const uint16_t *data, size_t data_length) {
+  assert(ut_object_is_uint16_array(object));
+  UtUint16Array *self = (UtUint16Array *)object;
+
+  size_t orig_data_length = self->data_length;
+  resize_list(self, self->data_length + data_length);
+
+  // Shift existing data up
+  for (size_t i = index; i < orig_data_length; i++) {
+    size_t new_index = self->data_length - i - 1;
+    size_t old_index = new_index - data_length;
+    self->data[new_index] = self->data[old_index];
+  }
+
+  // Insert new data
+  for (size_t i = 0; i < data_length; i++) {
+    self->data[index + i] = data[i];
+  }
+}
+
 static void ut_uint16_array_insert_object(UtObject *object, size_t index,
                                           UtObject *item) {
   assert(ut_object_is_uint16(item));
-  ut_uint16_array_insert(object, index, ut_uint16_get_value(item));
+  uint16_t value = ut_uint16_get_value(item);
+  ut_uint16_array_insert(object, index, &value, 1);
 }
 
 static void ut_uint16_array_remove(UtObject *object, size_t index,
@@ -74,7 +96,7 @@ static UtObject *ut_uint16_array_get_element_object(UtObject *object,
 static UtObject *ut_uint16_array_copy(UtObject *object) {
   UtUint16Array *self = (UtUint16Array *)object;
   UtObject *copy = ut_uint16_array_new();
-  ut_uint16_array_append_block(copy, self->data, self->data_length);
+  ut_uint16_array_insert(copy, 0, self->data, self->data_length);
   return copy;
 }
 
@@ -86,8 +108,8 @@ static void ut_uint16_array_read(UtObject *object,
   UtObjectRef unused_data = NULL;
   if (n_used != self->data_length) {
     unused_data = ut_uint16_array_new();
-    ut_uint16_array_append_block(unused_data, self->data + n_used,
-                                 self->data_length - n_used);
+    ut_uint16_array_insert(unused_data, 0, self->data + n_used,
+                           self->data_length - n_used);
   }
   UtObjectRef eos = ut_end_of_stream_new(unused_data);
   callback(user_data, eos);
@@ -169,42 +191,6 @@ UtObject *ut_uint16_array_new_with_va_data(size_t length, va_list ap) {
   }
 
   return object;
-}
-
-void ut_uint16_array_append(UtObject *object, uint16_t data) {
-  ut_uint16_array_append_block(object, &data, 1);
-}
-
-void ut_uint16_array_append_block(UtObject *object, const uint16_t *data,
-                                  size_t data_length) {
-  assert(ut_object_is_uint16_array(object));
-  UtUint16Array *self = (UtUint16Array *)object;
-  ut_uint16_array_insert_block(object, self->data_length, data, data_length);
-}
-
-void ut_uint16_array_insert(UtObject *object, size_t index, uint16_t data) {
-  ut_uint16_array_insert_block(object, index, &data, 1);
-}
-
-void ut_uint16_array_insert_block(UtObject *object, size_t index,
-                                  const uint16_t *data, size_t data_length) {
-  assert(ut_object_is_uint16_array(object));
-  UtUint16Array *self = (UtUint16Array *)object;
-
-  size_t orig_data_length = self->data_length;
-  resize_list(self, self->data_length + data_length);
-
-  // Shift existing data up
-  for (size_t i = index; i < orig_data_length; i++) {
-    size_t new_index = self->data_length - i - 1;
-    size_t old_index = new_index - data_length;
-    self->data[new_index] = self->data[old_index];
-  }
-
-  // Insert new data
-  for (size_t i = 0; i < data_length; i++) {
-    self->data[index + i] = data[i];
-  }
 }
 
 uint16_t *ut_uint16_array_get_data(UtObject *object) {
