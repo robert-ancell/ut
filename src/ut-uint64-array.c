@@ -11,6 +11,7 @@
 #include "ut-string.h"
 #include "ut-uint64-array.h"
 #include "ut-uint64-list.h"
+#include "ut-uint64-subarray.h"
 #include "ut-uint64.h"
 
 typedef struct {
@@ -94,6 +95,11 @@ static UtObject *ut_uint64_array_get_element_object(UtObject *object,
   return ut_uint64_new(self->data[index]);
 }
 
+static UtObject *ut_uint64_array_get_sublist(UtObject *object, size_t start,
+                                             size_t count) {
+  return ut_uint64_subarray_new(object, start, count);
+}
+
 static UtObject *ut_uint64_array_copy(UtObject *object) {
   UtUint64Array *self = (UtUint64Array *)object;
   UtObject *copy = ut_uint64_array_new();
@@ -151,6 +157,7 @@ static UtListInterface list_interface = {
     .is_mutable = true,
     .get_length = ut_uint64_array_get_length,
     .get_element = ut_uint64_array_get_element_object,
+    .get_sublist = ut_uint64_array_get_sublist,
     .copy = ut_uint64_array_copy,
     .insert = ut_uint64_array_insert_object,
     .remove = ut_uint64_array_remove,

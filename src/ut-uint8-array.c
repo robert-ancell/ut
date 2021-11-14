@@ -11,6 +11,7 @@
 #include "ut-string.h"
 #include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
+#include "ut-uint8-subarray.h"
 #include "ut-uint8.h"
 
 typedef struct {
@@ -102,6 +103,11 @@ static UtObject *ut_uint8_array_get_element_object(UtObject *object,
   return ut_uint8_new(self->data[index]);
 }
 
+static UtObject *ut_uint8_array_get_sublist(UtObject *object, size_t start,
+                                            size_t count) {
+  return ut_uint8_subarray_new(object, start, count);
+}
+
 static UtObject *ut_uint8_array_copy(UtObject *object) {
   UtUint8Array *self = (UtUint8Array *)object;
   UtObject *copy = ut_uint8_array_new();
@@ -182,6 +188,7 @@ static UtListInterface list_interface = {
     .is_mutable = true,
     .get_length = ut_uint8_array_get_length,
     .get_element = ut_uint8_array_get_element_object,
+    .get_sublist = ut_uint8_array_get_sublist,
     .copy = ut_uint8_array_copy,
     .insert = ut_uint8_array_insert_object,
     .remove = ut_uint8_array_remove,

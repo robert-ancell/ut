@@ -9,9 +9,10 @@ typedef struct {
   bool is_mutable;
   size_t (*get_length)(UtObject *object);
   UtObject *(*get_element)(UtObject *object, size_t index);
+  UtObject *(*get_sublist)(UtObject *object, size_t index, size_t count);
   UtObject *(*copy)(UtObject *object);
   void (*insert)(UtObject *object, size_t index, UtObject *item);
-  void (*remove)(UtObject *object, size_t index, size_t count);
+  void (*remove)(UtObject *object, size_t start, size_t count);
   void (*resize)(UtObject *object, size_t length);
 } UtListInterface;
 
@@ -29,6 +30,8 @@ UtObject *ut_list_get_first(UtObject *object);
 
 // Returns a reference.
 UtObject *ut_list_get_last(UtObject *object);
+
+UtObject *ut_list_get_sublist(UtObject *object, size_t start, size_t count);
 
 // If was previously immutable, copy will be mutable
 // Returns a reference.

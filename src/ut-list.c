@@ -34,6 +34,13 @@ UtObject *ut_list_get_last(UtObject *object) {
   return length > 0 ? ut_list_get_element(object, length - 1) : NULL;
 }
 
+UtObject *ut_list_get_sublist(UtObject *object, size_t start, size_t count) {
+  UtListInterface *list_interface =
+      ut_object_get_interface(object, &ut_list_id);
+  assert(list_interface != NULL);
+  return list_interface->get_sublist(object, start, count);
+}
+
 UtObject *ut_list_copy(UtObject *object) {
   UtListInterface *list_interface =
       ut_object_get_interface(object, &ut_list_id);

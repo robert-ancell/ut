@@ -52,6 +52,12 @@ static UtObject *ut_uint8_subarray_get_element_object(UtObject *object,
   return ut_uint8_new(data[index]);
 }
 
+static UtObject *ut_uint8_subarray_get_sublist(UtObject *object, size_t start,
+                                               size_t count) {
+  UtUint8Subarray *self = (UtUint8Subarray *)object;
+  return ut_uint8_subarray_new(self->parent, self->start + start, count);
+}
+
 static UtObject *ut_uint8_subarray_copy(UtObject *object) {
   UtUint8Subarray *self = (UtUint8Subarray *)object;
   UtObject *copy = ut_uint8_array_new();
@@ -114,6 +120,7 @@ static UtListInterface list_interface = {
     .is_mutable = false,
     .get_length = ut_uint8_subarray_get_length,
     .get_element = ut_uint8_subarray_get_element_object,
+    .get_sublist = ut_uint8_subarray_get_sublist,
     .copy = ut_uint8_subarray_copy};
 
 static UtInputStreamInterface input_stream_interface = {

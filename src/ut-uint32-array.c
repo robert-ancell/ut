@@ -10,6 +10,7 @@
 #include "ut-string.h"
 #include "ut-uint32-array.h"
 #include "ut-uint32-list.h"
+#include "ut-uint32-subarray.h"
 #include "ut-uint32.h"
 
 typedef struct {
@@ -93,6 +94,11 @@ static UtObject *ut_uint32_array_get_element_object(UtObject *object,
   return ut_uint32_new(self->data[index]);
 }
 
+static UtObject *ut_uint32_array_get_sublist(UtObject *object, size_t start,
+                                             size_t count) {
+  return ut_uint32_subarray_new(object, start, count);
+}
+
 static UtObject *ut_uint32_array_copy(UtObject *object) {
   UtUint32Array *self = (UtUint32Array *)object;
   UtObject *copy = ut_uint32_array_new();
@@ -151,6 +157,7 @@ static UtListInterface list_interface = {
     .is_mutable = true,
     .get_length = ut_uint32_array_get_length,
     .get_element = ut_uint32_array_get_element_object,
+    .get_sublist = ut_uint32_array_get_sublist,
     .copy = ut_uint32_array_copy,
     .insert = ut_uint32_array_insert_object,
     .remove = ut_uint32_array_remove,
