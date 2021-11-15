@@ -68,7 +68,10 @@ static size_t read_cb(void *user_data, UtObject *data, bool complete) {
         ut_writable_input_stream_write(self->active_stream, d, complete);
     total_used += n_used;
   } while (self->stream_changed &&
-           ut_writable_input_stream_get_reading(self->active_stream));
+           ut_writable_input_stream_get_reading(self->active_stream) &&
+           total_used < data_length);
+
+  assert(total_used <= data_length);
 
   return total_used;
 }

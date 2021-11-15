@@ -17,10 +17,13 @@ typedef struct {
 
 static void feed_data(UtListInputStream *self) {
   size_t data_length = ut_list_get_length(self->data);
+
   while (!ut_cancel_is_active(self->cancel) && self->active &&
          self->offset < data_length) {
     self->offset += self->callback(self->user_data, self->data, true);
   }
+
+  assert(self->offset <= data_length);
 }
 
 static void ut_list_input_stream_read(UtObject *object,

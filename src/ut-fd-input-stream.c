@@ -55,6 +55,7 @@ static void read_cb(void *user_data) {
 
   size_t n_used =
       self->callback(self->user_data, self->read_buffer, self->complete);
+  assert(n_used <= buffer_length);
   ut_list_remove(self->read_buffer, 0, n_used);
 
   // Stop listening for read events when consumer no longer wants them.
