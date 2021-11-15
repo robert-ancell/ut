@@ -42,10 +42,13 @@ static void ut_list_input_stream_read(UtObject *object,
 
 static void ut_list_input_stream_set_active(UtObject *object, bool active) {
   UtListInputStream *self = (UtListInputStream *)object;
-  if (self->active == !!active) {
+
+  active = active ? true : false;
+  if (self->active == active) {
     return;
   }
-  self->active = !!active;
+  self->active = active;
+
   if (self->active) {
     feed_data(self);
   }
