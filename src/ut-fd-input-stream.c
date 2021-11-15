@@ -116,12 +116,12 @@ static void ut_fd_input_stream_set_active(UtObject *object, bool active) {
   }
 
   if (active) {
+    ut_event_loop_add_read_watch(self->fd, read_cb, self, self->watch_cancel);
     if (ut_list_get_length(self->read_buffer) > 0) {
       size_t n_used =
           self->callback(self->user_data, self->read_buffer, self->complete);
       ut_list_remove(self->read_buffer, 0, n_used);
     }
-    ut_event_loop_add_read_watch(self->fd, read_cb, self, self->watch_cancel);
   } else {
     ut_cancel_activate(self->watch_cancel);
     ut_object_unref(self->watch_cancel);
