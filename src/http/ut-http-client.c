@@ -9,6 +9,7 @@
 #include "ut-http-client.h"
 #include "ut-http-header.h"
 #include "ut-http-response.h"
+#include "ut-input-stream-multiplexer.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-object-array.h"
@@ -25,6 +26,9 @@ typedef struct {
 typedef struct {
   UtHttpClient *client;
   UtObject *tcp_client;
+  UtObject *multiplexer;
+  UtObject *header_stream;
+  UtObject *content_stream;
   char *host;
   char *method;
   char *path;
@@ -42,6 +46,11 @@ HttpRequest *http_request_new(const char *host, uint16_t port,
                               void *callback_user_data) {
   HttpRequest *request = malloc(sizeof(HttpRequest));
   request->tcp_client = ut_tcp_client_new(host, port);
+  request->multiplexer = ut_input_stream_multiplexer_new(request->tcp_client);
+  request->header_stream =
+      ut_input_stream_multiplexer_add(request->multiplexer);
+  request->content_stream =
+      ut_input_stream_multiplexer_add(request->multiplexer);
   request->host = strdup(host);
   request->method = strdup(method);
   request->path = strdup(path);
@@ -56,6 +65,9 @@ HttpRequest *http_request_new(const char *host, uint16_t port,
 
 void http_request_free(HttpRequest *request) {
   ut_object_unref(request->tcp_client);
+  ut_object_unref(request->multiplexer);
+  ut_object_unref(request->header_stream);
+  ut_object_unref(request->content_stream);
   free(request->host);
   free(request->method);
   free(request->path);
@@ -265,7 +277,7 @@ static void response_cb(void *user_data) {
 
   UtObjectRef response = ut_http_response_new(
       request->response_status_code, request->reason_phrase,
-      request->response_headers, request->tcp_client);
+      request->response_headers, request->content_stream);
   if (request->callback != NULL) {
     request->callback(request->callback_user_data, response);
   }
@@ -287,6 +299,8 @@ static size_t read_cb(void *user_data, UtObject *data, bool complete) {
 
     // Ends on empty line.
     if ((size_t)line_end == line_start) {
+      ut_input_stream_multiplexer_set_active(request->multiplexer,
+                                             request->content_stream);
       ut_event_loop_add_delay(0, response_cb, request, NULL); // FIXME: cancel
       ut_cancel_activate(request->header_read_cancel);
       break;
@@ -316,8 +330,10 @@ static void connect_cb(void *user_data) {
   ut_string_append(header, "\r\n");
   UtObjectRef utf8 = ut_string_get_utf8(header);
   ut_output_stream_write(request->tcp_client, utf8);
-  ut_input_stream_read(request->tcp_client, read_cb, request,
+  ut_input_stream_read(request->header_stream, read_cb, request,
                        request->header_read_cancel);
+  ut_input_stream_multiplexer_set_active(request->multiplexer,
+                                         request->header_stream);
 }
 
 static UtObjectInterface object_interface = {.type_name = "HttpClient"};
