@@ -147,8 +147,16 @@ static void ut_tcp_client_read(UtObject *object, UtInputStreamCallback callback,
   ut_input_stream_read(self->input_stream, callback, user_data, cancel);
 }
 
-static UtInputStreamInterface input_stream_interface = {.read =
-                                                            ut_tcp_client_read};
+static void ut_tcp_client_set_active(UtObject *object, bool active) {
+  assert(ut_object_is_tcp_client(object));
+  UtTcpClient *self = (UtTcpClient *)object;
+  assert(self->input_stream != NULL);
+
+  ut_input_stream_set_active(self->input_stream, active);
+}
+
+static UtInputStreamInterface input_stream_interface = {
+    .read = ut_tcp_client_read, .set_active = ut_tcp_client_set_active};
 
 static void ut_tcp_client_write(UtObject *object, UtObject *data,
                                 UtOutputStreamCallback callback,

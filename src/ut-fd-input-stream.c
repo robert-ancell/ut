@@ -17,6 +17,8 @@ typedef struct {
   UtObject object;
   int fd;
   UtObject *read_buffer;
+  bool active;
+  bool complete;
   size_t block_size;
   UtObject *watch_cancel;
   UtInputStreamCallback callback;
@@ -46,13 +48,13 @@ static void read_cb(void *user_data) {
   ut_list_resize(self->read_buffer, buffer_length);
 
   // No more data to read.
-  bool complete = false;
   if (n_read == 0) {
     ut_cancel_activate(self->watch_cancel);
-    complete = true;
+    self->complete = true;
   }
 
-  size_t n_used = self->callback(self->user_data, self->read_buffer, complete);
+  size_t n_used =
+      self->callback(self->user_data, self->read_buffer, self->complete);
   ut_list_remove(self->read_buffer, 0, n_used);
 
   // Stop listening for read events when consumer no longer wants them.
@@ -65,6 +67,8 @@ static void ut_fd_input_stream_init(UtObject *object) {
   UtFdInputStream *self = (UtFdInputStream *)object;
   self->fd = -1;
   self->read_buffer = ut_uint8_array_new();
+  self->active = false;
+  self->complete = false;
   self->block_size = 4096;
   self->watch_cancel = ut_cancel_new();
   self->callback = NULL;
@@ -95,11 +99,39 @@ static void ut_fd_input_stream_read(UtObject *object,
   self->user_data = user_data;
   self->cancel = ut_object_ref(cancel);
 
+  self->active = true;
   ut_event_loop_add_read_watch(self->fd, read_cb, self, self->watch_cancel);
 }
 
+static void ut_fd_input_stream_set_active(UtObject *object, bool active) {
+  UtFdInputStream *self = (UtFdInputStream *)object;
+
+  if (self->active == !!active) {
+    return;
+  }
+  self->active = !!active;
+
+  if (self->callback == NULL) {
+    return;
+  }
+
+  if (active) {
+    if (ut_list_get_length(self->read_buffer) > 0) {
+      size_t n_used =
+          self->callback(self->user_data, self->read_buffer, self->complete);
+      ut_list_remove(self->read_buffer, 0, n_used);
+    }
+    ut_event_loop_add_read_watch(self->fd, read_cb, self, self->watch_cancel);
+  } else {
+    ut_cancel_activate(self->watch_cancel);
+    ut_object_unref(self->watch_cancel);
+    self->watch_cancel = ut_cancel_new();
+  }
+}
+
 static UtInputStreamInterface input_stream_interface = {
-    .read = ut_fd_input_stream_read};
+    .read = ut_fd_input_stream_read,
+    .set_active = ut_fd_input_stream_set_active};
 
 static UtObjectInterface object_interface = {
     .type_name = "UtFdInputStream",
