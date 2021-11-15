@@ -13,6 +13,7 @@ typedef struct {
   UtObject *cancel;
   bool active;
   size_t offset;
+  bool in_callback;
 } UtListInputStream;
 
 static void feed_data(UtListInputStream *self) {
@@ -20,7 +21,9 @@ static void feed_data(UtListInputStream *self) {
 
   while (!ut_cancel_is_active(self->cancel) && self->active &&
          self->offset < data_length) {
+    self->in_callback = true;
     self->offset += self->callback(self->user_data, self->data, true);
+    self->in_callback = false;
   }
 
   assert(self->offset <= data_length);
@@ -49,7 +52,7 @@ static void ut_list_input_stream_set_active(UtObject *object, bool active) {
   }
   self->active = active;
 
-  if (self->active) {
+  if (self->active && !self->in_callback) {
     feed_data(self);
   }
 }
@@ -62,6 +65,7 @@ static void ut_list_input_stream_init(UtObject *object) {
   self->cancel = NULL;
   self->active = false;
   self->offset = 0;
+  self->in_callback = false;
 }
 
 static void ut_list_input_stream_cleanup(UtObject *object) {
