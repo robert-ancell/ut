@@ -34,6 +34,7 @@ ut_sources = [
   'ut-general-error.c',
   'ut-hash-table.c',
   'ut-input-stream.c',
+  'ut-input-stream-multiplexer.c',
   'ut-int16.c',
   'ut-int32.c',
   'ut-int64.c',

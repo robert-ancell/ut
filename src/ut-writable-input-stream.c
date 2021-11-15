@@ -88,6 +88,11 @@ size_t ut_writable_input_stream_write(UtObject *object, UtObject *data,
   UtWritableInputStream *self = (UtWritableInputStream *)object;
 
   assert(self->callback != NULL);
+
+  if (ut_cancel_is_active(self->cancel)) {
+    return 0;
+  }
+
   return self->callback(self->user_data, data, complete);
 }
 
