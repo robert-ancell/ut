@@ -136,6 +136,12 @@ UtPngColourType ut_png_image_get_colour_type(UtObject *object) {
   return self->colour_type;
 }
 
+UtObject *ut_png_image_get_data(UtObject *object) {
+  assert(ut_object_is_png_image(object));
+  UtPngImage *self = (UtPngImage *)object;
+  return self->data;
+}
+
 bool ut_object_is_png_image(UtObject *object) {
   return ut_object_is_type(object, &object_interface);
 }

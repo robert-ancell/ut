@@ -23,6 +23,9 @@ int main(int argc, char **argv) {
   assert(ut_png_image_get_bit_depth(greyscale_1x1_image) == 8);
   assert(ut_png_image_get_colour_type(greyscale_1x1_image) ==
          UT_PNG_COLOUR_TYPE_GREYSCALE);
+  uint8_t expected_greyscale_1x1_data[] = {0x00};
+  ut_assert_uint8_list_equal(ut_png_image_get_data(greyscale_1x1_image),
+                             expected_greyscale_1x1_data, 1);
 
   UtObjectRef greyscale_2x2_data = ut_uint8_list_new_with_data(
       71, 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00,
@@ -43,6 +46,9 @@ int main(int argc, char **argv) {
   assert(ut_png_image_get_bit_depth(greyscale_2x2_image) == 8);
   assert(ut_png_image_get_colour_type(greyscale_2x2_image) ==
          UT_PNG_COLOUR_TYPE_GREYSCALE);
+  uint8_t expected_greyscale_2x2_data[] = {0x00, 0x7f, 0xcc, 0xff};
+  ut_assert_uint8_list_equal(ut_png_image_get_data(greyscale_2x2_image),
+                             expected_greyscale_2x2_data, 4);
 
   UtObjectRef rgb_2x2_data = ut_uint8_list_new_with_data(
       79, 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00,
@@ -61,6 +67,11 @@ int main(int argc, char **argv) {
   assert(ut_png_image_get_bit_depth(rgb_2x2_image) == 8);
   assert(ut_png_image_get_colour_type(rgb_2x2_image) ==
          UT_PNG_COLOUR_TYPE_TRUECOLOUR);
+  assert(ut_list_get_length(ut_png_image_get_data(rgb_2x2_image)) == 12);
+  uint8_t expected_rgb_2x2_data[] = {0xff, 0x00, 0x00, 0x00, 0xff, 0x00,
+                                     0x00, 0x00, 0xff, 0xff, 0xff, 0xff};
+  ut_assert_uint8_list_equal(ut_png_image_get_data(rgb_2x2_image),
+                             expected_rgb_2x2_data, 12);
 
   return 0;
 }
