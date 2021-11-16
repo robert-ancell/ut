@@ -208,6 +208,9 @@ static size_t read_cb(void *user_data, UtObject *data, bool complete) {
       break;
     case DECODER_STATE_ERROR:
       ut_cancel_activate(self->read_cancel);
+      if (!ut_cancel_is_active(self->cancel)) {
+        self->callback(self->user_data, self->error, true);
+      }
       decoding = false;
       break;
     }
