@@ -39,6 +39,14 @@ typedef struct {
   UtObject *error;
 } UtZlibDecoder;
 
+static uint32_t adler32(uint32_t checksum, uint8_t value) {
+  uint32_t s1 = checksum & 0xffff;
+  uint32_t s2 = checksum >> 16;
+  s1 = (s1 + value) % 65521;
+  s2 = (s2 + s1) % 65521;
+  return s2 << 16 | s1;
+}
+
 static size_t deflate_read_cb(void *user_data, UtObject *data, bool complete) {
   UtZlibDecoder *self = user_data;
 
@@ -57,6 +65,10 @@ static size_t deflate_read_cb(void *user_data, UtObject *data, bool complete) {
             : ut_list_get_sublist(data, total_used, data_length - total_used);
     size_t n_used = self->callback(self->user_data, data, complete);
     total_used += n_used;
+
+    for (size_t i = 0; i < n_used; i++) {
+      self->checksum = adler32(self->checksum, ut_uint8_list_get_element(d, i));
+    }
   } while (!ut_cancel_is_active(self->cancel) && total_used < data_length);
 
   assert(total_used <= data_length);
@@ -113,7 +125,7 @@ static bool read_header(UtZlibDecoder *self, UtObject *data, size_t *offset,
 
   if (has_preset_dictionary) {
     self->dictionary_checksum =
-        ut_uint8_list_get_uint32_le(data, header_start + 2);
+        ut_uint8_list_get_uint32_be(data, header_start + 2);
     header_end += 4;
     if (data_length < header_end) {
       return false;
@@ -137,14 +149,6 @@ static bool read_header(UtZlibDecoder *self, UtObject *data, size_t *offset,
   return true;
 }
 
-static uint32_t adler32(uint32_t checksum, uint8_t value) {
-  uint32_t s1 = checksum & 0xffff;
-  uint32_t s2 = checksum >> 16;
-  s1 = (s1 + value) % 65521;
-  s2 = (s2 + s1) % 65521;
-  return s2 << 16 | s1;
-}
-
 static bool read_dictionary(UtZlibDecoder *self, UtObject *data, size_t *offset,
                             bool complete) {
   size_t data_length = ut_list_get_length(data);
@@ -160,6 +164,7 @@ static bool read_dictionary(UtZlibDecoder *self, UtObject *data, size_t *offset,
 
   *offset = dictionary_end;
   if (self->checksum == self->dictionary_checksum) {
+    self->checksum = 1;
     self->state = DECODER_STATE_COMPRESSED_DATA;
     return true;
   } else if (complete) {
@@ -178,6 +183,13 @@ static bool read_checksum(UtZlibDecoder *self, UtObject *data, size_t *offset,
   size_t checksum_end = checksum_start + 4;
   if (data_length < checksum_end) {
     return false;
+  }
+
+  uint32_t checksum = ut_uint8_list_get_uint32_be(data, checksum_start);
+  if (checksum != self->checksum) {
+    self->error = ut_zlib_error_new();
+    self->state = DECODER_STATE_ERROR;
+    return true;
   }
 
   *offset += 4;
