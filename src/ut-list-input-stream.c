@@ -22,7 +22,11 @@ static void feed_data(UtListInputStream *self) {
   while (!ut_cancel_is_active(self->cancel) && self->active &&
          self->offset < data_length) {
     self->in_callback = true;
-    self->offset += self->callback(self->user_data, self->data, true);
+    UtObjectRef data = self->offset == 0
+                           ? ut_object_ref(self->data)
+                           : ut_list_get_sublist(self->data, self->offset,
+                                                 data_length - self->offset);
+    self->offset += self->callback(self->user_data, data, true);
     self->in_callback = false;
   }
 
