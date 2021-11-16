@@ -135,23 +135,22 @@ static bool decode_interlace_method(uint8_t value,
   }
 }
 
-static void decode_image_header(UtPngDecoder *self, UtObject *data,
-                                size_t offset, size_t length) {
-  if (length != 13) {
+static void decode_image_header(UtPngDecoder *self, UtObject *data) {
+  if (ut_list_get_length(data) != 13) {
     self->error = ut_png_error_new();
     self->state = DECODER_STATE_ERROR;
     return;
   }
 
-  self->width = ut_uint8_list_get_uint32_be(data, offset);
-  self->height = ut_uint8_list_get_uint32_be(data, offset + 4);
-  self->bit_depth = ut_uint8_list_get_element(data, offset + 8);
+  self->width = ut_uint8_list_get_uint32_be(data, 0);
+  self->height = ut_uint8_list_get_uint32_be(data, 4);
+  self->bit_depth = ut_uint8_list_get_element(data, 8);
   bool valid_colour_type = decode_colour_type(
-      ut_uint8_list_get_element(data, offset + 9), &self->colour_type);
-  uint8_t compression_method = ut_uint8_list_get_element(data, offset + 10);
-  self->filter_method = ut_uint8_list_get_element(data, offset + 11);
+      ut_uint8_list_get_element(data, 9), &self->colour_type);
+  uint8_t compression_method = ut_uint8_list_get_element(data, 10);
+  self->filter_method = ut_uint8_list_get_element(data, 11);
   bool valid_interlace_method = decode_interlace_method(
-      ut_uint8_list_get_element(data, offset + 12), &self->interlace_method);
+      ut_uint8_list_get_element(data, 12), &self->interlace_method);
 
   if (self->width == 0 || self->height == 0 || !valid_colour_type ||
       !is_valid_bit_depth(self->colour_type, self->bit_depth) ||
@@ -163,15 +162,12 @@ static void decode_image_header(UtPngDecoder *self, UtObject *data,
   }
 }
 
-static void decode_palette(UtPngDecoder *self, UtObject *data, size_t offset,
-                           size_t length) {}
+static void decode_palette(UtPngDecoder *self, UtObject *data) {}
 
-static void decode_image_data(UtPngDecoder *self, UtObject *data, size_t offset,
-                              size_t length) {}
+static void decode_image_data(UtPngDecoder *self, UtObject *data) {}
 
-static void decode_image_end(UtPngDecoder *self, UtObject *data, size_t offset,
-                             size_t length) {
-  if (length != 0) {
+static void decode_image_end(UtPngDecoder *self, UtObject *data) {
+  if (ut_list_get_length(data) != 0) {
     self->error = ut_png_error_new();
     self->state = DECODER_STATE_ERROR;
     return;
@@ -180,72 +176,66 @@ static void decode_image_end(UtPngDecoder *self, UtObject *data, size_t offset,
   self->state = DECODER_STATE_END;
 }
 
-static void decode_background(UtPngDecoder *self, UtObject *data, size_t offset,
-                              size_t length) {
+static void decode_background(UtPngDecoder *self, UtObject *data) {
   switch (self->colour_type) {
   case UT_PNG_COLOUR_TYPE_GREYSCALE:
   case UT_PNG_COLOUR_TYPE_GREYSCALE_WITH_ALPHA:
-    if (length != 2) {
+    if (ut_list_get_length(data) != 2) {
       self->error = ut_png_error_new();
       self->state = DECODER_STATE_ERROR;
       return;
     }
-    /*self->background_colour = */ ut_uint8_list_get_uint16_be(data, offset);
+    /*self->background_colour = */ ut_uint8_list_get_uint16_be(data, 0);
     break;
   case UT_PNG_COLOUR_TYPE_TRUECOLOUR:
   case UT_PNG_COLOUR_TYPE_TRUECOLOUR_WITH_ALPHA:
-    if (length != 6) {
+    if (ut_list_get_length(data) != 6) {
       self->error = ut_png_error_new();
       self->state = DECODER_STATE_ERROR;
-      /*self->background_colour_r = */ ut_uint8_list_get_uint16_be(data,
-                                                                   offset);
-      /*self->background_colour_g = */ ut_uint8_list_get_uint16_be(data,
-                                                                   offset + 2);
-      /*self->background_colour_b = */ ut_uint8_list_get_uint16_be(data,
-                                                                   offset + 4);
+      /*self->background_colour_r = */ ut_uint8_list_get_uint16_be(data, 0);
+      /*self->background_colour_g = */ ut_uint8_list_get_uint16_be(data, 2);
+      /*self->background_colour_b = */ ut_uint8_list_get_uint16_be(data, 4);
       return;
     }
     break;
   case UT_PNG_COLOUR_TYPE_INDEXED_COLOUR:
-    if (length != 1) {
+    if (ut_list_get_length(data) != 1) {
       self->error = ut_png_error_new();
       self->state = DECODER_STATE_ERROR;
       return;
     }
-    /*self->background_colour_b = */ ut_uint8_list_get_element(data, offset);
+    /*self->background_colour_b = */ ut_uint8_list_get_element(data, 0);
     break;
   default:
     assert(false);
   }
 }
 
-static void decode_physical_dimensions(UtPngDecoder *self, UtObject *data,
-                                       size_t offset, size_t length) {
-  if (length != 9) {
+static void decode_physical_dimensions(UtPngDecoder *self, UtObject *data) {
+  if (ut_list_get_length(data) != 9) {
     self->error = ut_png_error_new();
     self->state = DECODER_STATE_ERROR;
     return;
   }
 
-  /*self->pixels_per_unit_x =*/ut_uint8_list_get_uint32_be(data, offset + 0);
-  /*self->pixels_per_unix_y =*/ut_uint8_list_get_uint32_be(data, offset + 4);
-  /*self->unit_specifier =*/ut_uint8_list_get_element(data, offset + 8);
+  /*self->pixels_per_unit_x =*/ut_uint8_list_get_uint32_be(data, 0);
+  /*self->pixels_per_unix_y =*/ut_uint8_list_get_uint32_be(data, 4);
+  /*self->unit_specifier =*/ut_uint8_list_get_element(data, 8);
 }
 
-static void decode_modification_time(UtPngDecoder *self, UtObject *data,
-                                     size_t offset, size_t length) {
-  if (length != 7) {
+static void decode_modification_time(UtPngDecoder *self, UtObject *data) {
+  if (ut_list_get_length(data) != 7) {
     self->error = ut_png_error_new();
     self->state = DECODER_STATE_ERROR;
     return;
   }
 
-  /*self->year =*/ut_uint8_list_get_uint16_be(data, offset + 0);
-  /*self->month =*/ut_uint8_list_get_element(data, offset + 2);
-  /*self->day =*/ut_uint8_list_get_element(data, offset + 3);
-  /*self->hour =*/ut_uint8_list_get_element(data, offset + 4);
-  /*self->minute =*/ut_uint8_list_get_element(data, offset + 5);
-  /*self->second =*/ut_uint8_list_get_element(data, offset + 6);
+  /*self->year =*/ut_uint8_list_get_uint16_be(data, 0);
+  /*self->month =*/ut_uint8_list_get_element(data, 2);
+  /*self->day =*/ut_uint8_list_get_element(data, 3);
+  /*self->hour =*/ut_uint8_list_get_element(data, 4);
+  /*self->minute =*/ut_uint8_list_get_element(data, 5);
+  /*self->second =*/ut_uint8_list_get_element(data, 6);
 }
 
 static size_t decode_chunk(UtPngDecoder *self, UtObject *data, size_t offset) {
@@ -265,15 +255,17 @@ static size_t decode_chunk(UtPngDecoder *self, UtObject *data, size_t offset) {
   ChunkType type = ut_uint8_list_get_uint32_be(data, offset + 4);
 
   size_t block_data_offset = offset + 8;
+  UtObjectRef block_data =
+      ut_list_get_sublist(data, block_data_offset, block_data_length);
   switch (type) {
   case IMAGE_HEADER:
-    decode_image_header(self, data, block_data_offset, block_data_length);
+    decode_image_header(self, block_data);
     break;
   case PALETTE:
-    decode_palette(self, data, block_data_offset, block_data_length);
+    decode_palette(self, block_data);
     break;
   case IMAGE_DATA:
-    decode_image_data(self, data, block_data_offset, block_data_length);
+    decode_image_data(self, block_data);
     break;
   case CHROMATICITIES:
     break;
@@ -286,21 +278,20 @@ static size_t decode_chunk(UtPngDecoder *self, UtObject *data, size_t offset) {
   case STANDARD_RGB:
     break;
   case IMAGE_END:
-    decode_image_end(self, data, block_data_offset, block_data_length);
+    decode_image_end(self, block_data);
     break;
   case BACKGROUND:
-    decode_background(self, data, block_data_offset, block_data_length);
+    decode_background(self, block_data);
     break;
   case HISTOGRAM:
     break;
   case PHYSICAL_DIMENSIONS:
-    decode_physical_dimensions(self, data, block_data_offset,
-                               block_data_length);
+    decode_physical_dimensions(self, block_data);
     break;
   case SUGGESTED_PALETTE:
     break;
   case MODIFICATION_TIME:
-    decode_modification_time(self, data, block_data_offset, block_data_length);
+    decode_modification_time(self, block_data);
     break;
   case TEXT:
     break;
