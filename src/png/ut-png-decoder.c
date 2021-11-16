@@ -7,6 +7,7 @@
 #include "ut-png-decoder.h"
 #include "ut-png-error.h"
 #include "ut-png-image.h"
+#include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
 
 typedef enum {
@@ -49,9 +50,9 @@ typedef struct {
   uint32_t height;
   uint8_t bit_depth;
   UtPngColourType colour_type;
-  uint8_t compression_method;
   uint8_t filter_method;
-  uint8_t interlace_method;
+  UtPngInterlaceMethod interlace_method;
+  UtObject *data;
 } UtPngDecoder;
 
 static size_t decode_signature(UtPngDecoder *self, UtObject *data,
@@ -120,8 +121,18 @@ static bool is_valid_compression_method(uint8_t method) { return method == 0; }
 
 static bool is_valid_filter_method(uint8_t method) { return method == 0; }
 
-static bool is_valid_interlace_method(uint8_t method) {
-  return method == 0 || method == 1;
+static bool decode_interlace_method(uint8_t value,
+                                    UtPngInterlaceMethod *method) {
+  switch (value) {
+  case 0:
+    *method = UT_PNG_INTERLACE_METHOD_NONE;
+    return true;
+  case 1:
+    *method = UT_PNG_INTERLACE_METHOD_ADAM7;
+    return true;
+  default:
+    return false;
+  }
 }
 
 static void decode_image_header(UtPngDecoder *self, UtObject *data,
@@ -137,15 +148,15 @@ static void decode_image_header(UtPngDecoder *self, UtObject *data,
   self->bit_depth = ut_uint8_list_get_element(data, offset + 8);
   bool valid_colour_type = decode_colour_type(
       ut_uint8_list_get_element(data, offset + 9), &self->colour_type);
-  self->compression_method = ut_uint8_list_get_element(data, offset + 10);
+  uint8_t compression_method = ut_uint8_list_get_element(data, offset + 10);
   self->filter_method = ut_uint8_list_get_element(data, offset + 11);
-  self->interlace_method = ut_uint8_list_get_element(data, offset + 12);
+  bool valid_interlace_method = decode_interlace_method(
+      ut_uint8_list_get_element(data, offset + 12), &self->interlace_method);
 
   if (self->width == 0 || self->height == 0 || !valid_colour_type ||
       !is_valid_bit_depth(self->colour_type, self->bit_depth) ||
-      !is_valid_compression_method(self->compression_method) ||
-      !is_valid_filter_method(self->filter_method) ||
-      !is_valid_interlace_method(self->interlace_method)) {
+      !is_valid_compression_method(compression_method) ||
+      !is_valid_filter_method(self->filter_method) || !valid_interlace_method) {
     self->error = ut_png_error_new();
     self->state = DECODER_STATE_ERROR;
     return;
@@ -326,8 +337,10 @@ static size_t read_cb(void *user_data, UtObject *data, bool complete) {
       return offset;
     case DECODER_STATE_END:
       ut_cancel_activate(self->read_cancel);
-      UtObjectRef image = ut_png_image_new(self->width, self->height,
-                                           self->bit_depth, self->colour_type);
+      UtObjectRef image =
+          ut_png_image_new(self->width, self->height, self->bit_depth,
+                           self->colour_type, self->data);
+      ut_png_image_set_interlace_method(image, self->interlace_method);
       self->callback(self->user_data, image);
       return offset;
     default:
@@ -361,9 +374,9 @@ static void ut_png_decoder_init(UtObject *object) {
   self->height = 0;
   self->bit_depth = 0;
   self->colour_type = 0;
-  self->compression_method = 0;
   self->filter_method = 0;
   self->interlace_method = 0;
+  self->data = ut_uint8_array_new();
 }
 
 static void ut_png_decoder_cleanup(UtObject *object) {
@@ -373,6 +386,7 @@ static void ut_png_decoder_cleanup(UtObject *object) {
   ut_object_unref(self->read_cancel);
   ut_object_unref(self->cancel);
   ut_object_unref(self->error);
+  ut_object_unref(self->data);
 }
 
 static UtObjectInterface object_interface = {.type_name = "UtPngDecoder",
