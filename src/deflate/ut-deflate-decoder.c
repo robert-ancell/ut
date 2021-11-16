@@ -28,6 +28,7 @@ typedef struct {
   uint8_t bit_count;
 
   DecoderState state;
+  bool is_last_block;
   uint16_t length;
   uint8_t extra_length_bits;
 
@@ -167,10 +168,9 @@ static bool read_block_header(UtDeflateDecoder *self, UtObject *data,
     return false;
   }
 
-  bool is_last = read_bit(self, data, offset) == 1;
+  self->is_last_block = read_bit(self, data, offset) == 1;
   uint8_t type =
       read_bit(self, data, offset) << 1 | read_bit(self, data, offset);
-  assert(is_last);
   assert(type == 2);
 
   self->state = DECODER_STATE_LITERAL_OR_LENGTH;
@@ -209,7 +209,8 @@ static bool read_literal_or_length(UtDeflateDecoder *self, UtObject *data,
     ut_uint8_list_append(self->buffer, value);
     return true;
   } else if (value == 256) {
-    self->state = DECODER_STATE_DONE;
+    self->state =
+        self->is_last_block ? DECODER_STATE_DONE : DECODER_STATE_BLOCK_HEADER;
     return true;
   } else {
     self->state = DECODER_STATE_LENGTH;
