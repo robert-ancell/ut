@@ -18,6 +18,9 @@ ut_sources = [
   'http/ut-http-client.c',
   'http/ut-http-header.c',
   'http/ut-http-response.c',
+  'png/ut-png-decoder.c',
+  'png/ut-png-error.c',
+  'png/ut-png-image.c',
   'json/ut-json.c',
   'json/ut-json-encoder.c',
   'ut-assert.c',
@@ -168,6 +171,11 @@ gzip_decoder_test = executable('ut-gzip-decoder-test',
                                'gzip/ut-gzip-decoder-test.c',
                                link_with: ut_lib)
 test('GZip', gzip_decoder_test)
+
+png_decoder_test = executable('ut-png-decoder-test',
+                              'png/ut-png-decoder-test.c',
+                              link_with: ut_lib)
+test('PNG', png_decoder_test)
 
 event_loop_test = executable('ut-event-loop-test',
                              'ut-event-loop-test.c',
