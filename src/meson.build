@@ -107,7 +107,9 @@ ut_sources = [
   'x11/ut-x11-value-error.c',
   'x11/ut-x11-window-error.c',
   'xml/ut-xml-document.c',
-  'xml/ut-xml-element.c'
+  'xml/ut-xml-element.c',
+  'zlib/ut-zlib-decoder.c',
+  'zlib/ut-zlib-error.c'
 ]
 
 ut_lib = static_library('ut', ut_sources, dependencies: thread_dep)
@@ -166,6 +168,11 @@ deflate_decoder_test = executable('ut-deflate-decoder-test',
                                   'deflate/ut-deflate-decoder-test.c',
                                   link_with: ut_lib)
 test('Deflate', deflate_decoder_test)
+
+zlib_decoder_test = executable('ut-zlib-decoder-test',
+                               'zlib/ut-zlib-decoder-test.c',
+                               link_with: ut_lib)
+test('zlib', zlib_decoder_test)
 
 gzip_decoder_test = executable('ut-gzip-decoder-test',
                                'gzip/ut-gzip-decoder-test.c',
