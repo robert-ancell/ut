@@ -62,6 +62,7 @@ static size_t sync_cb(void *user_data, UtObject *data, bool complete) {
     *result = ut_object_ref(data);
     return 0;
   } else if (complete) {
+    assert(*result == NULL);
     *result = ut_list_copy(data);
     return ut_list_get_length(data);
   } else {
