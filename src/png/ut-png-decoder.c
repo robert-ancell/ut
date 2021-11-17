@@ -293,7 +293,32 @@ static void process_image_data(UtPngDecoder *self, UtObject *data) {
         }
         break;
       case FILTER_TYPE_PAETH:
-        assert(false);
+        for (size_t i = 0; i < pixel_width; i++) {
+          ut_uint8_list_append(self->data,
+                               ut_uint8_list_get_element(self->line, i));
+        }
+        for (size_t i = pixel_width; i < self->rowstride; i += pixel_width) {
+          for (size_t j = 0; i < pixel_width; j++) {
+            uint8_t a =
+                ut_uint8_list_get_element(self->line, i + j - pixel_width);
+            uint8_t b = ut_uint8_list_get_element(self->prev_line, i + j);
+            uint8_t c =
+                ut_uint8_list_get_element(self->prev_line, i + j - pixel_width);
+            uint8_t p = a + b - c;
+            uint8_t pa = p > a ? p - a : a - p;
+            uint8_t pb = p > b ? p - b : b - p;
+            uint8_t pc = p > c ? p - c : c - p;
+            uint8_t value;
+            if (pa <= pb && pa <= pc) {
+              value = a;
+            } else if (pb <= pc) {
+              value = b;
+            } else {
+              value = c;
+            }
+            ut_uint8_list_append(self->data, value);
+          }
+        }
         break;
       }
 
