@@ -40,11 +40,11 @@ typedef enum {
 } DecoderState;
 
 typedef enum {
-  FILTER_TYPE_NONE = 0,
-  FILTER_TYPE_SUB = 1,
-  FILTER_TYPE_UP = 2,
-  FILTER_TYPE_AVERAGE = 3,
-  FILTER_TYPE_PAETH = 4
+  FILTER_TYPE_NONE,
+  FILTER_TYPE_SUB,
+  FILTER_TYPE_UP,
+  FILTER_TYPE_AVERAGE,
+  FILTER_TYPE_PAETH
 } FilterType;
 
 typedef struct {
@@ -154,6 +154,28 @@ static bool decode_interlace_method(uint8_t value,
   }
 }
 
+static bool decode_filter_type(uint8_t value, FilterType *type) {
+  switch (value) {
+  case 0:
+    *type = FILTER_TYPE_NONE;
+    return true;
+  case 1:
+    *type = FILTER_TYPE_SUB;
+    return true;
+  case 2:
+    *type = FILTER_TYPE_UP;
+    return true;
+  case 3:
+    *type = FILTER_TYPE_AVERAGE;
+    return true;
+  case 4:
+    *type = FILTER_TYPE_PAETH;
+    return true;
+  default:
+    return false;
+  }
+}
+
 static void decode_image_header(UtPngDecoder *self, UtObject *data) {
   if (ut_list_get_length(data) != 13) {
     self->error = ut_png_error_new();
@@ -211,7 +233,8 @@ static void process_image_data(UtPngDecoder *self, UtObject *data) {
   size_t offset = 0;
   while (offset < data_length) {
     if (self->line == NULL) {
-      self->line_filter = ut_uint8_list_get_element(data, offset);
+      assert(decode_filter_type(ut_uint8_list_get_element(data, offset),
+                                &self->line_filter));
       offset++;
       self->line = ut_uint8_array_new(); // FIXME: sized
     }
