@@ -5,6 +5,9 @@
 #include "ut-assert.h"
 #include "ut-cstring.h"
 #include "ut-error.h"
+#include "ut-list.h"
+#include "ut-string.h"
+#include "ut-uint8-list.h"
 
 static char *append_string(char *value, const char *suffix) {
   size_t value_length = value != NULL ? strlen(value) : 0;
@@ -117,6 +120,43 @@ void _ut_assert_cstring_equal(const char *file, int line, const char *a_name,
           "  %s\n"
           "  %s\n",
           file, line, a_name, b_name, escaped_a_value, escaped_b_value);
+
+  abort();
+}
+
+void _ut_assert_uint8_list_equal(const char *file, int line, const char *a_name,
+                                 UtObject *a_value, uint8_t *b_value,
+                                 size_t b_length) {
+  if (ut_list_get_length(a_value) == b_length) {
+    bool match = true;
+    for (size_t i = 0; i < b_length; i++) {
+      if (ut_uint8_list_get_element(a_value, i) != b_value[i]) {
+        match = false;
+        break;
+      }
+    }
+
+    if (match) {
+      return;
+    }
+  }
+
+  UtObjectRef b_value_string = ut_string_new("<uint8>[");
+  for (size_t i = 0; i < b_length; i++) {
+    if (i != 0) {
+      ut_string_append(b_value_string, ", ");
+    }
+    ut_string_append_printf(b_value_string, "%d", b_value[i]);
+  }
+  ut_string_append(b_value_string, "]");
+
+  ut_cstring_ref a_value_string = ut_object_to_string(a_value);
+  fprintf(stderr,
+          "%s:%d List %s doesn't have expected content:\n"
+          "  %s\n"
+          "  %s\n",
+          file, line, a_name, a_value_string,
+          ut_string_get_text(b_value_string));
 
   abort();
 }
