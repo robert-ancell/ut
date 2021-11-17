@@ -38,5 +38,14 @@ int main(int argc, char **argv) {
   ut_assert_cstring_equal(ut_string_get_text(hello3_result_string),
                           "hello hello hello");
 
+  UtObjectRef literal_data = ut_uint8_list_new_with_data(
+      10, 0x01, 0x01, 0x00, 0xfe, 0xff, 0x21, 0x00, 0x22, 0x00, 0x22);
+  UtObjectRef literal_data_stream = ut_list_input_stream_new(literal_data);
+  UtObjectRef literal_decoder = ut_deflate_decoder_new(literal_data_stream);
+  UtObjectRef literal_result = ut_input_stream_read_sync(literal_decoder);
+  ut_assert_is_not_error(literal_result);
+  UtObjectRef literal_result_string = ut_string_new_from_utf8(literal_result);
+  ut_assert_cstring_equal(ut_string_get_text(literal_result_string), "!");
+
   return 0;
 }

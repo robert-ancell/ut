@@ -10,6 +10,8 @@
 
 typedef enum {
   DECODER_STATE_BLOCK_HEADER,
+  DECODER_STATE_UNCOMPRESSED_LENGTH,
+  DECODER_STATE_UNCOMPRESSED_DATA,
   DECODER_STATE_LITERAL_OR_LENGTH,
   DECODER_STATE_LENGTH,
   DECODER_STATE_DISTANCE,
@@ -169,11 +171,58 @@ static bool read_block_header(UtDeflateDecoder *self, UtObject *data,
   }
 
   self->is_last_block = read_bit(self, data, offset) == 1;
-  uint8_t type =
+  uint8_t block_type =
       read_bit(self, data, offset) << 1 | read_bit(self, data, offset);
-  assert(type == 2);
+  switch (block_type) {
+  case 0:
+    // Clear remaining unused bits
+    self->bit_buffer = 0;
+    self->bit_count = 0;
+    self->state = DECODER_STATE_UNCOMPRESSED_LENGTH;
+    return true;
+  case 1:
+    // FIXME: Dynamic Huffman codes
+    assert(false);
+  case 2:
+    self->state = DECODER_STATE_LITERAL_OR_LENGTH;
+    return true;
+  default:
+    // Reserved type
+    assert(false);
+  }
+}
 
-  self->state = DECODER_STATE_LITERAL_OR_LENGTH;
+static bool read_uncompressed_length(UtDeflateDecoder *self, UtObject *data,
+                                     size_t *offset) {
+  size_t remaining = ut_list_get_length(data) - *offset;
+  if (remaining < 4) {
+    return false;
+  }
+
+  self->length = ut_uint8_list_get_uint16_le(data, *offset);
+  uint16_t nlength = ut_uint8_list_get_uint16_le(data, *offset + 2);
+  assert((self->length ^ nlength) == 0xffff);
+
+  self->state = DECODER_STATE_UNCOMPRESSED_DATA;
+  *offset += 4;
+  return true;
+}
+
+static bool read_uncompressed_data(UtDeflateDecoder *self, UtObject *data,
+                                   size_t *offset) {
+  size_t remaining = ut_list_get_length(data) - *offset;
+  if (remaining < self->length) {
+    return false;
+  }
+
+  for (size_t i = 0; i < self->length; i++) {
+    ut_uint8_list_append(self->buffer,
+                         ut_uint8_list_get_element(data, *offset + i));
+  }
+
+  *offset += self->length;
+  self->state =
+      self->is_last_block ? DECODER_STATE_DONE : DECODER_STATE_BLOCK_HEADER;
   return true;
 }
 
@@ -285,6 +334,12 @@ static size_t read_cb(void *user_data, UtObject *data, bool complete) {
     switch (self->state) {
     case DECODER_STATE_BLOCK_HEADER:
       decoding = read_block_header(self, data, &offset);
+      break;
+    case DECODER_STATE_UNCOMPRESSED_LENGTH:
+      decoding = read_uncompressed_length(self, data, &offset);
+      break;
+    case DECODER_STATE_UNCOMPRESSED_DATA:
+      decoding = read_uncompressed_data(self, data, &offset);
       break;
     case DECODER_STATE_LITERAL_OR_LENGTH:
       decoding = read_literal_or_length(self, data, &offset);
