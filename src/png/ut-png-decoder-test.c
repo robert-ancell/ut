@@ -3,7 +3,26 @@
 
 #include "ut.h"
 
+static void png_cb(void *user_data, UtObject *image) {
+  printf("%s\n", ut_object_to_string(image));
+  ut_event_loop_return(NULL);
+}
+
 int main(int argc, char **argv) {
+#if 1
+  if (argc < 2) {
+    printf("Need file name\n");
+    return 1;
+  }
+
+  UtObjectRef file = ut_local_file_new(argv[1]);
+  ut_file_open_read(file);
+  UtObjectRef decoder = ut_png_decoder_new(file);
+  ut_png_decoder_decode(decoder, png_cb, NULL, NULL);
+
+  ut_event_loop_run();
+#endif
+
   UtObjectRef greyscale_1x1_data = ut_uint8_list_new_with_data(
       67, 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00,
       0x0d, 0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,

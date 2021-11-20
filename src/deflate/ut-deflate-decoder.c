@@ -1,6 +1,7 @@
 #include <assert.h>
 
 #include "ut-cancel.h"
+#include "ut-constant-uint8-array.h"
 #include "ut-deflate-decoder.h"
 #include "ut-deflate-error.h"
 #include "ut-huffman-decoder.h"
@@ -14,6 +15,12 @@ typedef enum {
   DECODER_STATE_BLOCK_HEADER,
   DECODER_STATE_UNCOMPRESSED_LENGTH,
   DECODER_STATE_UNCOMPRESSED_DATA,
+  DECODER_STATE_HUFFMAN_LENGTHS,
+  DECODER_STATE_HUFFMAN_WIDTHS,
+  DECODER_STATE_HUFFMAN_LITERAL_OR_LENGTH_SYMBOL,
+  DECODER_STATE_HUFFMAN_LITERAL_OR_LENGTH,
+  DECODER_STATE_HUFFMAN_DISTANCE_SYMBOL,
+  DECODER_STATE_HUFFMAN_DISTANCE,
   DECODER_STATE_LITERAL_OR_LENGTH,
   DECODER_STATE_LENGTH,
   DECODER_STATE_DISTANCE_SYMBOL,
@@ -41,6 +48,18 @@ typedef struct {
   uint16_t length;
   uint16_t length_symbol;
   uint16_t distance_symbol;
+
+  // Huffman code used to encode the literal/length/distance codes.
+  uint8_t n_huffman_width_symbols;
+  UtObject *huffman_width_decoder;
+
+  // Huffman code to encode literals and lengths.
+  uint16_t n_literal_or_length_symbols;
+  UtObject *literal_or_length_code_widths;
+
+  // Huffman code to encode distances.
+  uint8_t n_distance_symbols;
+  UtObject *distance_code_widths;
 
   UtObject *literal_or_length_decoder;
   UtObject *distance_decoder;
@@ -103,8 +122,7 @@ static bool read_block_header(UtDeflateDecoder *self, UtObject *data,
     self->state = DECODER_STATE_UNCOMPRESSED_LENGTH;
     return true;
   case 1:
-    self->error = ut_deflate_error_new();
-    self->state = DECODER_STATE_ERROR;
+    self->state = DECODER_STATE_HUFFMAN_LENGTHS;
     return true;
   case 2: {
     UtObjectRef literal_or_length_symbols = ut_uint16_list_new();
@@ -185,6 +203,60 @@ static bool read_uncompressed_data(UtDeflateDecoder *self, UtObject *data,
   return true;
 }
 
+static bool read_huffman_lengths(UtDeflateDecoder *self, UtObject *data,
+                                 size_t *offset) {
+  size_t remaining = get_remaining_bits(self, data, offset);
+  if (remaining < 14) {
+    return false;
+  }
+
+  self->n_literal_or_length_symbols =
+      257 + (read_bit(self, data, offset) << 4 |
+             read_bit(self, data, offset) << 3 |
+             read_bit(self, data, offset) << 2 |
+             read_bit(self, data, offset) << 1 | read_bit(self, data, offset));
+  self->n_distance_symbols =
+      1 + (read_bit(self, data, offset) << 4 |
+           read_bit(self, data, offset) << 3 |
+           read_bit(self, data, offset) << 2 |
+           read_bit(self, data, offset) << 1 | read_bit(self, data, offset));
+  self->n_huffman_width_symbols =
+      4 + (read_bit(self, data, offset) << 3 |
+           read_bit(self, data, offset) << 2 |
+           read_bit(self, data, offset) << 1 | read_bit(self, data, offset));
+
+  ut_object_unref(self->literal_or_length_code_widths);
+  self->literal_or_length_code_widths = ut_uint8_list_new();
+  ut_object_unref(self->distance_code_widths);
+  self->distance_code_widths = ut_uint8_list_new();
+
+  self->state = DECODER_STATE_HUFFMAN_WIDTHS;
+  return true;
+}
+
+static bool read_huffman_widths(UtDeflateDecoder *self, UtObject *data,
+                                size_t *offset) {
+  size_t remaining = get_remaining_bits(self, data, offset);
+  if (remaining < self->n_huffman_width_symbols * 3) {
+    return false;
+  }
+
+  uint8_t code_widths[19] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                             0, 0, 0, 0, 0, 0, 0, 0, 0};
+  for (size_t i = 0; i < self->n_huffman_width_symbols; i++) {
+    uint8_t symbols[19] = {16, 17, 18, 0, 8,  7, 9,  6, 10, 5,
+                           11, 4,  12, 3, 13, 2, 14, 1, 15};
+    code_widths[symbols[i]] = read_bit(self, data, offset) << 2 |
+                              read_bit(self, data, offset) << 1 |
+                              read_bit(self, data, offset);
+  }
+  UtObjectRef code_widths_array = ut_constant_uint8_array_new(code_widths, 19);
+  self->huffman_width_decoder = ut_huffman_decoder_new(code_widths_array);
+
+  self->state = DECODER_STATE_HUFFMAN_LITERAL_OR_LENGTH;
+  return true;
+}
+
 static bool read_huffman_symbol(UtDeflateDecoder *self, UtObject *data,
                                 size_t *offset, UtObject *decoder,
                                 uint16_t *symbol) {
@@ -224,6 +296,128 @@ static bool read_huffman_symbol(UtDeflateDecoder *self, UtObject *data,
   self->code_width = 0;
 
   return true;
+}
+
+static bool read_huffman_literal_or_length_symbol(UtDeflateDecoder *self,
+                                                  UtObject *data,
+                                                  size_t *offset) {
+
+  if (!read_huffman_symbol(self, data, offset, self->huffman_width_decoder,
+                           &self->length_symbol)) {
+    return self->error != NULL;
+  }
+
+  self->state = DECODER_STATE_HUFFMAN_LITERAL_OR_LENGTH;
+
+  return true;
+}
+
+static bool read_widths(UtDeflateDecoder *self, UtObject *data, size_t *offset,
+                        uint16_t symbol, UtObject *code_widths) {
+  if (symbol <= 15) {
+    ut_uint8_list_append(code_widths, symbol);
+  } else {
+    size_t bit_count;
+    size_t base_count;
+    if (symbol == 16) {
+      base_count = 3;
+      bit_count = 2;
+    } else if (symbol == 17) {
+      base_count = 3;
+      bit_count = 3;
+    } else if (symbol == 18) {
+      base_count = 11;
+      bit_count = 7;
+    } else {
+      assert(false);
+    }
+
+    size_t remaining = get_remaining_bits(self, data, offset);
+    if (remaining < bit_count) {
+      return false;
+    }
+
+    uint16_t extra = 0;
+    for (uint8_t i = 0; i < bit_count; i++) {
+      extra = extra << 1 | read_bit(self, data, offset);
+    }
+
+    size_t code_widths_length = ut_list_get_length(code_widths);
+    if (code_widths_length == 0) {
+      self->error = ut_deflate_error_new();
+      self->state = DECODER_STATE_ERROR;
+      return true;
+    }
+    uint8_t code_width =
+        ut_uint8_list_get_element(code_widths, code_widths_length - 1);
+    size_t count = base_count + extra;
+    for (size_t i = 0; i < count; i++) {
+      ut_uint8_list_append(code_widths, code_width);
+    }
+  }
+
+  return true;
+}
+
+static bool read_huffman_literal_or_length(UtDeflateDecoder *self,
+                                           UtObject *data, size_t *offset) {
+  if (!read_widths(self, data, offset, self->length_symbol,
+                   self->literal_or_length_code_widths)) {
+    return self->error != NULL;
+  }
+
+  size_t code_widths_length =
+      ut_list_get_length(self->literal_or_length_code_widths);
+  if (code_widths_length < self->n_literal_or_length_symbols) {
+    self->state = DECODER_STATE_HUFFMAN_LITERAL_OR_LENGTH_SYMBOL;
+    return true;
+  } else if (code_widths_length == self->n_literal_or_length_symbols) {
+    ut_object_unref(self->literal_or_length_decoder);
+    self->literal_or_length_decoder =
+        ut_huffman_decoder_new(self->literal_or_length_code_widths);
+    self->state = DECODER_STATE_HUFFMAN_DISTANCE_SYMBOL;
+    return true;
+  } else {
+    self->error = ut_deflate_error_new();
+    self->state = DECODER_STATE_ERROR;
+    return true;
+  }
+}
+
+static bool read_huffman_distance_symbol(UtDeflateDecoder *self, UtObject *data,
+                                         size_t *offset) {
+
+  if (!read_huffman_symbol(self, data, offset, self->huffman_width_decoder,
+                           &self->distance_symbol)) {
+    return self->error != NULL;
+  }
+
+  self->state = DECODER_STATE_HUFFMAN_DISTANCE;
+
+  return true;
+}
+
+static bool read_huffman_distance(UtDeflateDecoder *self, UtObject *data,
+                                  size_t *offset) {
+  if (!read_widths(self, data, offset, self->distance_symbol,
+                   self->distance_code_widths)) {
+    return self->error != NULL;
+  }
+
+  size_t code_widths_length = ut_list_get_length(self->distance_code_widths);
+  if (code_widths_length < self->n_distance_symbols) {
+    self->state = DECODER_STATE_HUFFMAN_DISTANCE_SYMBOL;
+    return true;
+  } else if (code_widths_length == self->n_distance_symbols) {
+    ut_object_unref(self->distance_decoder);
+    self->distance_decoder = ut_huffman_decoder_new(self->distance_code_widths);
+    self->state = DECODER_STATE_LITERAL_OR_LENGTH;
+    return true;
+  } else {
+    self->error = ut_deflate_error_new();
+    self->state = DECODER_STATE_ERROR;
+    return true;
+  }
 }
 
 static bool read_literal_or_length(UtDeflateDecoder *self, UtObject *data,
@@ -336,6 +530,24 @@ static size_t read_cb(void *user_data, UtObject *data, bool complete) {
     case DECODER_STATE_UNCOMPRESSED_DATA:
       decoding = read_uncompressed_data(self, data, &offset);
       break;
+    case DECODER_STATE_HUFFMAN_LENGTHS:
+      decoding = read_huffman_lengths(self, data, &offset);
+      break;
+    case DECODER_STATE_HUFFMAN_WIDTHS:
+      decoding = read_huffman_widths(self, data, &offset);
+      break;
+    case DECODER_STATE_HUFFMAN_LITERAL_OR_LENGTH_SYMBOL:
+      decoding = read_huffman_literal_or_length_symbol(self, data, &offset);
+      break;
+    case DECODER_STATE_HUFFMAN_LITERAL_OR_LENGTH:
+      decoding = read_huffman_literal_or_length(self, data, &offset);
+      break;
+    case DECODER_STATE_HUFFMAN_DISTANCE_SYMBOL:
+      decoding = read_huffman_distance_symbol(self, data, &offset);
+      break;
+    case DECODER_STATE_HUFFMAN_DISTANCE:
+      decoding = read_huffman_distance(self, data, &offset);
+      break;
     case DECODER_STATE_LITERAL_OR_LENGTH:
       decoding = read_literal_or_length(self, data, &offset);
       break;
@@ -386,6 +598,12 @@ static void ut_deflate_decoder_init(UtObject *object) {
   self->length = 0;
   self->length_symbol = 0;
   self->distance_symbol = 0;
+  self->n_huffman_width_symbols = 0;
+  self->huffman_width_decoder = NULL;
+  self->n_literal_or_length_symbols = 0;
+  self->literal_or_length_code_widths = NULL;
+  self->n_distance_symbols = 0;
+  self->distance_code_widths = NULL;
   self->literal_or_length_decoder = NULL;
   self->distance_decoder = NULL;
   self->buffer = ut_uint8_array_new();
@@ -398,7 +616,10 @@ static void ut_deflate_decoder_cleanup(UtObject *object) {
   ut_object_unref(self->read_cancel);
   ut_object_unref(self->cancel);
   ut_object_unref(self->error);
+  ut_object_unref(self->huffman_width_decoder);
   ut_object_unref(self->literal_or_length_decoder);
+  ut_object_unref(self->literal_or_length_code_widths);
+  ut_object_unref(self->distance_code_widths);
   ut_object_unref(self->distance_decoder);
   ut_object_unref(self->buffer);
 }
