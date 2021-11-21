@@ -45,7 +45,7 @@ UtObject *ut_huffman_decoder_new(UtObject *code_widths) {
   for (size_t symbol = 0; symbol < n_symbols; symbol++) {
     uint8_t code_width = ut_uint8_list_get_element(code_widths, symbol);
     assert(code_width <= 16);
-    if (code_width < self->min_code_width) {
+    if (code_width != 0 && code_width < self->min_code_width) {
       self->min_code_width = code_width;
     }
     if (code_width > self->max_code_width) {
