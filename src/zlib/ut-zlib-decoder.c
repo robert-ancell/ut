@@ -4,6 +4,7 @@
 #include "deflate/ut-deflate-decoder.h"
 #include "ut-cancel.h"
 #include "ut-cstring.h"
+#include "ut-error.h"
 #include "ut-input-stream-multiplexer.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
@@ -52,6 +53,14 @@ static size_t deflate_read_cb(void *user_data, UtObject *data, bool complete) {
 
   if (ut_cancel_is_active(self->cancel)) {
     ut_cancel_activate(self->read_cancel);
+    return 0;
+  }
+
+  if (ut_object_implements_error(data)) {
+    self->error = ut_zlib_error_new();
+    self->state = DECODER_STATE_ERROR;
+    ut_input_stream_multiplexer_set_active(self->multiplexer,
+                                           self->zlib_input_stream);
     return 0;
   }
 
