@@ -37,7 +37,7 @@ typedef struct {
   uint16_t code;
   uint8_t code_width;
   uint16_t length;
-  uint8_t extra_length_bits;
+  uint16_t length_symbol;
 
   UtObject *literal_or_length_decoder;
   UtObject *distance_decoder;
@@ -233,8 +233,7 @@ static bool read_literal_or_length(UtDeflateDecoder *self, UtObject *data,
     return true;
   } else if (symbol <= 285) {
     self->state = DECODER_STATE_LENGTH;
-    self->length = base_lengths[symbol - 257];
-    self->extra_length_bits = extra_length_bits[symbol - 257];
+    self->length_symbol = symbol;
     return true;
   } else {
     self->error = ut_deflate_error_new();
@@ -245,17 +244,18 @@ static bool read_literal_or_length(UtDeflateDecoder *self, UtObject *data,
 
 static bool read_length(UtDeflateDecoder *self, UtObject *data,
                         size_t *offset) {
-  uint16_t extra = 0;
-
   size_t remaining = get_remaining_bits(self, data, offset);
-  if (remaining < self->extra_length_bits) {
+
+  uint8_t bit_count = extra_length_bits[self->length_symbol - 257];
+  if (remaining < bit_count) {
     return false;
   }
 
-  for (uint8_t i = 0; i < self->extra_length_bits; i++) {
+  uint16_t extra = 0;
+  for (uint8_t i = 0; i < bit_count; i++) {
     extra = extra << 1 | read_bit(self, data, offset);
   }
-  self->length += extra;
+  self->length = base_lengths[self->length_symbol - 257] + extra;
 
   self->state = DECODER_STATE_DISTANCE;
   return true;
@@ -364,7 +364,7 @@ static void ut_deflate_decoder_init(UtObject *object) {
   self->code = 0;
   self->code_width = 0;
   self->length = 0;
-  self->extra_length_bits = 0;
+  self->length_symbol = 0;
   self->literal_or_length_decoder = NULL;
   self->distance_decoder = NULL;
   self->buffer = ut_uint8_array_new();
