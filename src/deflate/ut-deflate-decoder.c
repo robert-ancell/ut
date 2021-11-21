@@ -104,27 +104,27 @@ static bool read_block_header(UtDeflateDecoder *self, UtObject *data,
     self->state = DECODER_STATE_ERROR;
     return true;
   case 2:
-    UtObjectRef distance_symbol_lengths = ut_uint8_list_new();
+    UtObjectRef distance_code_lengths = ut_uint8_list_new();
     for (size_t symbol = 0; symbol < 30; symbol++) {
-      ut_uint8_list_append(distance_symbol_lengths, 5);
+      ut_uint8_list_append(distance_code_lengths, 5);
     }
-    self->distance_decoder = ut_huffman_decoder_new(distance_symbol_lengths);
+    self->distance_decoder = ut_huffman_decoder_new(distance_code_lengths);
 
-    UtObjectRef literal_or_length_symbol_lengths = ut_uint8_list_new();
+    UtObjectRef literal_or_length_code_lengths = ut_uint8_list_new();
     for (size_t symbol = 0; symbol <= 143; symbol++) {
-      ut_uint8_list_append(literal_or_length_symbol_lengths, 8);
+      ut_uint8_list_append(literal_or_length_code_lengths, 8);
     }
     for (size_t symbol = 144; symbol <= 255; symbol++) {
-      ut_uint8_list_append(literal_or_length_symbol_lengths, 9);
+      ut_uint8_list_append(literal_or_length_code_lengths, 9);
     }
     for (size_t symbol = 256; symbol <= 279; symbol++) {
-      ut_uint8_list_append(literal_or_length_symbol_lengths, 7);
+      ut_uint8_list_append(literal_or_length_code_lengths, 7);
     }
     for (size_t symbol = 280; symbol <= 287; symbol++) {
-      ut_uint8_list_append(literal_or_length_symbol_lengths, 8);
+      ut_uint8_list_append(literal_or_length_code_lengths, 8);
     }
     self->literal_or_length_decoder =
-        ut_huffman_decoder_new(literal_or_length_symbol_lengths);
+        ut_huffman_decoder_new(literal_or_length_code_lengths);
 
     self->state = DECODER_STATE_LITERAL_OR_LENGTH;
     return true;
