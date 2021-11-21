@@ -105,7 +105,7 @@ static bool read_block_header(UtDeflateDecoder *self, UtObject *data,
     self->error = ut_deflate_error_new();
     self->state = DECODER_STATE_ERROR;
     return true;
-  case 2:
+  case 2: {
     UtObjectRef distance_code_lengths = ut_uint8_list_new();
     for (size_t symbol = 0; symbol < 30; symbol++) {
       ut_uint8_list_append(distance_code_lengths, 5);
@@ -130,6 +130,7 @@ static bool read_block_header(UtDeflateDecoder *self, UtObject *data,
 
     self->state = DECODER_STATE_LITERAL_OR_LENGTH;
     return true;
+  }
   default:
     self->error = ut_deflate_error_new();
     self->state = DECODER_STATE_ERROR;
