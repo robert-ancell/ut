@@ -119,6 +119,7 @@ static bool read_block_header(UtDeflateDecoder *self, UtObject *data,
     for (size_t symbol = 280; symbol <= 287; symbol++) {
       ut_uint8_list_append(literal_or_length_code_widths, 8);
     }
+    ut_object_unref(self->literal_or_length_decoder);
     self->literal_or_length_decoder =
         ut_huffman_decoder_new(literal_or_length_code_widths);
 
@@ -126,6 +127,7 @@ static bool read_block_header(UtDeflateDecoder *self, UtObject *data,
     for (size_t symbol = 0; symbol < 30; symbol++) {
       ut_uint8_list_append(distance_code_widths, 5);
     }
+    ut_object_unref(self->distance_decoder);
     self->distance_decoder = ut_huffman_decoder_new(distance_code_widths);
 
     self->state = DECODER_STATE_LITERAL_OR_LENGTH;
