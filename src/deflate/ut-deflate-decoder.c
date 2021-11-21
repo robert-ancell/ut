@@ -210,7 +210,7 @@ static bool read_huffman_symbol(UtDeflateDecoder *self, UtObject *data,
   if (self->code_width > max_code_width) {
     self->error = ut_deflate_error_new();
     self->state = DECODER_STATE_ERROR;
-    return true;
+    return false;
   }
 
   self->code = 0;
