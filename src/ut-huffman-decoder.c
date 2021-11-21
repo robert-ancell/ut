@@ -33,17 +33,17 @@ static UtObjectInterface object_interface = {.type_name = "UtHuffmanDecoder",
                                                  ut_huffman_decoder_cleanup,
                                              .interfaces = {{NULL, NULL}}};
 
-UtObject *ut_huffman_decoder_new(UtObject *symbol_widths) {
+UtObject *ut_huffman_decoder_new(UtObject *code_widths) {
   UtObject *object = ut_object_new(sizeof(UtHuffmanDecoder), &object_interface);
   UtHuffmanDecoder *self = (UtHuffmanDecoder *)object;
 
-  size_t n_symbols = ut_list_get_length(symbol_widths);
+  size_t n_symbols = ut_list_get_length(code_widths);
 
   // Calculate the longest length code.
   self->min_code_width = 17;
   self->max_code_width = 0;
   for (size_t symbol = 0; symbol < n_symbols; symbol++) {
-    uint8_t code_width = ut_uint8_list_get_element(symbol_widths, symbol);
+    uint8_t code_width = ut_uint8_list_get_element(code_widths, symbol);
     assert(code_width <= 16);
     if (code_width < self->min_code_width) {
       self->min_code_width = code_width;
@@ -74,7 +74,7 @@ UtObject *ut_huffman_decoder_new(UtObject *symbol_widths) {
        code_width++) {
     uint16_t *code_table = self->code_tables[code_width - 1];
     for (size_t symbol = 0; symbol < n_symbols; symbol++) {
-      if (code_width == ut_uint8_list_get_element(symbol_widths, symbol)) {
+      if (code_width == ut_uint8_list_get_element(code_widths, symbol)) {
         code_table[code] = symbol;
         code++;
         // FIXME: Check if have run out of codes
