@@ -16,7 +16,8 @@ typedef enum {
   DECODER_STATE_LITERAL_OR_LENGTH,
   DECODER_STATE_LENGTH,
   DECODER_STATE_DISTANCE,
-  DECODER_STATE_DONE
+  DECODER_STATE_DONE,
+  DECODER_STATE_ERROR
 } DecoderState;
 
 typedef struct {
@@ -31,6 +32,7 @@ typedef struct {
   uint8_t bit_count;
 
   DecoderState state;
+  UtObject *error;
   bool is_last_block;
   uint16_t length;
   uint8_t extra_length_bits;
@@ -96,8 +98,9 @@ static bool read_block_header(UtDeflateDecoder *self, UtObject *data,
     self->state = DECODER_STATE_UNCOMPRESSED_LENGTH;
     return true;
   case 1:
-    // FIXME: Dynamic Huffman codes
-    assert(false);
+    self->error = ut_deflate_error_new();
+    self->state = DECODER_STATE_ERROR;
+    return true;
   case 2:
     UtObjectRef distance_symbol_lengths = ut_uint8_list_new();
     for (size_t symbol = 0; symbol < 30; symbol++) {
@@ -118,13 +121,15 @@ static bool read_block_header(UtDeflateDecoder *self, UtObject *data,
     for (size_t symbol = 280; symbol <= 287; symbol++) {
       ut_uint8_list_append(literal_or_length_symbol_lengths, 8);
     }
-    self->literal_or_length_decoder = ut_huffman_decoder_new(literal_or_length_symbol_lengths);
+    self->literal_or_length_decoder =
+        ut_huffman_decoder_new(literal_or_length_symbol_lengths);
 
     self->state = DECODER_STATE_LITERAL_OR_LENGTH;
     return true;
   default:
-    // Reserved type
-    assert(false);
+    self->error = ut_deflate_error_new();
+    self->state = DECODER_STATE_ERROR;
+    return true;
   }
 }
 
@@ -137,7 +142,11 @@ static bool read_uncompressed_length(UtDeflateDecoder *self, UtObject *data,
 
   self->length = ut_uint8_list_get_uint16_le(data, *offset);
   uint16_t nlength = ut_uint8_list_get_uint16_le(data, *offset + 2);
-  assert((self->length ^ nlength) == 0xffff);
+  if ((self->length ^ nlength) != 0xffff) {
+    self->error = ut_deflate_error_new();
+    self->state = DECODER_STATE_ERROR;
+    return true;
+  }
 
   self->state = DECODER_STATE_UNCOMPRESSED_DATA;
   *offset += 4;
@@ -188,8 +197,9 @@ static bool read_literal_or_length(UtDeflateDecoder *self, UtObject *data,
   }
 
   if (code_width > max_code_width) {
-    // FIXME: Error
-    return false;
+    self->error = ut_deflate_error_new();
+    self->state = DECODER_STATE_ERROR;
+    return true;
   }
 
   if (symbol < 256) {
@@ -199,11 +209,14 @@ static bool read_literal_or_length(UtDeflateDecoder *self, UtObject *data,
     self->state =
         self->is_last_block ? DECODER_STATE_DONE : DECODER_STATE_BLOCK_HEADER;
     return true;
-  } else {
+  } else if (symbol <= 285) {
     self->state = DECODER_STATE_LENGTH;
-    assert(symbol >= 257 && symbol <= 285);
     self->length = base_lengths[symbol - 257];
     self->extra_length_bits = extra_length_bits[symbol - 257];
+    return true;
+  } else {
+    self->error = ut_deflate_error_new();
+    self->state = DECODER_STATE_ERROR;
     return true;
   }
 }
@@ -247,7 +260,11 @@ static bool read_distance(UtDeflateDecoder *self, UtObject *data,
   uint16_t distance = base_distances[code] + extra;
 
   size_t buffer_length = ut_list_get_length(self->buffer);
-  assert(distance <= buffer_length);
+  if (distance > buffer_length) {
+    self->error = ut_deflate_error_new();
+    self->state = DECODER_STATE_ERROR;
+    return true;
+  }
   size_t start = buffer_length - distance;
   for (size_t i = 0; i < self->length; i++) {
     ut_uint8_list_append(self->buffer,
@@ -293,6 +310,10 @@ static size_t read_cb(void *user_data, UtObject *data, bool complete) {
       ut_cancel_activate(self->read_cancel);
       decoding = false;
       break;
+    case DECODER_STATE_ERROR:
+      ut_cancel_activate(self->read_cancel);
+      self->callback(self->user_data, self->error, true);
+      return offset;
     }
   }
 
@@ -316,6 +337,7 @@ static void ut_deflate_decoder_init(UtObject *object) {
   self->bit_buffer = 0x00;
   self->bit_count = 0;
   self->state = DECODER_STATE_BLOCK_HEADER;
+  self->error = NULL;
   self->length = 0;
   self->extra_length_bits = 0;
   self->literal_or_length_decoder = NULL;
@@ -329,9 +351,10 @@ static void ut_deflate_decoder_cleanup(UtObject *object) {
   ut_object_unref(self->input_stream);
   ut_object_unref(self->read_cancel);
   ut_object_unref(self->cancel);
-  ut_object_unref(self->buffer);
+  ut_object_unref(self->error);
   ut_object_unref(self->literal_or_length_decoder);
   ut_object_unref(self->distance_decoder);
+  ut_object_unref(self->buffer);
 }
 
 static void ut_deflate_decoder_read(UtObject *object,
