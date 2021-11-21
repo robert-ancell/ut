@@ -40,6 +40,7 @@ ut_sources = [
   'ut-float64-list.c',
   'ut-general-error.c',
   'ut-hash-table.c',
+  'ut-huffman-decoder.c',
   'ut-input-stream.c',
   'ut-input-stream-multiplexer.c',
   'ut-int16.c',
