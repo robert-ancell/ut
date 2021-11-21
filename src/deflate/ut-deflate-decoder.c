@@ -34,6 +34,8 @@ typedef struct {
   DecoderState state;
   UtObject *error;
   bool is_last_block;
+  uint16_t code;
+  uint8_t code_width;
   uint16_t length;
   uint8_t extra_length_bits;
 
@@ -171,35 +173,55 @@ static bool read_uncompressed_data(UtDeflateDecoder *self, UtObject *data,
   return true;
 }
 
-static bool read_literal_or_length(UtDeflateDecoder *self, UtObject *data,
-                                   size_t *offset) {
+static bool read_huffman_symbol(UtDeflateDecoder *self, UtObject *data,
+                                size_t *offset, UtObject *decoder,
+                                uint16_t *symbol) {
   size_t remaining = get_remaining_bits(self, data, offset);
 
-  size_t min_code_width =
-      ut_huffman_decoder_get_min_code_width(self->literal_or_length_decoder);
-  if (remaining < min_code_width) {
-    return false;
+  if (self->code_width == 0) {
+    size_t min_code_width =
+        ut_huffman_decoder_get_min_code_width(self->literal_or_length_decoder);
+    if (remaining < min_code_width) {
+      return false;
+    }
+    self->code = 0;
+    for (size_t i = 0; i < min_code_width; i++) {
+      self->code = self->code << 1 | read_bit(self, data, offset);
+    }
+    self->code_width = min_code_width;
   }
-  uint16_t code = 0;
-  for (size_t i = 0; i < min_code_width; i++) {
-    code = code << 1 | read_bit(self, data, offset);
-  }
-  size_t code_width = min_code_width;
 
   size_t max_code_width =
       ut_huffman_decoder_get_max_code_width(self->literal_or_length_decoder);
-  uint16_t symbol;
-  while (code_width <= max_code_width &&
-         !ut_huffman_decoder_get_symbol(self->literal_or_length_decoder, code,
-                                        code_width, &symbol)) {
-    code = code << 1 | read_bit(self, data, offset);
-    code_width++;
+  while (self->code_width < remaining && self->code_width <= max_code_width &&
+         !ut_huffman_decoder_get_symbol(self->literal_or_length_decoder,
+                                        self->code, self->code_width, symbol)) {
+    self->code = self->code << 1 | read_bit(self, data, offset);
+    self->code_width++;
   }
 
-  if (code_width > max_code_width) {
+  if (self->code_width >= remaining) {
+    return false;
+  }
+
+  if (self->code_width > max_code_width) {
     self->error = ut_deflate_error_new();
     self->state = DECODER_STATE_ERROR;
     return true;
+  }
+
+  self->code = 0;
+  self->code_width = 0;
+
+  return true;
+}
+
+static bool read_literal_or_length(UtDeflateDecoder *self, UtObject *data,
+                                   size_t *offset) {
+  uint16_t symbol;
+  if (!read_huffman_symbol(self, data, offset, self->literal_or_length_decoder,
+                           &symbol)) {
+    return self->error != NULL;
   }
 
   if (symbol < 256) {
@@ -338,6 +360,9 @@ static void ut_deflate_decoder_init(UtObject *object) {
   self->bit_count = 0;
   self->state = DECODER_STATE_BLOCK_HEADER;
   self->error = NULL;
+  self->is_last_block = false;
+  self->code = 0;
+  self->code_width = 0;
   self->length = 0;
   self->extra_length_bits = 0;
   self->literal_or_length_decoder = NULL;
