@@ -5,7 +5,7 @@
 
 #pragma once
 
-UtObject *ut_huffman_decoder_new(UtObject *code_widths);
+UtObject *ut_huffman_decoder_new(UtObject *symbols, UtObject *code_widths);
 
 size_t ut_huffman_decoder_get_min_code_width(UtObject *object);
 

@@ -6,6 +6,7 @@
 #include "ut-huffman-decoder.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
+#include "ut-uint16-list.h"
 #include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
 
@@ -106,29 +107,35 @@ static bool read_block_header(UtDeflateDecoder *self, UtObject *data,
     self->state = DECODER_STATE_ERROR;
     return true;
   case 2: {
+    UtObjectRef literal_or_length_symbols = ut_uint16_list_new();
     UtObjectRef literal_or_length_code_widths = ut_uint8_list_new();
-    for (size_t symbol = 0; symbol <= 143; symbol++) {
-      ut_uint8_list_append(literal_or_length_code_widths, 8);
-    }
-    for (size_t symbol = 144; symbol <= 255; symbol++) {
-      ut_uint8_list_append(literal_or_length_code_widths, 9);
-    }
-    for (size_t symbol = 256; symbol <= 279; symbol++) {
-      ut_uint8_list_append(literal_or_length_code_widths, 7);
-    }
-    for (size_t symbol = 280; symbol <= 287; symbol++) {
-      ut_uint8_list_append(literal_or_length_code_widths, 8);
+    for (size_t symbol = 0; symbol <= 287; symbol++) {
+      ut_uint16_list_append(literal_or_length_symbols, symbol);
+      uint8_t code_width;
+      if (symbol <= 143) {
+        code_width = 8;
+      } else if (symbol <= 255) {
+        code_width = 9;
+      } else if (symbol <= 279) {
+        code_width = 7;
+      } else {
+        code_width = 8;
+      }
+      ut_uint8_list_append(literal_or_length_code_widths, code_width);
     }
     ut_object_unref(self->literal_or_length_decoder);
-    self->literal_or_length_decoder =
-        ut_huffman_decoder_new(literal_or_length_code_widths);
+    self->literal_or_length_decoder = ut_huffman_decoder_new(
+        literal_or_length_symbols, literal_or_length_code_widths);
 
+    UtObjectRef distance_symbols = ut_uint16_list_new();
     UtObjectRef distance_code_widths = ut_uint8_list_new();
     for (size_t symbol = 0; symbol < 30; symbol++) {
+      ut_uint16_list_append(distance_symbols, symbol);
       ut_uint8_list_append(distance_code_widths, 5);
     }
     ut_object_unref(self->distance_decoder);
-    self->distance_decoder = ut_huffman_decoder_new(distance_code_widths);
+    self->distance_decoder =
+        ut_huffman_decoder_new(distance_symbols, distance_code_widths);
 
     self->state = DECODER_STATE_LITERAL_OR_LENGTH;
     return true;

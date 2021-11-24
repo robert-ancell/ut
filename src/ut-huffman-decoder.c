@@ -3,6 +3,7 @@
 
 #include "ut-huffman-decoder.h"
 #include "ut-list.h"
+#include "ut-uint16-list.h"
 #include "ut-uint8-list.h"
 
 typedef struct {
@@ -33,17 +34,18 @@ static UtObjectInterface object_interface = {.type_name = "UtHuffmanDecoder",
                                                  ut_huffman_decoder_cleanup,
                                              .interfaces = {{NULL, NULL}}};
 
-UtObject *ut_huffman_decoder_new(UtObject *code_widths) {
+UtObject *ut_huffman_decoder_new(UtObject *symbols, UtObject *code_widths) {
   UtObject *object = ut_object_new(sizeof(UtHuffmanDecoder), &object_interface);
   UtHuffmanDecoder *self = (UtHuffmanDecoder *)object;
 
-  size_t n_symbols = ut_list_get_length(code_widths);
+  size_t n_symbols = ut_list_get_length(symbols);
+  assert(ut_list_get_length(code_widths) == n_symbols);
 
   // Calculate the longest length code.
   self->min_code_width = 17;
   self->max_code_width = 0;
-  for (size_t symbol = 0; symbol < n_symbols; symbol++) {
-    uint8_t code_width = ut_uint8_list_get_element(code_widths, symbol);
+  for (size_t i = 0; i < n_symbols; i++) {
+    uint8_t code_width = ut_uint8_list_get_element(code_widths, i);
     assert(code_width <= 16);
     if (code_width != 0 && code_width < self->min_code_width) {
       self->min_code_width = code_width;
@@ -73,8 +75,9 @@ UtObject *ut_huffman_decoder_new(UtObject *code_widths) {
   for (size_t code_width = 1; code_width <= self->max_code_width;
        code_width++) {
     uint16_t *code_table = self->code_tables[code_width - 1];
-    for (size_t symbol = 0; symbol < n_symbols; symbol++) {
-      if (code_width == ut_uint8_list_get_element(code_widths, symbol)) {
+    for (size_t i = 0; i < n_symbols; i++) {
+      uint16_t symbol = ut_uint16_list_get_element(symbols, i);
+      if (code_width == ut_uint8_list_get_element(code_widths, i)) {
         code_table[code] = symbol;
         code++;
         // FIXME: Check if have run out of codes
