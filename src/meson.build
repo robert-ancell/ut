@@ -120,6 +120,7 @@ ut_sources = [
   'x11/ut-x11-property-notify.c',
   'x11/ut-x11-reparent-notify.c',
   'x11/ut-x11-request-error.c',
+  'x11/ut-x11-shm-segment-error.c',
   'x11/ut-x11-unknown-error.c',
   'x11/ut-x11-unknown-event.c',
   'x11/ut-x11-unknown-generic-event.c',

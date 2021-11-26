@@ -3,10 +3,12 @@
 
 #include "ut.h"
 
-static size_t width = 255;
-static size_t height = 255;
+static size_t width = 640;
+static size_t height = 480;
 
 static UtObject *client = NULL;
+static uint32_t segment = 0;
+static UtObject *buffer = NULL;
 static uint32_t window = 0;
 static uint32_t pixmap = 0;
 static uint32_t gc = 0;
@@ -43,6 +45,25 @@ static void list_extensions_cb(void *user_data, UtObject *names,
   }
 }
 
+static void create_segment_cb(void *user_data, UtObject *fd, UtObject *error) {
+  buffer = ut_shared_memory_array_new_from_fd(fd);
+  uint8_t *pixmap_data = ut_shared_memory_array_get_data(buffer);
+  for (size_t y = 0; y < height; y++) {
+    for (size_t x = 0; x < width; x++) {
+      uint8_t *pixel = pixmap_data + (y * width * 4) + (x * 4);
+      pixel[0] = 255 * x / width;
+      pixel[1] = 255 * y / height;
+      pixel[2] = 255;
+      pixel[3] = 255;
+    }
+  }
+
+  UtObject *shm = ut_x11_client_get_mit_shm_extension(client);
+  pixmap = ut_x11_mit_shm_extension_create_pixmap(shm, window, width, height,
+                                                  24, segment, 0);
+  gc = ut_x11_client_create_gc(client, pixmap);
+}
+
 static void connect_cb(void *user_data, UtObject *error) {
   if (error != NULL) {
     ut_cstring_ref description = ut_error_get_description(error);
@@ -62,22 +83,9 @@ static void connect_cb(void *user_data, UtObject *error) {
   window = ut_x11_client_create_window(client, 0, 0, width, height);
   ut_x11_client_map_window(client, window);
 
-  pixmap = ut_x11_client_create_pixmap(client, window, width, height, 24);
-  gc = ut_x11_client_create_gc(client, pixmap);
-  size_t pixmap_data_length = width * height * 4;
-  uint8_t pixmap_data[pixmap_data_length];
-  for (size_t y = 0; y < height; y++) {
-    for (size_t x = 0; x < width; x++) {
-      uint8_t *pixel = pixmap_data + (y * width * 4) + (x * 4);
-      pixel[0] = 255 * x / width;
-      pixel[1] = 255 * y / height;
-      pixel[2] = 255;
-      pixel[3] = 255;
-    }
-  }
-  ut_x11_client_put_image(client, pixmap, gc, UT_X11_IMAGE_FORMAT_Z_PIXMAP,
-                          width, height, 24, 0, 0, pixmap_data,
-                          pixmap_data_length);
+  UtObject *shm = ut_x11_client_get_mit_shm_extension(client);
+  segment = ut_x11_mit_shm_extension_create_segment(
+      shm, width * height * 4, false, create_segment_cb, NULL, NULL);
 }
 
 int main(int argc, char **argv) {

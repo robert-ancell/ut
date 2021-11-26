@@ -287,6 +287,8 @@ static void decode_big_requests_enable_reply(UtObject *object, uint8_t data0,
 static void handle_big_requests_enable_error(UtObject *object,
                                              UtObject *error) {}
 
+static void mit_shm_enable_cb(void *user_data, UtObject *error) {}
+
 static void present_enable_cb(void *user_data, UtObject *error) {}
 
 static void decode_query_extension_reply(UtObject *object, uint8_t data0,
@@ -316,6 +318,9 @@ static void decode_query_extension_reply(UtObject *object, uint8_t data0,
       self->mit_shm_extension = ut_x11_mit_shm_extension_new(
           (UtObject *)self, major_opcode, first_event, first_error);
       ut_list_append(self->extensions, self->mit_shm_extension);
+
+      ut_x11_mit_shm_extension_enable(self->mit_shm_extension,
+                                      mit_shm_enable_cb, self, self->cancel);
     } else if (strcmp(query_extension_data->name, "Present") == 0) {
       self->present_extension =
           ut_x11_present_extension_new((UtObject *)self, major_opcode);
