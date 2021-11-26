@@ -66,6 +66,7 @@
 #include "ut-utf8-encoder.h"
 #include "ut-utf8-string.h"
 #include "ut-writable-input-stream.h"
+#include "wayland/ut-wayland-client.h"
 #include "x11/ut-x11-atom-error.h"
 #include "x11/ut-x11-button-press.h"
 #include "x11/ut-x11-button-release.h"

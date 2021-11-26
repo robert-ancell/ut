@@ -88,6 +88,7 @@ ut_sources = [
   'ut-utf8-encoder.c',
   'ut-utf8-string.c',
   'ut-writable-input-stream.c',
+  'wayland/ut-wayland-client.c',
   'x11/ut-x11-access-error.c',
   'x11/ut-x11-alloc-error.c',
   'x11/ut-x11-atom-error.c',
@@ -238,6 +239,11 @@ x11_client_test = executable('ut-x11-client-test',
                              'x11/ut-x11-client-test.c',
                              link_with: ut_lib)
 #test('X11 Client', x11_client_test)
+
+wayland_client_test = executable('ut-wayland-client-test',
+                             'wayland/ut-wayland-client-test.c',
+                             link_with: ut_lib)
+#test('wayland Client', wayland_client_test)
 
 dbus_message_encoder_test = executable('ut-dbus-message-encoder-test',
                                        'dbus/ut-dbus-message-encoder-test.c',
