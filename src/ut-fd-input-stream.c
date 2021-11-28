@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include "ut-cancel.h"
@@ -9,13 +10,16 @@
 #include "ut-event-loop.h"
 #include "ut-fd-input-stream.h"
 #include "ut-input-stream.h"
+#include "ut-int32-list.h"
 #include "ut-list.h"
+#include "ut-uint8-array-with-fds.h"
 #include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
 
 typedef struct {
   UtObject object;
   int fd;
+  bool receive_fds;
   UtObject *read_buffer;
   bool active;
   bool complete;
@@ -40,9 +44,42 @@ static void read_cb(void *user_data) {
   ut_list_resize(self->read_buffer, buffer_length + self->block_size);
 
   // Read a block.
-  ssize_t n_read =
-      read(self->fd, ut_uint8_array_get_data(self->read_buffer) + buffer_length,
-           self->block_size);
+  ssize_t n_read;
+  UtObjectRef fds = NULL;
+  if (self->receive_fds) {
+    struct iovec iov;
+    iov.iov_base = ut_uint8_array_get_data(self->read_buffer) + buffer_length;
+    iov.iov_len = self->block_size;
+    uint8_t control_data[CMSG_SPACE(sizeof(int) * 1024)];
+    struct msghdr msg;
+    msg.msg_name = NULL;
+    msg.msg_namelen = 0;
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+    msg.msg_control = control_data;
+    msg.msg_controllen = sizeof(control_data);
+    msg.msg_flags = 0;
+    n_read = recvmsg(self->fd, &msg, 0);
+    for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg); cmsg != NULL;
+         cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+      if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
+        if (fds == NULL) {
+          fds = ut_int32_list_new();
+        }
+
+        size_t cmsg_fds_length = cmsg->cmsg_len / sizeof(int);
+        int cmsg_fds[cmsg_fds_length];
+        memcpy(cmsg_fds, CMSG_DATA(cmsg), cmsg->cmsg_len);
+        for (size_t i = 0; i < cmsg_fds_length; i++) {
+          ut_int32_list_append(fds, cmsg_fds[i]);
+        }
+      }
+    }
+  } else {
+    n_read = read(self->fd,
+                  ut_uint8_array_get_data(self->read_buffer) + buffer_length,
+                  self->block_size);
+  }
   assert(n_read >= 0);
   buffer_length += n_read;
   ut_list_resize(self->read_buffer, buffer_length);
@@ -53,8 +90,10 @@ static void read_cb(void *user_data) {
     self->complete = true;
   }
 
-  size_t n_used =
-      self->callback(self->user_data, self->read_buffer, self->complete);
+  UtObjectRef buffer = fds != NULL
+                           ? ut_uint8_array_with_fds_new(self->read_buffer, fds)
+                           : ut_object_ref(self->read_buffer);
+  size_t n_used = self->callback(self->user_data, buffer, self->complete);
   assert(n_used <= buffer_length);
   ut_list_remove(self->read_buffer, 0, n_used);
 
@@ -67,6 +106,7 @@ static void read_cb(void *user_data) {
 static void ut_fd_input_stream_init(UtObject *object) {
   UtFdInputStream *self = (UtFdInputStream *)object;
   self->fd = -1;
+  self->receive_fds = false;
   self->read_buffer = ut_uint8_array_new();
   self->active = false;
   self->complete = false;
@@ -147,6 +187,12 @@ UtObject *ut_fd_input_stream_new(int fd) {
   UtFdInputStream *self = (UtFdInputStream *)object;
   self->fd = fd;
   return object;
+}
+
+void ut_fd_input_stream_set_receive_fds(UtObject *object, bool receive_fds) {
+  assert(ut_object_is_fd_input_stream(object));
+  UtFdInputStream *self = (UtFdInputStream *)object;
+  self->receive_fds = receive_fds;
 }
 
 bool ut_object_is_fd_input_stream(UtObject *object) {
