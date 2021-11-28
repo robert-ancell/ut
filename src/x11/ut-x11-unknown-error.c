@@ -22,7 +22,7 @@ static UtX11ErrorInterface x11_error_interface = {};
 static UtObjectInterface object_interface = {
     .type_name = "UtX11UnknownError",
     .init = ut_x11_unknown_error_init,
-    .interfaces = {{&ut_x11_error_id, &x11_error_interface}}};
+    .interfaces = {{&ut_x11_error_id, &x11_error_interface}, {NULL, NULL}}};
 
 UtObject *ut_x11_unknown_error_new(uint8_t code, uint8_t major_opcode,
                                    uint16_t minor_opcode) {

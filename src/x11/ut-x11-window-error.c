@@ -18,7 +18,7 @@ static UtX11ErrorInterface x11_error_interface = {};
 static UtObjectInterface object_interface = {
     .type_name = "UtX11WindowError",
     .init = ut_x11_window_error_init,
-    .interfaces = {{&ut_x11_error_id, &x11_error_interface}}};
+    .interfaces = {{&ut_x11_error_id, &x11_error_interface}, {NULL, NULL}}};
 
 UtObject *ut_x11_window_error_new(uint32_t window) {
   UtObject *object = ut_object_new(sizeof(UtX11WindowError), &object_interface);

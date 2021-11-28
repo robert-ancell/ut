@@ -18,7 +18,7 @@ static UtX11ErrorInterface x11_error_interface = {};
 static UtObjectInterface object_interface = {
     .type_name = "UtX11DrawableError",
     .init = ut_x11_drawable_error_init,
-    .interfaces = {{&ut_x11_error_id, &x11_error_interface}}};
+    .interfaces = {{&ut_x11_error_id, &x11_error_interface}, {NULL, NULL}}};
 
 UtObject *ut_x11_drawable_error_new(uint32_t drawable) {
   UtObject *object =

@@ -18,7 +18,7 @@ static UtX11ErrorInterface x11_error_interface = {};
 static UtObjectInterface object_interface = {
     .type_name = "UtX11PixmapError",
     .init = ut_x11_pixmap_error_init,
-    .interfaces = {{&ut_x11_error_id, &x11_error_interface}}};
+    .interfaces = {{&ut_x11_error_id, &x11_error_interface}, {NULL, NULL}}};
 
 UtObject *ut_x11_pixmap_error_new(uint32_t pixmap) {
   UtObject *object = ut_object_new(sizeof(UtX11PixmapError), &object_interface);
