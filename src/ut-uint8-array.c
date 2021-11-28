@@ -42,7 +42,6 @@ static uint8_t *ut_uint8_array_take_data(UtObject *object) {
 
 static void ut_uint8_array_insert(UtObject *object, size_t index,
                                   const uint8_t *data, size_t data_length) {
-  assert(ut_object_is_uint8_array(object));
   UtUint8Array *self = (UtUint8Array *)object;
 
   size_t orig_data_length = self->data_length;
@@ -63,7 +62,6 @@ static void ut_uint8_array_insert(UtObject *object, size_t index,
 
 static void ut_uint8_array_append(UtObject *object, const uint8_t *data,
                                   size_t data_length) {
-  assert(ut_object_is_uint8_array(object));
   UtUint8Array *self = (UtUint8Array *)object;
   ut_uint8_array_insert(object, self->data_length, data, data_length);
 }
