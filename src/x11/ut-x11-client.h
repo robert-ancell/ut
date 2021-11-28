@@ -15,11 +15,6 @@ typedef void (*UtX11GetPropertyCallback)(void *user_data, uint32_t type,
                                          UtObject *error);
 typedef void (*UtX11ListPropertiesCallback)(void *user_data, UtObject *atoms,
                                             UtObject *error);
-typedef void (*UtX11QueryExtensionCallback)(void *user_data, bool present,
-                                            uint8_t major_opcode,
-                                            uint8_t first_event,
-                                            uint8_t first_error,
-                                            UtObject *error);
 typedef void (*UtX11ListExtensionsCallback)(void *user_data, UtObject *names,
                                             UtObject *error);
 
@@ -79,10 +74,6 @@ uint32_t ut_x11_client_create_pixmap(UtObject *object, uint32_t drawable,
                                      uint8_t depth);
 
 void ut_x11_client_free_pixmap(UtObject *object, uint32_t pixmap);
-
-void ut_x11_client_query_extension(UtObject *object, const char *name,
-                                   UtX11QueryExtensionCallback callback,
-                                   void *user_data, UtObject *cancel);
 
 void ut_x11_client_list_extensions(UtObject *object,
                                    UtX11ListExtensionsCallback callback,
