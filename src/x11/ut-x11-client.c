@@ -44,8 +44,7 @@ typedef struct _UtX11Client UtX11Client;
 typedef struct _Request Request;
 
 typedef void (*DecodeReplyFunction)(UtX11Client *self, Request *request,
-                                    uint8_t data0, UtObject *data,
-                                    size_t *offset);
+                                    uint8_t data0, UtObject *data);
 typedef void (*HandleErrorFunction)(UtX11Client *self, Request *request,
                                     UtObject *error);
 
@@ -293,22 +292,14 @@ static Request *find_request(UtX11Client *self, uint16_t sequence_number) {
   return NULL;
 }
 
-static uint8_t peek_card8(UtObject *buffer, size_t *offset) {
-  return ut_uint8_list_get_element(buffer, *offset);
-}
-
 static uint8_t read_card8(UtObject *buffer, size_t *offset) {
-  uint8_t value = peek_card8(buffer, offset);
+  uint8_t value = ut_uint8_list_get_element(buffer, *offset);
   (*offset)++;
   return value;
 }
 
 static bool read_bool(UtObject *buffer, size_t *offset) {
   return read_card8(buffer, offset) != 0;
-}
-
-static size_t get_remaining(UtObject *buffer, size_t *offset) {
-  return ut_list_get_length(buffer) - *offset;
 }
 
 static void read_padding(UtObject *buffer, size_t *offset, size_t count) {
@@ -342,75 +333,73 @@ static uint32_t read_card32(UtObject *buffer, size_t *offset) {
 
 static char *read_string8(UtObject *buffer, size_t *offset, size_t length) {
   assert(ut_list_get_length(buffer) >= *offset + length);
-  char *string =
-      strndup((const char *)ut_uint8_array_get_data(buffer) + *offset, length);
-  (*offset) += length;
-  return string;
+  UtObjectRef value = ut_uint8_array_new();
+  for (size_t i = 0; i < length; i++) {
+    ut_uint8_list_append(value, ut_uint8_list_get_element(buffer, *offset));
+    (*offset)++;
+  }
+  ut_uint8_list_append(value, '\0');
+  return (char *)ut_uint8_list_take_data(value);
 }
 
-static bool decode_setup_failed(UtX11Client *self, UtObject *data,
-                                size_t *offset) {
-  size_t o = *offset;
-
-  size_t data_length = get_remaining(data, &o);
+static size_t decode_setup_failed(UtX11Client *self, UtObject *data) {
+  size_t data_length = ut_list_get_length(data);
   if (data_length < 8) {
-    return false;
+    return 0;
   }
 
-  assert(read_card8(data, &o) == 0);
-  uint8_t reason_length = read_card8(data, &o);
-  /*uint16_t protocol_major_version = */ read_card16(data, &o);
-  /*uint16_t protocol_minor_version = */ read_card16(data, &o);
-  uint16_t length = read_card16(data, &o);
+  size_t offset = 0;
+  assert(read_card8(data, &offset) == 0);
+  uint8_t reason_length = read_card8(data, &offset);
+  /*uint16_t protocol_major_version = */ read_card16(data, &offset);
+  /*uint16_t protocol_minor_version = */ read_card16(data, &offset);
+  uint16_t length = read_card16(data, &offset);
   size_t message_length = (length + 2) * 4;
   if (data_length < message_length) {
-    return false;
+    return 0;
   }
-  ut_cstring_ref reason = read_string8(data, &o, reason_length);
+  ut_cstring_ref reason = read_string8(data, &offset, reason_length);
 
   UtObjectRef error =
       ut_general_error_new("Failed to connect to X server: %s", reason);
   self->connect_callback(self->connect_user_data, error);
 
-  *offset = o;
-  return true;
+  return offset;
 }
 
-static bool decode_setup_success(UtX11Client *self, UtObject *data,
-                                 size_t *offset) {
-  size_t o = *offset;
-
-  size_t data_length = get_remaining(data, &o);
+static size_t decode_setup_success(UtX11Client *self, UtObject *data) {
+  size_t data_length = ut_list_get_length(data);
   if (data_length < 8) {
-    return false;
+    return 0;
   }
 
-  assert(read_card8(data, &o) == 1);
-  read_padding(data, &o, 1);
-  /*uint16_t protocol_major_version = */ read_card16(data, &o);
-  /*uint16_t protocol_minor_version = */ read_card16(data, &o);
-  uint16_t length = read_card16(data, &o);
+  size_t offset = 0;
+  assert(read_card8(data, &offset) == 1);
+  read_padding(data, &offset, 1);
+  /*uint16_t protocol_major_version = */ read_card16(data, &offset);
+  /*uint16_t protocol_minor_version = */ read_card16(data, &offset);
+  uint16_t length = read_card16(data, &offset);
   size_t message_length = (length + 2) * 4;
   if (data_length < message_length) {
-    return false;
+    return 0;
   }
-  self->release_number = read_card32(data, &o);
-  self->resource_id_base = read_card32(data, &o);
-  self->resource_id_mask = read_card32(data, &o);
-  read_card32(data, &o); // motion_buffer_size
-  uint16_t vendor_length = read_card16(data, &o);
-  self->maximum_request_length = read_card16(data, &o);
-  size_t screens_length = read_card8(data, &o);
-  size_t pixmap_formats_length = read_card8(data, &o);
-  read_card8(data, &o); // image_byte_order
-  read_card8(data, &o); // bitmap_format_bit_order
-  read_card8(data, &o); // bitmap_format_scanline_unit
-  read_card8(data, &o); // bitmap_format_scanline_pad
-  read_card8(data, &o); // min_keycode
-  read_card8(data, &o); // max_keycode
-  read_padding(data, &o, 4);
-  self->vendor = read_string8(data, &o, vendor_length);
-  read_align_padding(data, &o, 4);
+  self->release_number = read_card32(data, &offset);
+  self->resource_id_base = read_card32(data, &offset);
+  self->resource_id_mask = read_card32(data, &offset);
+  read_card32(data, &offset); // motion_buffer_size
+  uint16_t vendor_length = read_card16(data, &offset);
+  self->maximum_request_length = read_card16(data, &offset);
+  size_t screens_length = read_card8(data, &offset);
+  size_t pixmap_formats_length = read_card8(data, &offset);
+  read_card8(data, &offset); // image_byte_order
+  read_card8(data, &offset); // bitmap_format_bit_order
+  read_card8(data, &offset); // bitmap_format_scanline_unit
+  read_card8(data, &offset); // bitmap_format_scanline_pad
+  read_card8(data, &offset); // min_keycode
+  read_card8(data, &offset); // max_keycode
+  read_padding(data, &offset, 4);
+  self->vendor = read_string8(data, &offset, vendor_length);
+  read_align_padding(data, &offset, 4);
 
   self->pixmap_formats =
       malloc(sizeof(X11PixmapFormat *) * pixmap_formats_length);
@@ -418,10 +407,10 @@ static bool decode_setup_success(UtX11Client *self, UtObject *data,
   for (size_t i = 0; i < pixmap_formats_length; i++) {
     X11PixmapFormat *format = self->pixmap_formats[i] =
         malloc(sizeof(X11PixmapFormat));
-    format->depth = read_card8(data, &o);          // depth
-    format->bits_per_pixel = read_card8(data, &o); // bits_per_pixel
-    format->scanline_pad = read_card8(data, &o);   // scanline_pad
-    read_padding(data, &o, 5);
+    format->depth = read_card8(data, &offset);          // depth
+    format->bits_per_pixel = read_card8(data, &offset); // bits_per_pixel
+    format->scanline_pad = read_card8(data, &offset);   // scanline_pad
+    read_padding(data, &offset, 5);
   }
 
   self->screens = malloc(sizeof(X11Screen *) * screens_length);
@@ -429,30 +418,30 @@ static bool decode_setup_success(UtX11Client *self, UtObject *data,
   for (size_t i = 0; i < screens_length; i++) {
     X11Screen *screen = self->screens[i] = malloc(sizeof(X11Screen));
 
-    screen->root = read_card32(data, &o);
-    screen->default_colormap = read_card32(data, &o);
-    screen->white_pixel = read_card32(data, &o);
-    screen->black_pixel = read_card32(data, &o);
-    screen->current_input_masks = read_card32(data, &o);
-    screen->width_in_pixels = read_card16(data, &o);
-    screen->height_in_pixels = read_card16(data, &o);
-    screen->width_in_millimeters = read_card16(data, &o);
-    screen->height_in_millimeters = read_card16(data, &o);
-    read_card16(data, &o); // min_installed_maps
-    read_card16(data, &o); // max_installed_maps
+    screen->root = read_card32(data, &offset);
+    screen->default_colormap = read_card32(data, &offset);
+    screen->white_pixel = read_card32(data, &offset);
+    screen->black_pixel = read_card32(data, &offset);
+    screen->current_input_masks = read_card32(data, &offset);
+    screen->width_in_pixels = read_card16(data, &offset);
+    screen->height_in_pixels = read_card16(data, &offset);
+    screen->width_in_millimeters = read_card16(data, &offset);
+    screen->height_in_millimeters = read_card16(data, &offset);
+    read_card16(data, &offset); // min_installed_maps
+    read_card16(data, &offset); // max_installed_maps
     screen->root_visual = NULL;
-    uint32_t root_visual_id = read_card32(data, &o);
-    read_card8(data, &o); // backing_stores
-    read_card8(data, &o); // save_unders
-    read_card8(data, &o); // root_depth
+    uint32_t root_visual_id = read_card32(data, &offset);
+    read_card8(data, &offset); // backing_stores
+    read_card8(data, &offset); // save_unders
+    read_card8(data, &offset); // root_depth
     screen->visuals = NULL;
     screen->visuals_length = 0;
-    size_t allowed_depths_length = read_card8(data, &o);
+    size_t allowed_depths_length = read_card8(data, &offset);
     for (size_t j = 0; j < allowed_depths_length; j++) {
-      uint8_t depth = read_card8(data, &o);
-      read_padding(data, &o, 1);
-      size_t visuals_length = read_card16(data, &o);
-      read_padding(data, &o, 4);
+      uint8_t depth = read_card8(data, &offset);
+      read_padding(data, &offset, 1);
+      size_t visuals_length = read_card16(data, &offset);
+      read_padding(data, &offset, 4);
       size_t first_visual = screen->visuals_length;
       screen->visuals_length += visuals_length;
       screen->visuals = realloc(screen->visuals,
@@ -460,15 +449,15 @@ static bool decode_setup_success(UtX11Client *self, UtObject *data,
       for (size_t k = 0; k < visuals_length; k++) {
         X11Visual *visual = screen->visuals[first_visual + k] =
             malloc(sizeof(X11Visual));
-        visual->id = read_card32(data, &o);
+        visual->id = read_card32(data, &offset);
         visual->depth = depth;
-        visual->class = read_card8(data, &o);
-        visual->bits_per_rgb_value = read_card8(data, &o);
-        visual->colormap_entries = read_card16(data, &o);
-        visual->red_mask = read_card32(data, &o);
-        visual->blue_mask = read_card32(data, &o);
-        visual->green_mask = read_card32(data, &o);
-        read_padding(data, &o, 4);
+        visual->class = read_card8(data, &offset);
+        visual->bits_per_rgb_value = read_card8(data, &offset);
+        visual->colormap_entries = read_card16(data, &offset);
+        visual->red_mask = read_card32(data, &offset);
+        visual->blue_mask = read_card32(data, &offset);
+        visual->green_mask = read_card32(data, &offset);
+        read_padding(data, &offset, 4);
 
         if (visual->id == root_visual_id) {
           screen->root_visual = visual;
@@ -481,76 +470,63 @@ static bool decode_setup_success(UtX11Client *self, UtObject *data,
 
   self->connect_callback(self->connect_user_data, NULL);
 
-  *offset = o;
-  return true;
+  return offset;
 }
 
-static bool decode_setup_authenticate(UtObject *data, size_t *offset) {
-  return false;
-}
+static size_t decode_setup_authenticate(UtObject *message) { return 0; }
 
-static bool decode_setup_message(UtX11Client *self, UtObject *data,
-                                 size_t *offset) {
-  uint8_t status = peek_card8(data, offset);
+static size_t decode_setup_message(UtX11Client *self, UtObject *message) {
+  uint8_t status = ut_uint8_list_get_element(message, 0);
   if (status == 0) {
-    return decode_setup_failed(self, data, offset);
+    return decode_setup_failed(self, message);
   } else if (status == 1) {
-    return decode_setup_success(self, data, offset);
+    return decode_setup_success(self, message);
   } else if (status == 2) {
-    return decode_setup_authenticate(data, offset);
+    return decode_setup_authenticate(message);
   } else {
     assert(false);
   }
 }
 
-static bool decode_error(UtX11Client *self, UtObject *data, size_t *offset) {
-  if (get_remaining(data, offset) < 32) {
+static size_t decode_error(UtX11Client *self, UtObject *data) {
+  if (ut_list_get_length(data) < 32) {
     return false;
   }
 
-  assert(read_card8(data, offset) == 0);
-  uint8_t code = read_card8(data, offset);
-  uint16_t sequence_number = read_card16(data, offset);
-  uint32_t value = read_card32(data, offset);
-  uint16_t minor_opcode = read_card16(data, offset);
-  uint8_t major_opcode = read_card8(data, offset);
+  UtObjectRef error_data = ut_list_get_sublist(data, 0, 32);
+
+  size_t offset = 0;
+  assert(read_card8(error_data, &offset) == 0);
+  uint8_t code = read_card8(error_data, &offset);
+  uint16_t sequence_number = read_card16(error_data, &offset);
+  uint32_t value = read_card32(error_data, &offset);
+  uint16_t minor_opcode = read_card16(error_data, &offset);
+  uint8_t major_opcode = read_card8(error_data, &offset);
 
   UtObjectRef error = NULL;
   if (code == 1) {
-    read_padding(data, offset, 21);
     error = ut_x11_request_error_new();
   } else if (code == 2) {
-    read_padding(data, offset, 21);
     error = ut_x11_value_error_new(value);
   } else if (code == 3) {
-    read_padding(data, offset, 21);
     error = ut_x11_window_error_new(value);
   } else if (code == 4) {
-    read_padding(data, offset, 21);
     error = ut_x11_pixmap_error_new(value);
   } else if (code == 5) {
-    read_padding(data, offset, 21);
     error = ut_x11_atom_error_new(value);
   } else if (code == 8) {
-    read_padding(data, offset, 21);
     error = ut_x11_match_error_new();
   } else if (code == 9) {
-    read_padding(data, offset, 21);
     error = ut_x11_drawable_error_new(value);
   } else if (code == 14) {
-    read_padding(data, offset, 21);
     error = ut_x11_id_choice_error_new(value);
   } else if (code == 15) {
-    read_padding(data, offset, 21);
     error = ut_x11_name_error_new();
   } else if (code == 16) {
-    read_padding(data, offset, 21);
     error = ut_x11_length_error_new(sequence_number);
   } else if (code == 17) {
-    read_padding(data, offset, 21);
     error = ut_x11_implementation_error_new();
   } else {
-    read_padding(data, offset, 28);
     error = ut_x11_unknown_error_new(code, major_opcode, minor_opcode);
   }
 
@@ -561,14 +537,14 @@ static bool decode_error(UtX11Client *self, UtObject *data, size_t *offset) {
       self->
    }*/
 
-  return true;
+  return 32;
 }
 
 static void decode_intern_atom_reply(UtX11Client *self, Request *request,
-                                     uint8_t data0, UtObject *data,
-                                     size_t *offset) {
-  uint32_t atom = read_card32(data, offset);
-  read_padding(data, offset, 20);
+                                     uint8_t data0, UtObject *data) {
+  size_t offset = 0;
+  uint32_t atom = read_card32(data, &offset);
+  read_padding(data, &offset, 20);
 
   if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11InternAtomCallback callback =
@@ -587,12 +563,12 @@ static void handle_intern_atom_error(UtX11Client *self, Request *request,
 }
 
 static void decode_get_atom_name_reply(UtX11Client *self, Request *request,
-                                       uint8_t data0, UtObject *data,
-                                       size_t *offset) {
-  uint16_t name_length = read_card16(data, offset);
-  read_padding(data, offset, 22);
-  ut_cstring_ref name = read_string8(data, offset, name_length);
-  read_align_padding(data, offset, 4);
+                                       uint8_t data0, UtObject *data) {
+  size_t offset = 0;
+  uint16_t name_length = read_card16(data, &offset);
+  read_padding(data, &offset, 22);
+  ut_cstring_ref name = read_string8(data, &offset, name_length);
+  read_align_padding(data, &offset, 4);
 
   if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11GetAtomNameCallback callback =
@@ -611,34 +587,34 @@ static void handle_get_atom_name_error(UtX11Client *self, Request *request,
 }
 
 static void decode_get_property_reply(UtX11Client *self, Request *request,
-                                      uint8_t data0, UtObject *data,
-                                      size_t *offset) {
+                                      uint8_t data0, UtObject *data) {
+  size_t offset = 0;
   uint8_t format = data0;
-  uint32_t type = read_card32(data, offset);
-  uint32_t bytes_after = read_card32(data, offset);
-  size_t length = read_card32(data, offset);
-  read_padding(data, offset, 12);
+  uint32_t type = read_card32(data, &offset);
+  uint32_t bytes_after = read_card32(data, &offset);
+  size_t length = read_card32(data, &offset);
+  read_padding(data, &offset, 12);
   UtObjectRef value = NULL;
   if (format == 0) {
   } else if (format == 8) {
     value = ut_uint8_array_new();
     for (size_t i = 0; i < length; i++) {
-      ut_uint8_list_append(value, read_card8(data, offset));
+      ut_uint8_list_append(value, read_card8(data, &offset));
     }
   } else if (format == 16) {
     value = ut_uint16_list_new();
     for (size_t i = 0; i < length; i++) {
-      ut_uint16_list_append(value, read_card16(data, offset));
+      ut_uint16_list_append(value, read_card16(data, &offset));
     }
   } else if (format == 32) {
     value = ut_uint32_list_new();
     for (size_t i = 0; i < length; i++) {
-      ut_uint32_list_append(value, read_card32(data, offset));
+      ut_uint32_list_append(value, read_card32(data, &offset));
     }
   } else {
     assert(false);
   }
-  read_align_padding(data, offset, 4);
+  read_align_padding(data, &offset, 4);
 
   if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11GetPropertyCallback callback =
@@ -657,13 +633,13 @@ static void handle_get_property_error(UtX11Client *self, Request *request,
 }
 
 static void decode_list_properties_reply(UtX11Client *self, Request *request,
-                                         uint8_t data0, UtObject *data,
-                                         size_t *offset) {
-  size_t atoms_length = read_card16(data, offset);
-  read_padding(data, offset, 22);
+                                         uint8_t data0, UtObject *data) {
+  size_t offset = 0;
+  size_t atoms_length = read_card16(data, &offset);
+  read_padding(data, &offset, 22);
   UtObjectRef atoms = ut_uint32_list_new();
   for (size_t i = 0; i < atoms_length; i++) {
-    ut_uint32_list_append(atoms, read_card32(data, offset));
+    ut_uint32_list_append(atoms, read_card32(data, &offset));
   }
 
   if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
@@ -683,13 +659,13 @@ static void handle_list_properties_error(UtX11Client *self, Request *request,
 }
 
 static void decode_query_extension_reply(UtX11Client *self, Request *request,
-                                         uint8_t data0, UtObject *data,
-                                         size_t *offset) {
-  uint8_t major_opcode = read_card8(data, offset);
-  bool present = read_bool(data, offset);
-  uint8_t first_event = read_card8(data, offset);
-  uint8_t first_error = read_card8(data, offset);
-  read_padding(data, offset, 20);
+                                         uint8_t data0, UtObject *data) {
+  size_t offset = 0;
+  uint8_t major_opcode = read_card8(data, &offset);
+  bool present = read_bool(data, &offset);
+  uint8_t first_event = read_card8(data, &offset);
+  uint8_t first_error = read_card8(data, &offset);
+  read_padding(data, &offset, 20);
 
   if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11QueryExtensionCallback callback =
@@ -709,17 +685,17 @@ static void handle_query_extension_error(UtX11Client *self, Request *request,
 }
 
 static void decode_list_extensions_reply(UtX11Client *self, Request *request,
-                                         uint8_t data0, UtObject *data,
-                                         size_t *offset) {
-  read_padding(data, offset, 24);
+                                         uint8_t data0, UtObject *data) {
+  size_t offset = 0;
+  read_padding(data, &offset, 24);
   size_t names_length = data0;
   UtObjectRef names = ut_string_list_new();
   for (size_t i = 0; i < names_length; i++) {
-    uint8_t name_length = read_card8(data, offset);
-    ut_cstring_ref name = read_string8(data, offset, name_length);
+    uint8_t name_length = read_card8(data, &offset);
+    ut_cstring_ref name = read_string8(data, &offset, name_length);
     ut_string_list_append(names, name);
   }
-  read_align_padding(data, offset, 4);
+  read_align_padding(data, &offset, 4);
 
   if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11ListExtensionsCallback callback =
@@ -737,233 +713,254 @@ static void handle_list_extensions_error(UtX11Client *self, Request *request,
   }
 }
 
-static bool decode_reply(UtX11Client *self, UtObject *data, size_t *offset) {
-  if (get_remaining(data, offset) < 4) {
-    return false;
+static size_t decode_reply(UtX11Client *self, UtObject *data) {
+  size_t data_length = ut_list_get_length(data);
+  if (data_length < 4) {
+    return 0;
   }
 
-  size_t o = *offset;
-  assert(read_card8(data, &o) == 1);
-  uint8_t data0 = read_card8(data, &o);
-  uint16_t sequence_number = read_card16(data, &o);
-  uint32_t length = read_card32(data, &o);
+  size_t offset = 0;
+  assert(read_card8(data, &offset) == 1);
+  uint8_t data0 = read_card8(data, &offset);
+  uint16_t sequence_number = read_card16(data, &offset);
+  uint32_t length = read_card32(data, &offset);
 
-  size_t payload_length = 24 + length * 4;
-  if (get_remaining(data, &o) < payload_length) {
-    return false;
+  size_t payload_length = 32 + length * 4;
+  if (data_length < payload_length) {
+    return 0;
   }
 
   Request *request = find_request(self, sequence_number);
   if (request != NULL) {
-    size_t reply_offset = o;
-    request->decode_reply_function(self, request, data0, data, &reply_offset);
+    UtObjectRef payload =
+        ut_list_get_sublist(data, offset, payload_length - offset);
+    request->decode_reply_function(self, request, data0, payload);
   } else {
     // FIXME: Warn about unexpected reply.
   }
-  read_padding(data, &o, payload_length);
 
-  *offset = o;
-  return true;
+  return payload_length;
 }
 
-static UtObject *decode_key_press(UtObject *data, size_t *offset) {
-  uint8_t keycode = read_card8(data, offset);
-  read_card16(data, offset); // sequence_number
-  read_card32(data, offset); // time
-  read_card32(data, offset); // root
-  uint32_t window = read_card32(data, offset);
-  read_card32(data, offset); // child
-  read_int16(data, offset);  // root_x
-  read_int16(data, offset);  // root_y
-  int16_t x = read_int16(data, offset);
-  int16_t y = read_int16(data, offset);
-  read_card16(data, offset); // state
-  read_card8(data, offset);  // same_screen
-  read_padding(data, offset, 1);
+static UtObject *decode_key_press(UtObject *data) {
+  size_t offset = 0;
+  assert(read_card8(data, &offset) == 2);
+  uint8_t keycode = read_card8(data, &offset);
+  read_card16(data, &offset); // sequence_number
+  read_card32(data, &offset); // time
+  read_card32(data, &offset); // root
+  uint32_t window = read_card32(data, &offset);
+  read_card32(data, &offset); // child
+  read_int16(data, &offset);  // root_x
+  read_int16(data, &offset);  // root_y
+  int16_t x = read_int16(data, &offset);
+  int16_t y = read_int16(data, &offset);
+  read_card16(data, &offset); // state
+  read_card8(data, &offset);  // same_screen
+  read_padding(data, &offset, 1);
 
   return ut_x11_key_press_new(window, keycode, x, y);
 }
 
-static UtObject *decode_key_release(UtObject *data, size_t *offset) {
-  uint8_t keycode = read_card8(data, offset);
-  read_card16(data, offset); // sequence_number
-  read_card32(data, offset); // time
-  read_card32(data, offset); // root
-  uint32_t window = read_card32(data, offset);
-  read_card32(data, offset); // child
-  read_int16(data, offset);  // root_x
-  read_int16(data, offset);  // root_y
-  int16_t x = read_int16(data, offset);
-  int16_t y = read_int16(data, offset);
-  read_card16(data, offset); // state
-  read_card8(data, offset);  // same_screen
-  read_padding(data, offset, 1);
+static UtObject *decode_key_release(UtObject *data) {
+  size_t offset = 0;
+  assert(read_card8(data, &offset) == 3);
+  uint8_t keycode = read_card8(data, &offset);
+  read_card16(data, &offset); // sequence_number
+  read_card32(data, &offset); // time
+  read_card32(data, &offset); // root
+  uint32_t window = read_card32(data, &offset);
+  read_card32(data, &offset); // child
+  read_int16(data, &offset);  // root_x
+  read_int16(data, &offset);  // root_y
+  int16_t x = read_int16(data, &offset);
+  int16_t y = read_int16(data, &offset);
+  read_card16(data, &offset); // state
+  read_card8(data, &offset);  // same_screen
+  read_padding(data, &offset, 1);
 
   return ut_x11_key_release_new(window, keycode, x, y);
 }
 
-static UtObject *decode_button_press(UtObject *data, size_t *offset) {
-  uint8_t button = read_card8(data, offset);
-  read_card16(data, offset); // sequence_number
-  read_card32(data, offset); // time
-  read_card32(data, offset); // root
-  uint32_t window = read_card32(data, offset);
-  read_card32(data, offset); // child
-  read_int16(data, offset);  // root_x
-  read_int16(data, offset);  // root_y
-  int16_t x = read_int16(data, offset);
-  int16_t y = read_int16(data, offset);
-  read_card16(data, offset); // state
-  read_card8(data, offset);  // same_screen
-  read_padding(data, offset, 1);
+static UtObject *decode_button_press(UtObject *data) {
+  size_t offset = 0;
+  assert(read_card8(data, &offset) == 4);
+  uint8_t button = read_card8(data, &offset);
+  read_card16(data, &offset); // sequence_number
+  read_card32(data, &offset); // time
+  read_card32(data, &offset); // root
+  uint32_t window = read_card32(data, &offset);
+  read_card32(data, &offset); // child
+  read_int16(data, &offset);  // root_x
+  read_int16(data, &offset);  // root_y
+  int16_t x = read_int16(data, &offset);
+  int16_t y = read_int16(data, &offset);
+  read_card16(data, &offset); // state
+  read_card8(data, &offset);  // same_screen
+  read_padding(data, &offset, 1);
 
   return ut_x11_button_press_new(window, button, x, y);
 }
 
-static UtObject *decode_button_release(UtObject *data, size_t *offset) {
-  uint8_t button = read_card8(data, offset);
-  read_card16(data, offset); // sequence_number
-  read_card32(data, offset); // time
-  read_card32(data, offset); // root
-  uint32_t window = read_card32(data, offset);
-  read_card32(data, offset); // child
-  read_int16(data, offset);  // root_x
-  read_int16(data, offset);  // root_y
-  int16_t x = read_int16(data, offset);
-  int16_t y = read_int16(data, offset);
-  read_card16(data, offset); // state
-  read_card8(data, offset);  // same_screen
-  read_padding(data, offset, 1);
+static UtObject *decode_button_release(UtObject *data) {
+  size_t offset = 0;
+  assert(read_card8(data, &offset) == 5);
+  uint8_t button = read_card8(data, &offset);
+  read_card16(data, &offset); // sequence_number
+  read_card32(data, &offset); // time
+  read_card32(data, &offset); // root
+  uint32_t window = read_card32(data, &offset);
+  read_card32(data, &offset); // child
+  read_int16(data, &offset);  // root_x
+  read_int16(data, &offset);  // root_y
+  int16_t x = read_int16(data, &offset);
+  int16_t y = read_int16(data, &offset);
+  read_card16(data, &offset); // state
+  read_card8(data, &offset);  // same_screen
+  read_padding(data, &offset, 1);
 
   return ut_x11_button_release_new(window, button, x, y);
 }
 
-static UtObject *decode_motion_notify(UtObject *data, size_t *offset) {
-  read_card8(data, offset);  // detail
-  read_card16(data, offset); // sequence_number
-  read_card32(data, offset); // time
-  read_card32(data, offset); // root
-  uint32_t window = read_card32(data, offset);
-  read_card32(data, offset); // child
-  read_int16(data, offset);  // root_x
-  read_int16(data, offset);  // root_y
-  int16_t x = read_int16(data, offset);
-  int16_t y = read_int16(data, offset);
-  read_card16(data, offset); // state
-  read_card8(data, offset);  // same_screen
-  read_padding(data, offset, 1);
+static UtObject *decode_motion_notify(UtObject *data) {
+  size_t offset = 0;
+  assert(read_card8(data, &offset) == 6);
+  read_card8(data, &offset);  // detail
+  read_card16(data, &offset); // sequence_number
+  read_card32(data, &offset); // time
+  read_card32(data, &offset); // root
+  uint32_t window = read_card32(data, &offset);
+  read_card32(data, &offset); // child
+  read_int16(data, &offset);  // root_x
+  read_int16(data, &offset);  // root_y
+  int16_t x = read_int16(data, &offset);
+  int16_t y = read_int16(data, &offset);
+  read_card16(data, &offset); // state
+  read_card8(data, &offset);  // same_screen
+  read_padding(data, &offset, 1);
 
   return ut_x11_motion_notify_new(window, x, y);
 }
 
-static UtObject *decode_enter_notify(UtObject *data, size_t *offset) {
-  read_card8(data, offset);  // detail
-  read_card16(data, offset); // sequence_number
-  read_card32(data, offset); // time
-  read_card32(data, offset); // root
-  uint32_t window = read_card32(data, offset);
-  read_card32(data, offset); // child
-  read_int16(data, offset);  // root_x
-  read_int16(data, offset);  // root_y
-  int16_t x = read_int16(data, offset);
-  int16_t y = read_int16(data, offset);
-  read_card16(data, offset); // state
-  read_card8(data, offset);  // mode
-  read_card8(data, offset);  // same_screen, focus
+static UtObject *decode_enter_notify(UtObject *data) {
+  size_t offset = 0;
+  assert(read_card8(data, &offset) == 7);
+  read_card8(data, &offset);  // detail
+  read_card16(data, &offset); // sequence_number
+  read_card32(data, &offset); // time
+  read_card32(data, &offset); // root
+  uint32_t window = read_card32(data, &offset);
+  read_card32(data, &offset); // child
+  read_int16(data, &offset);  // root_x
+  read_int16(data, &offset);  // root_y
+  int16_t x = read_int16(data, &offset);
+  int16_t y = read_int16(data, &offset);
+  read_card16(data, &offset); // state
+  read_card8(data, &offset);  // mode
+  read_card8(data, &offset);  // same_screen, focus
 
   return ut_x11_enter_notify_new(window, x, y);
 }
 
-static UtObject *decode_leave_notify(UtObject *data, size_t *offset) {
-  read_card8(data, offset);  // detail
-  read_card16(data, offset); // sequence_number
-  read_card32(data, offset); // time
-  read_card32(data, offset); // root
-  uint32_t window = read_card32(data, offset);
-  read_card32(data, offset); // child
-  read_int16(data, offset);  // root_x
-  read_int16(data, offset);  // root_y
-  int16_t x = read_int16(data, offset);
-  int16_t y = read_int16(data, offset);
-  read_card16(data, offset); // state
-  read_card8(data, offset);  // mode
-  read_card8(data, offset);  // same_screen, focus
+static UtObject *decode_leave_notify(UtObject *data) {
+  size_t offset = 0;
+  assert(read_card8(data, &offset) == 8);
+  read_card8(data, &offset);  // detail
+  read_card16(data, &offset); // sequence_number
+  read_card32(data, &offset); // time
+  read_card32(data, &offset); // root
+  uint32_t window = read_card32(data, &offset);
+  read_card32(data, &offset); // child
+  read_int16(data, &offset);  // root_x
+  read_int16(data, &offset);  // root_y
+  int16_t x = read_int16(data, &offset);
+  int16_t y = read_int16(data, &offset);
+  read_card16(data, &offset); // state
+  read_card8(data, &offset);  // mode
+  read_card8(data, &offset);  // same_screen, focus
 
   return ut_x11_leave_notify_new(window, x, y);
 }
 
-static UtObject *decode_expose(UtObject *data, size_t *offset) {
-  read_padding(data, offset, 1);
-  read_card16(data, offset); // sequence_number
-  uint32_t window = read_card32(data, offset);
-  uint16_t x = read_card16(data, offset);
-  uint16_t y = read_card16(data, offset);
-  uint16_t width = read_card16(data, offset);
-  uint16_t height = read_card16(data, offset);
-  read_card16(data, offset); // count
-  read_padding(data, offset, 14);
+static UtObject *decode_expose(UtObject *data) {
+  size_t offset = 0;
+  assert(read_card8(data, &offset) == 12);
+  read_padding(data, &offset, 1);
+  read_card16(data, &offset); // sequence_number
+  uint32_t window = read_card32(data, &offset);
+  uint16_t x = read_card16(data, &offset);
+  uint16_t y = read_card16(data, &offset);
+  uint16_t width = read_card16(data, &offset);
+  uint16_t height = read_card16(data, &offset);
+  read_card16(data, &offset); // count
+  read_padding(data, &offset, 14);
 
   return ut_x11_expose_new(window, x, y, width, height);
 }
 
-static UtObject *decode_configure_notify(UtObject *data, size_t *offset) {
-  read_padding(data, offset, 1);
-  read_card16(data, offset); // sequence_number
-  read_card32(data, offset); // event
-  uint32_t window = read_card32(data, offset);
-  read_card32(data, offset); // above_sibling
-  int16_t x = read_int16(data, offset);
-  int16_t y = read_int16(data, offset);
-  uint16_t width = read_card16(data, offset);
-  uint16_t height = read_card16(data, offset);
-  read_card16(data, offset); // border_width
-  read_card8(data, offset);  // override_redirect
-  read_padding(data, offset, 5);
+static UtObject *decode_configure_notify(UtObject *data) {
+  size_t offset = 0;
+  assert(read_card8(data, &offset) == 22);
+  read_padding(data, &offset, 1);
+  read_card16(data, &offset); // sequence_number
+  read_card32(data, &offset); // event
+  uint32_t window = read_card32(data, &offset);
+  read_card32(data, &offset); // above_sibling
+  int16_t x = read_int16(data, &offset);
+  int16_t y = read_int16(data, &offset);
+  uint16_t width = read_card16(data, &offset);
+  uint16_t height = read_card16(data, &offset);
+  read_card16(data, &offset); // border_width
+  read_card8(data, &offset);  // override_redirect
+  read_padding(data, &offset, 5);
 
   return ut_x11_configure_notify_new(window, x, y, width, height);
 }
 
-static UtObject *decode_property_notify(UtObject *data, size_t *offset) {
-  read_padding(data, offset, 1);
-  read_card16(data, offset); // sequence_number
-  uint32_t window = read_card32(data, offset);
-  uint32_t atom = read_card32(data, offset);
-  read_card32(data, offset); // time
-  read_card8(data, offset);  // state
-  read_padding(data, offset, 15);
+static UtObject *decode_property_notify(UtObject *data) {
+  size_t offset = 0;
+  assert(read_card8(data, &offset) == 28);
+  read_padding(data, &offset, 1);
+  read_card16(data, &offset); // sequence_number
+  uint32_t window = read_card32(data, &offset);
+  uint32_t atom = read_card32(data, &offset);
+  read_card32(data, &offset); // time
+  read_card8(data, &offset);  // state
+  read_padding(data, &offset, 15);
 
   return ut_x11_property_notify_new(window, atom);
 }
 
-static bool decode_event(UtX11Client *self, UtObject *data, size_t *offset) {
-  if (get_remaining(data, offset) < 32) {
-    return false;
+static size_t decode_event(UtX11Client *self, UtObject *data) {
+  if (ut_list_get_length(data) < 32) {
+    return 0;
   }
 
-  uint8_t code = read_card8(data, offset);
+  UtObjectRef event_data = ut_list_get_sublist(data, 0, 32);
+
+  uint8_t code = ut_uint8_list_get_element(event_data, 0);
   UtObjectRef event = NULL;
   if (code == 2) {
-    event = decode_key_press(data, offset);
+    event = decode_key_press(event_data);
   } else if (code == 3) {
-    event = decode_key_release(data, offset);
+    event = decode_key_release(event_data);
   } else if (code == 4) {
-    event = decode_button_press(data, offset);
+    event = decode_button_press(event_data);
   } else if (code == 5) {
-    event = decode_button_release(data, offset);
+    event = decode_button_release(event_data);
   } else if (code == 6) {
-    event = decode_motion_notify(data, offset);
+    event = decode_motion_notify(event_data);
   } else if (code == 7) {
-    event = decode_enter_notify(data, offset);
+    event = decode_enter_notify(event_data);
   } else if (code == 8) {
-    event = decode_leave_notify(data, offset);
+    event = decode_leave_notify(event_data);
   } else if (code == 12) {
-    event = decode_expose(data, offset);
+    event = decode_expose(event_data);
   } else if (code == 22) {
-    event = decode_configure_notify(data, offset);
+    event = decode_configure_notify(event_data);
   } else if (code == 28) {
-    event = decode_property_notify(data, offset);
+    event = decode_property_notify(event_data);
   } else {
-    read_padding(data, offset, 31);
     event = ut_x11_unknown_event_new(code);
   }
 
@@ -972,17 +969,17 @@ static bool decode_event(UtX11Client *self, UtObject *data, size_t *offset) {
     self->event_callback(self->event_user_data, event);
   }
 
-  return true;
+  return 32;
 }
 
-static bool decode_message(UtX11Client *self, UtObject *data, size_t *offset) {
-  uint8_t code = peek_card8(data, offset);
+static size_t decode_message(UtX11Client *self, UtObject *data) {
+  uint8_t code = ut_uint8_list_get_element(data, 0);
   if (code == 0) {
-    return decode_error(self, data, offset);
+    return decode_error(self, data);
   } else if (code == 1) {
-    return decode_reply(self, data, offset);
+    return decode_reply(self, data);
   } else {
-    return decode_event(self, data, offset);
+    return decode_event(self, data);
   }
 }
 
@@ -990,16 +987,22 @@ static size_t read_cb(void *user_data, UtObject *data, bool complete) {
   UtX11Client *self = user_data;
 
   size_t offset = 0;
-  while (!self->connected) {
-    if (!decode_setup_message(self, data, &offset)) {
-      return offset;
+  if (!self->connected) {
+    offset = decode_setup_message(self, data);
+    if (offset == 0) {
+      return 0;
     }
   }
 
-  while (get_remaining(data, &offset) > 0) {
-    if (!decode_message(self, data, &offset)) {
+  size_t data_length = ut_list_get_length(data);
+  while (offset < data_length) {
+    UtObjectRef message =
+        ut_list_get_sublist(data, offset, data_length - offset);
+    size_t n_used = decode_message(self, message);
+    if (n_used == 0) {
       return offset;
     }
+    offset += n_used;
   }
 
   if (complete) {
