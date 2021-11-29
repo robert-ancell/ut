@@ -17,6 +17,7 @@
 #include "ut-unix-domain-socket-client.h"
 #include "ut-x11-atom-error.h"
 #include "ut-x11-big-requests-extension.h"
+#include "ut-x11-buffer.h"
 #include "ut-x11-button-press.h"
 #include "ut-x11-button-release.h"
 #include "ut-x11-client.h"
@@ -219,49 +220,6 @@ static uint32_t create_resource_id(UtX11Client *self) {
   return self->resource_id_base | (self->next_resource_id++);
 }
 
-static void write_card8(UtObject *buffer, uint8_t value) {
-  ut_uint8_list_append(buffer, value);
-}
-
-static void write_padding(UtObject *buffer, size_t count) {
-  for (size_t i = 0; i < count; i++) {
-    write_card8(buffer, 0);
-  }
-}
-
-static void write_align_padding(UtObject *buffer, size_t alignment) {
-  size_t extra = ut_list_get_length(buffer) % alignment;
-  if (extra != 0) {
-    write_padding(buffer, alignment - extra);
-  }
-}
-
-static void write_card16(UtObject *buffer, uint16_t value) {
-  ut_uint8_list_append_uint16_le(buffer, value);
-}
-
-static void write_int16(UtObject *buffer, int16_t value) {
-  write_card16(buffer, (uint16_t)value);
-}
-
-static void write_card32(UtObject *buffer, uint32_t value) {
-  ut_uint8_list_append_uint32_le(buffer, value);
-}
-
-static void write_value_card16(UtObject *buffer, uint16_t value) {
-  write_card32(buffer, value);
-}
-
-static void write_value_int16(UtObject *buffer, int16_t value) {
-  write_value_card16(buffer, (uint16_t)value);
-}
-
-static void write_string8(UtObject *buffer, const char *value) {
-  for (const char *c = value; *c != '\0'; c++) {
-    write_card8(buffer, *c);
-  }
-}
-
 static void send_request_with_data_and_reply(
     UtX11Client *self, void *request_data,
     RequestDataFreeCallback request_data_free_function, uint8_t opcode,
@@ -271,10 +229,10 @@ static void send_request_with_data_and_reply(
   size_t data_length = ut_list_get_length(data);
   assert(data_length % 4 == 0);
 
-  UtObjectRef request = ut_uint8_array_new();
-  write_card8(request, opcode);
-  write_card8(request, data0);
-  write_card16(request, 1 + data_length / 4);
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card8(request, opcode);
+  ut_x11_buffer_append_card8(request, data0);
+  ut_x11_buffer_append_card16(request, 1 + data_length / 4);
   ut_uint8_list_append_block(request, ut_uint8_array_get_data(data),
                              data_length);
 
@@ -320,56 +278,6 @@ static Request *find_request(UtX11Client *self, uint16_t sequence_number) {
   return NULL;
 }
 
-static uint8_t read_card8(UtObject *buffer, size_t *offset) {
-  uint8_t value = ut_uint8_list_get_element(buffer, *offset);
-  (*offset)++;
-  return value;
-}
-
-static bool read_bool(UtObject *buffer, size_t *offset) {
-  return read_card8(buffer, offset) != 0;
-}
-
-static void read_padding(UtObject *buffer, size_t *offset, size_t count) {
-  (*offset) += count;
-}
-
-static void read_align_padding(UtObject *buffer, size_t *offset,
-                               size_t alignment) {
-  while ((*offset) % alignment != 0) {
-    (*offset)++;
-  }
-}
-
-static uint16_t read_card16(UtObject *buffer, size_t *offset) {
-  uint16_t byte1 = read_card8(buffer, offset);
-  uint16_t byte2 = read_card8(buffer, offset);
-  return byte1 | byte2 << 8;
-}
-
-static int16_t read_int16(UtObject *buffer, size_t *offset) {
-  return (int16_t)read_card16(buffer, offset);
-}
-
-static uint32_t read_card32(UtObject *buffer, size_t *offset) {
-  uint32_t byte1 = read_card8(buffer, offset);
-  uint32_t byte2 = read_card8(buffer, offset);
-  uint32_t byte3 = read_card8(buffer, offset);
-  uint32_t byte4 = read_card8(buffer, offset);
-  return byte1 | byte2 << 8 | byte3 << 16 | byte4 << 24;
-}
-
-static char *read_string8(UtObject *buffer, size_t *offset, size_t length) {
-  assert(ut_list_get_length(buffer) >= *offset + length);
-  UtObjectRef value = ut_uint8_array_new();
-  for (size_t i = 0; i < length; i++) {
-    ut_uint8_list_append(value, ut_uint8_list_get_element(buffer, *offset));
-    (*offset)++;
-  }
-  ut_uint8_list_append(value, '\0');
-  return (char *)ut_uint8_list_take_data(value);
-}
-
 static size_t decode_setup_failed(UtX11Client *self, UtObject *data) {
   size_t data_length = ut_list_get_length(data);
   if (data_length < 8) {
@@ -377,16 +285,19 @@ static size_t decode_setup_failed(UtX11Client *self, UtObject *data) {
   }
 
   size_t offset = 0;
-  assert(read_card8(data, &offset) == 0);
-  uint8_t reason_length = read_card8(data, &offset);
-  /*uint16_t protocol_major_version = */ read_card16(data, &offset);
-  /*uint16_t protocol_minor_version = */ read_card16(data, &offset);
-  uint16_t length = read_card16(data, &offset);
+  assert(ut_x11_buffer_get_card8(data, &offset) == 0);
+  uint8_t reason_length = ut_x11_buffer_get_card8(data, &offset);
+  /*uint16_t protocol_major_version = */ ut_x11_buffer_get_card16(data,
+                                                                  &offset);
+  /*uint16_t protocol_minor_version = */ ut_x11_buffer_get_card16(data,
+                                                                  &offset);
+  uint16_t length = ut_x11_buffer_get_card16(data, &offset);
   size_t message_length = (length + 2) * 4;
   if (data_length < message_length) {
     return 0;
   }
-  ut_cstring_ref reason = read_string8(data, &offset, reason_length);
+  ut_cstring_ref reason =
+      ut_x11_buffer_get_string8(data, &offset, reason_length);
 
   UtObjectRef error =
       ut_general_error_new("Failed to connect to X server: %s", reason);
@@ -400,11 +311,11 @@ static void decode_query_extension_reply(UtX11Client *self, Request *request,
   const char *extension_name = request->request_data;
 
   size_t offset = 0;
-  uint8_t major_opcode = read_card8(data, &offset);
-  bool present = read_bool(data, &offset);
-  uint8_t first_event = read_card8(data, &offset);
-  uint8_t first_error = read_card8(data, &offset);
-  read_padding(data, &offset, 20);
+  uint8_t major_opcode = ut_x11_buffer_get_card8(data, &offset);
+  bool present = ut_x11_buffer_get_bool(data, &offset);
+  uint8_t first_event = ut_x11_buffer_get_card8(data, &offset);
+  uint8_t first_error = ut_x11_buffer_get_card8(data, &offset);
+  ut_x11_buffer_get_padding(data, &offset, 20);
 
   if (present) {
     if (strcmp(extension_name, "BIG-REQUESTS") == 0) {
@@ -427,11 +338,11 @@ static void handle_query_extension_error(UtX11Client *self, Request *request,
 }
 
 static void query_extension(UtX11Client *self, const char *name) {
-  UtObjectRef request = ut_uint8_array_new();
-  write_card16(request, strlen(name));
-  write_padding(request, 2);
-  write_string8(request, name);
-  write_align_padding(request, 4);
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card16(request, strlen(name));
+  ut_x11_buffer_append_padding(request, 2);
+  ut_x11_buffer_append_string8(request, name);
+  ut_x11_buffer_append_align_padding(request, 4);
 
   send_request_with_data_and_reply(
       self, strdup(name), free, 98, 0, request, decode_query_extension_reply,
@@ -445,32 +356,34 @@ static size_t decode_setup_success(UtX11Client *self, UtObject *data) {
   }
 
   size_t offset = 0;
-  assert(read_card8(data, &offset) == 1);
-  read_padding(data, &offset, 1);
-  /*uint16_t protocol_major_version = */ read_card16(data, &offset);
-  /*uint16_t protocol_minor_version = */ read_card16(data, &offset);
-  uint16_t length = read_card16(data, &offset);
+  assert(ut_x11_buffer_get_card8(data, &offset) == 1);
+  ut_x11_buffer_get_padding(data, &offset, 1);
+  /*uint16_t protocol_major_version = */ ut_x11_buffer_get_card16(data,
+                                                                  &offset);
+  /*uint16_t protocol_minor_version = */ ut_x11_buffer_get_card16(data,
+                                                                  &offset);
+  uint16_t length = ut_x11_buffer_get_card16(data, &offset);
   size_t message_length = (length + 2) * 4;
   if (data_length < message_length) {
     return 0;
   }
-  self->release_number = read_card32(data, &offset);
-  self->resource_id_base = read_card32(data, &offset);
-  self->resource_id_mask = read_card32(data, &offset);
-  read_card32(data, &offset); // motion_buffer_size
-  uint16_t vendor_length = read_card16(data, &offset);
-  self->maximum_request_length = read_card16(data, &offset);
-  size_t screens_length = read_card8(data, &offset);
-  size_t pixmap_formats_length = read_card8(data, &offset);
-  read_card8(data, &offset); // image_byte_order
-  read_card8(data, &offset); // bitmap_format_bit_order
-  read_card8(data, &offset); // bitmap_format_scanline_unit
-  read_card8(data, &offset); // bitmap_format_scanline_pad
-  read_card8(data, &offset); // min_keycode
-  read_card8(data, &offset); // max_keycode
-  read_padding(data, &offset, 4);
-  self->vendor = read_string8(data, &offset, vendor_length);
-  read_align_padding(data, &offset, 4);
+  self->release_number = ut_x11_buffer_get_card32(data, &offset);
+  self->resource_id_base = ut_x11_buffer_get_card32(data, &offset);
+  self->resource_id_mask = ut_x11_buffer_get_card32(data, &offset);
+  ut_x11_buffer_get_card32(data, &offset); // motion_buffer_size
+  uint16_t vendor_length = ut_x11_buffer_get_card16(data, &offset);
+  self->maximum_request_length = ut_x11_buffer_get_card16(data, &offset);
+  size_t screens_length = ut_x11_buffer_get_card8(data, &offset);
+  size_t pixmap_formats_length = ut_x11_buffer_get_card8(data, &offset);
+  ut_x11_buffer_get_card8(data, &offset); // image_byte_order
+  ut_x11_buffer_get_card8(data, &offset); // bitmap_format_bit_order
+  ut_x11_buffer_get_card8(data, &offset); // bitmap_format_scanline_unit
+  ut_x11_buffer_get_card8(data, &offset); // bitmap_format_scanline_pad
+  ut_x11_buffer_get_card8(data, &offset); // min_keycode
+  ut_x11_buffer_get_card8(data, &offset); // max_keycode
+  ut_x11_buffer_get_padding(data, &offset, 4);
+  self->vendor = ut_x11_buffer_get_string8(data, &offset, vendor_length);
+  ut_x11_buffer_get_align_padding(data, &offset, 4);
 
   self->pixmap_formats =
       malloc(sizeof(X11PixmapFormat *) * pixmap_formats_length);
@@ -478,10 +391,12 @@ static size_t decode_setup_success(UtX11Client *self, UtObject *data) {
   for (size_t i = 0; i < pixmap_formats_length; i++) {
     X11PixmapFormat *format = self->pixmap_formats[i] =
         malloc(sizeof(X11PixmapFormat));
-    format->depth = read_card8(data, &offset);          // depth
-    format->bits_per_pixel = read_card8(data, &offset); // bits_per_pixel
-    format->scanline_pad = read_card8(data, &offset);   // scanline_pad
-    read_padding(data, &offset, 5);
+    format->depth = ut_x11_buffer_get_card8(data, &offset); // depth
+    format->bits_per_pixel =
+        ut_x11_buffer_get_card8(data, &offset); // bits_per_pixel
+    format->scanline_pad =
+        ut_x11_buffer_get_card8(data, &offset); // scanline_pad
+    ut_x11_buffer_get_padding(data, &offset, 5);
   }
 
   self->screens = malloc(sizeof(X11Screen *) * screens_length);
@@ -489,30 +404,30 @@ static size_t decode_setup_success(UtX11Client *self, UtObject *data) {
   for (size_t i = 0; i < screens_length; i++) {
     X11Screen *screen = self->screens[i] = malloc(sizeof(X11Screen));
 
-    screen->root = read_card32(data, &offset);
-    screen->default_colormap = read_card32(data, &offset);
-    screen->white_pixel = read_card32(data, &offset);
-    screen->black_pixel = read_card32(data, &offset);
-    screen->current_input_masks = read_card32(data, &offset);
-    screen->width_in_pixels = read_card16(data, &offset);
-    screen->height_in_pixels = read_card16(data, &offset);
-    screen->width_in_millimeters = read_card16(data, &offset);
-    screen->height_in_millimeters = read_card16(data, &offset);
-    read_card16(data, &offset); // min_installed_maps
-    read_card16(data, &offset); // max_installed_maps
+    screen->root = ut_x11_buffer_get_card32(data, &offset);
+    screen->default_colormap = ut_x11_buffer_get_card32(data, &offset);
+    screen->white_pixel = ut_x11_buffer_get_card32(data, &offset);
+    screen->black_pixel = ut_x11_buffer_get_card32(data, &offset);
+    screen->current_input_masks = ut_x11_buffer_get_card32(data, &offset);
+    screen->width_in_pixels = ut_x11_buffer_get_card16(data, &offset);
+    screen->height_in_pixels = ut_x11_buffer_get_card16(data, &offset);
+    screen->width_in_millimeters = ut_x11_buffer_get_card16(data, &offset);
+    screen->height_in_millimeters = ut_x11_buffer_get_card16(data, &offset);
+    ut_x11_buffer_get_card16(data, &offset); // min_installed_maps
+    ut_x11_buffer_get_card16(data, &offset); // max_installed_maps
     screen->root_visual = NULL;
-    uint32_t root_visual_id = read_card32(data, &offset);
-    read_card8(data, &offset); // backing_stores
-    read_card8(data, &offset); // save_unders
-    read_card8(data, &offset); // root_depth
+    uint32_t root_visual_id = ut_x11_buffer_get_card32(data, &offset);
+    ut_x11_buffer_get_card8(data, &offset); // backing_stores
+    ut_x11_buffer_get_card8(data, &offset); // save_unders
+    ut_x11_buffer_get_card8(data, &offset); // root_depth
     screen->visuals = NULL;
     screen->visuals_length = 0;
-    size_t allowed_depths_length = read_card8(data, &offset);
+    size_t allowed_depths_length = ut_x11_buffer_get_card8(data, &offset);
     for (size_t j = 0; j < allowed_depths_length; j++) {
-      uint8_t depth = read_card8(data, &offset);
-      read_padding(data, &offset, 1);
-      size_t visuals_length = read_card16(data, &offset);
-      read_padding(data, &offset, 4);
+      uint8_t depth = ut_x11_buffer_get_card8(data, &offset);
+      ut_x11_buffer_get_padding(data, &offset, 1);
+      size_t visuals_length = ut_x11_buffer_get_card16(data, &offset);
+      ut_x11_buffer_get_padding(data, &offset, 4);
       size_t first_visual = screen->visuals_length;
       screen->visuals_length += visuals_length;
       screen->visuals = realloc(screen->visuals,
@@ -520,15 +435,15 @@ static size_t decode_setup_success(UtX11Client *self, UtObject *data) {
       for (size_t k = 0; k < visuals_length; k++) {
         X11Visual *visual = screen->visuals[first_visual + k] =
             malloc(sizeof(X11Visual));
-        visual->id = read_card32(data, &offset);
+        visual->id = ut_x11_buffer_get_card32(data, &offset);
         visual->depth = depth;
-        visual->class = read_card8(data, &offset);
-        visual->bits_per_rgb_value = read_card8(data, &offset);
-        visual->colormap_entries = read_card16(data, &offset);
-        visual->red_mask = read_card32(data, &offset);
-        visual->blue_mask = read_card32(data, &offset);
-        visual->green_mask = read_card32(data, &offset);
-        read_padding(data, &offset, 4);
+        visual->class = ut_x11_buffer_get_card8(data, &offset);
+        visual->bits_per_rgb_value = ut_x11_buffer_get_card8(data, &offset);
+        visual->colormap_entries = ut_x11_buffer_get_card16(data, &offset);
+        visual->red_mask = ut_x11_buffer_get_card32(data, &offset);
+        visual->blue_mask = ut_x11_buffer_get_card32(data, &offset);
+        visual->green_mask = ut_x11_buffer_get_card32(data, &offset);
+        ut_x11_buffer_get_padding(data, &offset, 4);
 
         if (visual->id == root_visual_id) {
           screen->root_visual = visual;
@@ -568,12 +483,12 @@ static size_t decode_error(UtX11Client *self, UtObject *data) {
   UtObjectRef error_data = ut_list_get_sublist(data, 0, 32);
 
   size_t offset = 0;
-  assert(read_card8(error_data, &offset) == 0);
-  uint8_t code = read_card8(error_data, &offset);
-  uint16_t sequence_number = read_card16(error_data, &offset);
-  uint32_t value = read_card32(error_data, &offset);
-  uint16_t minor_opcode = read_card16(error_data, &offset);
-  uint8_t major_opcode = read_card8(error_data, &offset);
+  assert(ut_x11_buffer_get_card8(error_data, &offset) == 0);
+  uint8_t code = ut_x11_buffer_get_card8(error_data, &offset);
+  uint16_t sequence_number = ut_x11_buffer_get_card16(error_data, &offset);
+  uint32_t value = ut_x11_buffer_get_card32(error_data, &offset);
+  uint16_t minor_opcode = ut_x11_buffer_get_card16(error_data, &offset);
+  uint8_t major_opcode = ut_x11_buffer_get_card8(error_data, &offset);
 
   UtObjectRef error = NULL;
   if (code == 1) {
@@ -625,8 +540,8 @@ static size_t decode_error(UtX11Client *self, UtObject *data) {
 static void decode_intern_atom_reply(UtX11Client *self, Request *request,
                                      uint8_t data0, UtObject *data) {
   size_t offset = 0;
-  uint32_t atom = read_card32(data, &offset);
-  read_padding(data, &offset, 20);
+  uint32_t atom = ut_x11_buffer_get_card32(data, &offset);
+  ut_x11_buffer_get_padding(data, &offset, 20);
 
   if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11InternAtomCallback callback =
@@ -647,10 +562,10 @@ static void handle_intern_atom_error(UtX11Client *self, Request *request,
 static void decode_get_atom_name_reply(UtX11Client *self, Request *request,
                                        uint8_t data0, UtObject *data) {
   size_t offset = 0;
-  uint16_t name_length = read_card16(data, &offset);
-  read_padding(data, &offset, 22);
-  ut_cstring_ref name = read_string8(data, &offset, name_length);
-  read_align_padding(data, &offset, 4);
+  uint16_t name_length = ut_x11_buffer_get_card16(data, &offset);
+  ut_x11_buffer_get_padding(data, &offset, 22);
+  ut_cstring_ref name = ut_x11_buffer_get_string8(data, &offset, name_length);
+  ut_x11_buffer_get_align_padding(data, &offset, 4);
 
   if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11GetAtomNameCallback callback =
@@ -672,31 +587,31 @@ static void decode_get_property_reply(UtX11Client *self, Request *request,
                                       uint8_t data0, UtObject *data) {
   size_t offset = 0;
   uint8_t format = data0;
-  uint32_t type = read_card32(data, &offset);
-  uint32_t bytes_after = read_card32(data, &offset);
-  size_t length = read_card32(data, &offset);
-  read_padding(data, &offset, 12);
+  uint32_t type = ut_x11_buffer_get_card32(data, &offset);
+  uint32_t bytes_after = ut_x11_buffer_get_card32(data, &offset);
+  size_t length = ut_x11_buffer_get_card32(data, &offset);
+  ut_x11_buffer_get_padding(data, &offset, 12);
   UtObjectRef value = NULL;
   if (format == 0) {
   } else if (format == 8) {
     value = ut_uint8_array_new();
     for (size_t i = 0; i < length; i++) {
-      ut_uint8_list_append(value, read_card8(data, &offset));
+      ut_uint8_list_append(value, ut_x11_buffer_get_card8(data, &offset));
     }
   } else if (format == 16) {
     value = ut_uint16_list_new();
     for (size_t i = 0; i < length; i++) {
-      ut_uint16_list_append(value, read_card16(data, &offset));
+      ut_uint16_list_append(value, ut_x11_buffer_get_card16(data, &offset));
     }
   } else if (format == 32) {
     value = ut_uint32_list_new();
     for (size_t i = 0; i < length; i++) {
-      ut_uint32_list_append(value, read_card32(data, &offset));
+      ut_uint32_list_append(value, ut_x11_buffer_get_card32(data, &offset));
     }
   } else {
     assert(false);
   }
-  read_align_padding(data, &offset, 4);
+  ut_x11_buffer_get_align_padding(data, &offset, 4);
 
   if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11GetPropertyCallback callback =
@@ -717,11 +632,11 @@ static void handle_get_property_error(UtX11Client *self, Request *request,
 static void decode_list_properties_reply(UtX11Client *self, Request *request,
                                          uint8_t data0, UtObject *data) {
   size_t offset = 0;
-  size_t atoms_length = read_card16(data, &offset);
-  read_padding(data, &offset, 22);
+  size_t atoms_length = ut_x11_buffer_get_card16(data, &offset);
+  ut_x11_buffer_get_padding(data, &offset, 22);
   UtObjectRef atoms = ut_uint32_list_new();
   for (size_t i = 0; i < atoms_length; i++) {
-    ut_uint32_list_append(atoms, read_card32(data, &offset));
+    ut_uint32_list_append(atoms, ut_x11_buffer_get_card32(data, &offset));
   }
 
   if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
@@ -743,15 +658,15 @@ static void handle_list_properties_error(UtX11Client *self, Request *request,
 static void decode_list_extensions_reply(UtX11Client *self, Request *request,
                                          uint8_t data0, UtObject *data) {
   size_t offset = 0;
-  read_padding(data, &offset, 24);
+  ut_x11_buffer_get_padding(data, &offset, 24);
   size_t names_length = data0;
   UtObjectRef names = ut_string_list_new();
   for (size_t i = 0; i < names_length; i++) {
-    uint8_t name_length = read_card8(data, &offset);
-    ut_cstring_ref name = read_string8(data, &offset, name_length);
+    uint8_t name_length = ut_x11_buffer_get_card8(data, &offset);
+    ut_cstring_ref name = ut_x11_buffer_get_string8(data, &offset, name_length);
     ut_string_list_append(names, name);
   }
-  read_align_padding(data, &offset, 4);
+  ut_x11_buffer_get_align_padding(data, &offset, 4);
 
   if (request->callback != NULL && !ut_cancel_is_active(request->cancel)) {
     UtX11ListExtensionsCallback callback =
@@ -776,10 +691,10 @@ static size_t decode_reply(UtX11Client *self, UtObject *data) {
   }
 
   size_t offset = 0;
-  assert(read_card8(data, &offset) == 1);
-  uint8_t data0 = read_card8(data, &offset);
-  uint16_t sequence_number = read_card16(data, &offset);
-  uint32_t length = read_card32(data, &offset);
+  assert(ut_x11_buffer_get_card8(data, &offset) == 1);
+  uint8_t data0 = ut_x11_buffer_get_card8(data, &offset);
+  uint16_t sequence_number = ut_x11_buffer_get_card16(data, &offset);
+  uint32_t length = ut_x11_buffer_get_card32(data, &offset);
 
   size_t payload_length = 32 + length * 4;
   if (data_length < payload_length) {
@@ -800,189 +715,189 @@ static size_t decode_reply(UtX11Client *self, UtObject *data) {
 
 static UtObject *decode_key_press(UtObject *data) {
   size_t offset = 0;
-  assert(read_card8(data, &offset) == 2);
-  uint8_t keycode = read_card8(data, &offset);
-  read_card16(data, &offset); // sequence_number
-  read_card32(data, &offset); // time
-  read_card32(data, &offset); // root
-  uint32_t window = read_card32(data, &offset);
-  read_card32(data, &offset); // child
-  read_int16(data, &offset);  // root_x
-  read_int16(data, &offset);  // root_y
-  int16_t x = read_int16(data, &offset);
-  int16_t y = read_int16(data, &offset);
-  read_card16(data, &offset); // state
-  read_card8(data, &offset);  // same_screen
-  read_padding(data, &offset, 1);
+  assert(ut_x11_buffer_get_card8(data, &offset) == 2);
+  uint8_t keycode = ut_x11_buffer_get_card8(data, &offset);
+  ut_x11_buffer_get_card16(data, &offset); // sequence_number
+  ut_x11_buffer_get_card32(data, &offset); // time
+  ut_x11_buffer_get_card32(data, &offset); // root
+  uint32_t window = ut_x11_buffer_get_card32(data, &offset);
+  ut_x11_buffer_get_card32(data, &offset); // child
+  ut_x11_buffer_get_int16(data, &offset);  // root_x
+  ut_x11_buffer_get_int16(data, &offset);  // root_y
+  int16_t x = ut_x11_buffer_get_int16(data, &offset);
+  int16_t y = ut_x11_buffer_get_int16(data, &offset);
+  ut_x11_buffer_get_card16(data, &offset); // state
+  ut_x11_buffer_get_card8(data, &offset);  // same_screen
+  ut_x11_buffer_get_padding(data, &offset, 1);
 
   return ut_x11_key_press_new(window, keycode, x, y);
 }
 
 static UtObject *decode_key_release(UtObject *data) {
   size_t offset = 0;
-  assert(read_card8(data, &offset) == 3);
-  uint8_t keycode = read_card8(data, &offset);
-  read_card16(data, &offset); // sequence_number
-  read_card32(data, &offset); // time
-  read_card32(data, &offset); // root
-  uint32_t window = read_card32(data, &offset);
-  read_card32(data, &offset); // child
-  read_int16(data, &offset);  // root_x
-  read_int16(data, &offset);  // root_y
-  int16_t x = read_int16(data, &offset);
-  int16_t y = read_int16(data, &offset);
-  read_card16(data, &offset); // state
-  read_card8(data, &offset);  // same_screen
-  read_padding(data, &offset, 1);
+  assert(ut_x11_buffer_get_card8(data, &offset) == 3);
+  uint8_t keycode = ut_x11_buffer_get_card8(data, &offset);
+  ut_x11_buffer_get_card16(data, &offset); // sequence_number
+  ut_x11_buffer_get_card32(data, &offset); // time
+  ut_x11_buffer_get_card32(data, &offset); // root
+  uint32_t window = ut_x11_buffer_get_card32(data, &offset);
+  ut_x11_buffer_get_card32(data, &offset); // child
+  ut_x11_buffer_get_int16(data, &offset);  // root_x
+  ut_x11_buffer_get_int16(data, &offset);  // root_y
+  int16_t x = ut_x11_buffer_get_int16(data, &offset);
+  int16_t y = ut_x11_buffer_get_int16(data, &offset);
+  ut_x11_buffer_get_card16(data, &offset); // state
+  ut_x11_buffer_get_card8(data, &offset);  // same_screen
+  ut_x11_buffer_get_padding(data, &offset, 1);
 
   return ut_x11_key_release_new(window, keycode, x, y);
 }
 
 static UtObject *decode_button_press(UtObject *data) {
   size_t offset = 0;
-  assert(read_card8(data, &offset) == 4);
-  uint8_t button = read_card8(data, &offset);
-  read_card16(data, &offset); // sequence_number
-  read_card32(data, &offset); // time
-  read_card32(data, &offset); // root
-  uint32_t window = read_card32(data, &offset);
-  read_card32(data, &offset); // child
-  read_int16(data, &offset);  // root_x
-  read_int16(data, &offset);  // root_y
-  int16_t x = read_int16(data, &offset);
-  int16_t y = read_int16(data, &offset);
-  read_card16(data, &offset); // state
-  read_card8(data, &offset);  // same_screen
-  read_padding(data, &offset, 1);
+  assert(ut_x11_buffer_get_card8(data, &offset) == 4);
+  uint8_t button = ut_x11_buffer_get_card8(data, &offset);
+  ut_x11_buffer_get_card16(data, &offset); // sequence_number
+  ut_x11_buffer_get_card32(data, &offset); // time
+  ut_x11_buffer_get_card32(data, &offset); // root
+  uint32_t window = ut_x11_buffer_get_card32(data, &offset);
+  ut_x11_buffer_get_card32(data, &offset); // child
+  ut_x11_buffer_get_int16(data, &offset);  // root_x
+  ut_x11_buffer_get_int16(data, &offset);  // root_y
+  int16_t x = ut_x11_buffer_get_int16(data, &offset);
+  int16_t y = ut_x11_buffer_get_int16(data, &offset);
+  ut_x11_buffer_get_card16(data, &offset); // state
+  ut_x11_buffer_get_card8(data, &offset);  // same_screen
+  ut_x11_buffer_get_padding(data, &offset, 1);
 
   return ut_x11_button_press_new(window, button, x, y);
 }
 
 static UtObject *decode_button_release(UtObject *data) {
   size_t offset = 0;
-  assert(read_card8(data, &offset) == 5);
-  uint8_t button = read_card8(data, &offset);
-  read_card16(data, &offset); // sequence_number
-  read_card32(data, &offset); // time
-  read_card32(data, &offset); // root
-  uint32_t window = read_card32(data, &offset);
-  read_card32(data, &offset); // child
-  read_int16(data, &offset);  // root_x
-  read_int16(data, &offset);  // root_y
-  int16_t x = read_int16(data, &offset);
-  int16_t y = read_int16(data, &offset);
-  read_card16(data, &offset); // state
-  read_card8(data, &offset);  // same_screen
-  read_padding(data, &offset, 1);
+  assert(ut_x11_buffer_get_card8(data, &offset) == 5);
+  uint8_t button = ut_x11_buffer_get_card8(data, &offset);
+  ut_x11_buffer_get_card16(data, &offset); // sequence_number
+  ut_x11_buffer_get_card32(data, &offset); // time
+  ut_x11_buffer_get_card32(data, &offset); // root
+  uint32_t window = ut_x11_buffer_get_card32(data, &offset);
+  ut_x11_buffer_get_card32(data, &offset); // child
+  ut_x11_buffer_get_int16(data, &offset);  // root_x
+  ut_x11_buffer_get_int16(data, &offset);  // root_y
+  int16_t x = ut_x11_buffer_get_int16(data, &offset);
+  int16_t y = ut_x11_buffer_get_int16(data, &offset);
+  ut_x11_buffer_get_card16(data, &offset); // state
+  ut_x11_buffer_get_card8(data, &offset);  // same_screen
+  ut_x11_buffer_get_padding(data, &offset, 1);
 
   return ut_x11_button_release_new(window, button, x, y);
 }
 
 static UtObject *decode_motion_notify(UtObject *data) {
   size_t offset = 0;
-  assert(read_card8(data, &offset) == 6);
-  read_card8(data, &offset);  // detail
-  read_card16(data, &offset); // sequence_number
-  read_card32(data, &offset); // time
-  read_card32(data, &offset); // root
-  uint32_t window = read_card32(data, &offset);
-  read_card32(data, &offset); // child
-  read_int16(data, &offset);  // root_x
-  read_int16(data, &offset);  // root_y
-  int16_t x = read_int16(data, &offset);
-  int16_t y = read_int16(data, &offset);
-  read_card16(data, &offset); // state
-  read_card8(data, &offset);  // same_screen
-  read_padding(data, &offset, 1);
+  assert(ut_x11_buffer_get_card8(data, &offset) == 6);
+  ut_x11_buffer_get_card8(data, &offset);  // detail
+  ut_x11_buffer_get_card16(data, &offset); // sequence_number
+  ut_x11_buffer_get_card32(data, &offset); // time
+  ut_x11_buffer_get_card32(data, &offset); // root
+  uint32_t window = ut_x11_buffer_get_card32(data, &offset);
+  ut_x11_buffer_get_card32(data, &offset); // child
+  ut_x11_buffer_get_int16(data, &offset);  // root_x
+  ut_x11_buffer_get_int16(data, &offset);  // root_y
+  int16_t x = ut_x11_buffer_get_int16(data, &offset);
+  int16_t y = ut_x11_buffer_get_int16(data, &offset);
+  ut_x11_buffer_get_card16(data, &offset); // state
+  ut_x11_buffer_get_card8(data, &offset);  // same_screen
+  ut_x11_buffer_get_padding(data, &offset, 1);
 
   return ut_x11_motion_notify_new(window, x, y);
 }
 
 static UtObject *decode_enter_notify(UtObject *data) {
   size_t offset = 0;
-  assert(read_card8(data, &offset) == 7);
-  read_card8(data, &offset);  // detail
-  read_card16(data, &offset); // sequence_number
-  read_card32(data, &offset); // time
-  read_card32(data, &offset); // root
-  uint32_t window = read_card32(data, &offset);
-  read_card32(data, &offset); // child
-  read_int16(data, &offset);  // root_x
-  read_int16(data, &offset);  // root_y
-  int16_t x = read_int16(data, &offset);
-  int16_t y = read_int16(data, &offset);
-  read_card16(data, &offset); // state
-  read_card8(data, &offset);  // mode
-  read_card8(data, &offset);  // same_screen, focus
+  assert(ut_x11_buffer_get_card8(data, &offset) == 7);
+  ut_x11_buffer_get_card8(data, &offset);  // detail
+  ut_x11_buffer_get_card16(data, &offset); // sequence_number
+  ut_x11_buffer_get_card32(data, &offset); // time
+  ut_x11_buffer_get_card32(data, &offset); // root
+  uint32_t window = ut_x11_buffer_get_card32(data, &offset);
+  ut_x11_buffer_get_card32(data, &offset); // child
+  ut_x11_buffer_get_int16(data, &offset);  // root_x
+  ut_x11_buffer_get_int16(data, &offset);  // root_y
+  int16_t x = ut_x11_buffer_get_int16(data, &offset);
+  int16_t y = ut_x11_buffer_get_int16(data, &offset);
+  ut_x11_buffer_get_card16(data, &offset); // state
+  ut_x11_buffer_get_card8(data, &offset);  // mode
+  ut_x11_buffer_get_card8(data, &offset);  // same_screen, focus
 
   return ut_x11_enter_notify_new(window, x, y);
 }
 
 static UtObject *decode_leave_notify(UtObject *data) {
   size_t offset = 0;
-  assert(read_card8(data, &offset) == 8);
-  read_card8(data, &offset);  // detail
-  read_card16(data, &offset); // sequence_number
-  read_card32(data, &offset); // time
-  read_card32(data, &offset); // root
-  uint32_t window = read_card32(data, &offset);
-  read_card32(data, &offset); // child
-  read_int16(data, &offset);  // root_x
-  read_int16(data, &offset);  // root_y
-  int16_t x = read_int16(data, &offset);
-  int16_t y = read_int16(data, &offset);
-  read_card16(data, &offset); // state
-  read_card8(data, &offset);  // mode
-  read_card8(data, &offset);  // same_screen, focus
+  assert(ut_x11_buffer_get_card8(data, &offset) == 8);
+  ut_x11_buffer_get_card8(data, &offset);  // detail
+  ut_x11_buffer_get_card16(data, &offset); // sequence_number
+  ut_x11_buffer_get_card32(data, &offset); // time
+  ut_x11_buffer_get_card32(data, &offset); // root
+  uint32_t window = ut_x11_buffer_get_card32(data, &offset);
+  ut_x11_buffer_get_card32(data, &offset); // child
+  ut_x11_buffer_get_int16(data, &offset);  // root_x
+  ut_x11_buffer_get_int16(data, &offset);  // root_y
+  int16_t x = ut_x11_buffer_get_int16(data, &offset);
+  int16_t y = ut_x11_buffer_get_int16(data, &offset);
+  ut_x11_buffer_get_card16(data, &offset); // state
+  ut_x11_buffer_get_card8(data, &offset);  // mode
+  ut_x11_buffer_get_card8(data, &offset);  // same_screen, focus
 
   return ut_x11_leave_notify_new(window, x, y);
 }
 
 static UtObject *decode_expose(UtObject *data) {
   size_t offset = 0;
-  assert(read_card8(data, &offset) == 12);
-  read_padding(data, &offset, 1);
-  read_card16(data, &offset); // sequence_number
-  uint32_t window = read_card32(data, &offset);
-  uint16_t x = read_card16(data, &offset);
-  uint16_t y = read_card16(data, &offset);
-  uint16_t width = read_card16(data, &offset);
-  uint16_t height = read_card16(data, &offset);
-  read_card16(data, &offset); // count
-  read_padding(data, &offset, 14);
+  assert(ut_x11_buffer_get_card8(data, &offset) == 12);
+  ut_x11_buffer_get_padding(data, &offset, 1);
+  ut_x11_buffer_get_card16(data, &offset); // sequence_number
+  uint32_t window = ut_x11_buffer_get_card32(data, &offset);
+  uint16_t x = ut_x11_buffer_get_card16(data, &offset);
+  uint16_t y = ut_x11_buffer_get_card16(data, &offset);
+  uint16_t width = ut_x11_buffer_get_card16(data, &offset);
+  uint16_t height = ut_x11_buffer_get_card16(data, &offset);
+  ut_x11_buffer_get_card16(data, &offset); // count
+  ut_x11_buffer_get_padding(data, &offset, 14);
 
   return ut_x11_expose_new(window, x, y, width, height);
 }
 
 static UtObject *decode_configure_notify(UtObject *data) {
   size_t offset = 0;
-  assert(read_card8(data, &offset) == 22);
-  read_padding(data, &offset, 1);
-  read_card16(data, &offset); // sequence_number
-  read_card32(data, &offset); // event
-  uint32_t window = read_card32(data, &offset);
-  read_card32(data, &offset); // above_sibling
-  int16_t x = read_int16(data, &offset);
-  int16_t y = read_int16(data, &offset);
-  uint16_t width = read_card16(data, &offset);
-  uint16_t height = read_card16(data, &offset);
-  read_card16(data, &offset); // border_width
-  read_card8(data, &offset);  // override_redirect
-  read_padding(data, &offset, 5);
+  assert(ut_x11_buffer_get_card8(data, &offset) == 22);
+  ut_x11_buffer_get_padding(data, &offset, 1);
+  ut_x11_buffer_get_card16(data, &offset); // sequence_number
+  ut_x11_buffer_get_card32(data, &offset); // event
+  uint32_t window = ut_x11_buffer_get_card32(data, &offset);
+  ut_x11_buffer_get_card32(data, &offset); // above_sibling
+  int16_t x = ut_x11_buffer_get_int16(data, &offset);
+  int16_t y = ut_x11_buffer_get_int16(data, &offset);
+  uint16_t width = ut_x11_buffer_get_card16(data, &offset);
+  uint16_t height = ut_x11_buffer_get_card16(data, &offset);
+  ut_x11_buffer_get_card16(data, &offset); // border_width
+  ut_x11_buffer_get_card8(data, &offset);  // override_redirect
+  ut_x11_buffer_get_padding(data, &offset, 5);
 
   return ut_x11_configure_notify_new(window, x, y, width, height);
 }
 
 static UtObject *decode_property_notify(UtObject *data) {
   size_t offset = 0;
-  assert(read_card8(data, &offset) == 28);
-  read_padding(data, &offset, 1);
-  read_card16(data, &offset); // sequence_number
-  uint32_t window = read_card32(data, &offset);
-  uint32_t atom = read_card32(data, &offset);
-  read_card32(data, &offset); // time
-  read_card8(data, &offset);  // state
-  read_padding(data, &offset, 15);
+  assert(ut_x11_buffer_get_card8(data, &offset) == 28);
+  ut_x11_buffer_get_padding(data, &offset, 1);
+  ut_x11_buffer_get_card16(data, &offset); // sequence_number
+  uint32_t window = ut_x11_buffer_get_card32(data, &offset);
+  uint32_t atom = ut_x11_buffer_get_card32(data, &offset);
+  ut_x11_buffer_get_card32(data, &offset); // time
+  ut_x11_buffer_get_card8(data, &offset);  // state
+  ut_x11_buffer_get_padding(data, &offset, 15);
 
   return ut_x11_property_notify_new(window, atom);
 }
@@ -1064,7 +979,8 @@ static size_t read_cb(void *user_data, UtObject *data, bool complete) {
   while (offset < data_length) {
     UtObjectRef message =
         ut_list_get_sublist(data, offset, data_length - offset);
-    size_t n_used = decode_message(self, message);
+    UtObjectRef buffer = ut_x11_buffer_new_with_data(message);
+    size_t n_used = decode_message(self, buffer);
     if (n_used == 0) {
       return offset;
     }
@@ -1171,17 +1087,17 @@ void ut_x11_client_connect(UtObject *object,
   ut_input_stream_read(self->socket, read_cb, self, self->read_cancel);
 
   UtObjectRef setup = ut_uint8_array_new();
-  write_card8(setup, 0x6c); // Little endian.
-  write_padding(setup, 1);
-  write_card16(setup, 11); // Protocol major version.
-  write_card16(setup, 0);  // Protocol minor version.
-  write_card16(setup, 0);  // Authorizaton protocol name length.
-  write_card16(setup, 0);  // Authorizaton protocol data length.
-  write_padding(setup, 2);
+  ut_x11_buffer_append_card8(setup, 0x6c); // Little endian.
+  ut_x11_buffer_append_padding(setup, 1);
+  ut_x11_buffer_append_card16(setup, 11); // Protocol major version.
+  ut_x11_buffer_append_card16(setup, 0);  // Protocol minor version.
+  ut_x11_buffer_append_card16(setup, 0);  // Authorizaton protocol name length.
+  ut_x11_buffer_append_card16(setup, 0);  // Authorizaton protocol data length.
+  ut_x11_buffer_append_padding(setup, 2);
   // Authorization protocol name.
-  write_align_padding(setup, 4);
+  ut_x11_buffer_append_align_padding(setup, 4);
   // Authorization protocol data.
-  write_align_padding(setup, 4);
+  ut_x11_buffer_append_align_padding(setup, 4);
 
   ut_output_stream_write(self->socket, setup);
 }
@@ -1196,22 +1112,22 @@ uint32_t ut_x11_client_create_window(UtObject *object, int16_t x, int16_t y,
   assert(self->screens_length > 0);
   X11Screen *screen = self->screens[0];
 
-  UtObjectRef request = ut_uint8_array_new();
-  write_card32(request, id);
-  write_card32(request, screen->root); // parent
-  write_int16(request, x);
-  write_int16(request, y);
-  write_card16(request, width);
-  write_card16(request, height);
-  write_card16(request, 0); // border_width
-  write_card16(request, WINDOW_CLASS_INPUT_OUTPUT);
-  write_card32(request, screen->root_visual->id);
-  write_card32(request, VALUE_MASK_EVENT_MASK);
-  write_card32(request, EVENT_KEY_PRESS | EVENT_KEY_RELEASE |
-                            EVENT_BUTTON_PRESS | EVENT_BUTTON_RELEASE |
-                            EVENT_ENTER_WINDOW | EVENT_LEAVE_WINDOW |
-                            EVENT_POINTER_MOTION | EVENT_EXPOSURE |
-                            EVENT_STRUCTURE_NOTIFY | EVENT_PROPERTY_CHANGE);
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card32(request, id);
+  ut_x11_buffer_append_card32(request, screen->root); // parent
+  ut_x11_buffer_append_int16(request, x);
+  ut_x11_buffer_append_int16(request, y);
+  ut_x11_buffer_append_card16(request, width);
+  ut_x11_buffer_append_card16(request, height);
+  ut_x11_buffer_append_card16(request, 0); // border_width
+  ut_x11_buffer_append_card16(request, WINDOW_CLASS_INPUT_OUTPUT);
+  ut_x11_buffer_append_card32(request, screen->root_visual->id);
+  ut_x11_buffer_append_card32(request, VALUE_MASK_EVENT_MASK);
+  ut_x11_buffer_append_card32(
+      request, EVENT_KEY_PRESS | EVENT_KEY_RELEASE | EVENT_BUTTON_PRESS |
+                   EVENT_BUTTON_RELEASE | EVENT_ENTER_WINDOW |
+                   EVENT_LEAVE_WINDOW | EVENT_POINTER_MOTION | EVENT_EXPOSURE |
+                   EVENT_STRUCTURE_NOTIFY | EVENT_PROPERTY_CHANGE);
 
   send_request(self, 1, screen->root_visual->depth, request);
 
@@ -1222,8 +1138,8 @@ void ut_x11_client_destroy_window(UtObject *object, uint32_t window) {
   assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
-  UtObjectRef request = ut_uint8_array_new();
-  write_card32(request, window);
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card32(request, window);
 
   send_request(self, 4, 0, request);
 }
@@ -1232,8 +1148,8 @@ void ut_x11_client_map_window(UtObject *object, uint32_t window) {
   assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
-  UtObjectRef request = ut_uint8_array_new();
-  write_card32(request, window);
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card32(request, window);
 
   send_request(self, 8, 0, request);
 }
@@ -1242,8 +1158,8 @@ void ut_x11_client_unmap_window(UtObject *object, uint32_t window) {
   assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
-  UtObjectRef request = ut_uint8_array_new();
-  write_card32(request, window);
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card32(request, window);
 
   send_request(self, 10, 0, request);
 }
@@ -1254,14 +1170,14 @@ void ut_x11_client_configure_window(UtObject *object, uint32_t window,
   assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
-  UtObjectRef request = ut_uint8_array_new();
-  write_card32(request, window);
-  write_card16(request, 0x0001 | 0x0002 | 0x0004 | 0x0008);
-  write_padding(request, 2);
-  write_value_int16(request, x);
-  write_value_int16(request, y);
-  write_value_card16(request, width);
-  write_value_card16(request, height);
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card32(request, window);
+  ut_x11_buffer_append_card16(request, 0x0001 | 0x0002 | 0x0004 | 0x0008);
+  ut_x11_buffer_append_padding(request, 2);
+  ut_x11_buffer_append_value_int16(request, x);
+  ut_x11_buffer_append_value_int16(request, y);
+  ut_x11_buffer_append_value_card16(request, width);
+  ut_x11_buffer_append_value_card16(request, height);
 
   send_request(self, 12, 0, request);
 }
@@ -1273,11 +1189,11 @@ void ut_x11_client_intern_atom(UtObject *object, const char *name,
   assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
-  UtObjectRef request = ut_uint8_array_new();
-  write_card16(request, strlen(name));
-  write_padding(request, 2);
-  write_string8(request, name);
-  write_align_padding(request, 4);
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card16(request, strlen(name));
+  ut_x11_buffer_append_padding(request, 2);
+  ut_x11_buffer_append_string8(request, name);
+  ut_x11_buffer_append_align_padding(request, 4);
 
   send_request_with_reply(self, 16, only_if_exists ? 1 : 0, request,
                           decode_intern_atom_reply, handle_intern_atom_error,
@@ -1290,8 +1206,8 @@ void ut_x11_client_get_atom_name(UtObject *object, uint32_t atom,
   assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
-  UtObjectRef request = ut_uint8_array_new();
-  write_card32(request, atom);
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card32(request, atom);
 
   send_request_with_reply(self, 17, 0, request, decode_get_atom_name_reply,
                           handle_get_atom_name_error, (RequestCallback)callback,
@@ -1308,9 +1224,9 @@ void ut_x11_client_delete_property(UtObject *object, uint32_t window,
   assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
-  UtObjectRef request = ut_uint8_array_new();
-  write_card32(request, window);
-  write_card32(request, property);
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card32(request, window);
+  ut_x11_buffer_append_card32(request, property);
 
   send_request(self, 19, 0, request);
 }
@@ -1333,12 +1249,12 @@ void ut_x11_client_get_property_full(UtObject *object, uint32_t window,
   assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
-  UtObjectRef request = ut_uint8_array_new();
-  write_card32(request, window);
-  write_card32(request, property);
-  write_card32(request, type);
-  write_card32(request, long_offset);
-  write_card32(request, long_length);
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card32(request, window);
+  ut_x11_buffer_append_card32(request, property);
+  ut_x11_buffer_append_card32(request, type);
+  ut_x11_buffer_append_card32(request, long_offset);
+  ut_x11_buffer_append_card32(request, long_length);
 
   send_request_with_reply(self, 31, delete ? 1 : 0, request,
                           decode_get_property_reply, handle_get_property_error,
@@ -1351,8 +1267,8 @@ void ut_x11_client_list_properties(UtObject *object, uint32_t window,
   assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
-  UtObjectRef request = ut_uint8_array_new();
-  write_card32(request, window);
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card32(request, window);
 
   send_request_with_reply(self, 32, 0, request, decode_list_properties_reply,
                           handle_list_properties_error,
@@ -1367,11 +1283,11 @@ uint32_t ut_x11_client_create_pixmap(UtObject *object, uint32_t drawable,
 
   uint32_t id = create_resource_id(self);
 
-  UtObjectRef request = ut_uint8_array_new();
-  write_card32(request, id);
-  write_card32(request, drawable);
-  write_card16(request, width);
-  write_card16(request, height);
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card32(request, id);
+  ut_x11_buffer_append_card32(request, drawable);
+  ut_x11_buffer_append_card16(request, width);
+  ut_x11_buffer_append_card16(request, height);
 
   send_request(self, 53, depth, request);
 
@@ -1382,8 +1298,8 @@ void ut_x11_client_free_pixmap(UtObject *object, uint32_t pixmap) {
   assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
-  UtObjectRef request = ut_uint8_array_new();
-  write_card32(request, pixmap);
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card32(request, pixmap);
 
   send_request(self, 54, 0, request);
 }
@@ -1394,7 +1310,7 @@ void ut_x11_client_list_extensions(UtObject *object,
   assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
-  UtObjectRef request = ut_uint8_array_new();
+  UtObjectRef request = ut_x11_buffer_new();
   send_request_with_reply(self, 99, 0, request, decode_list_extensions_reply,
                           handle_list_extensions_error,
                           (RequestCallback)callback, user_data, cancel);

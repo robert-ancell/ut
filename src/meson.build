@@ -86,6 +86,7 @@ ut_sources = [
   'ut-writable-input-stream.c',
   'x11/ut-x11-atom-error.c',
   'x11/ut-x11-big-requests-extension.c',
+  'x11/ut-x11-buffer.c',
   'x11/ut-x11-button-press.c',
   'x11/ut-x11-button-release.c',
   'x11/ut-x11-client.c',
