@@ -27,6 +27,10 @@ const char *ut_object_get_type_name(UtObject *object) {
 }
 
 char *ut_object_to_string(UtObject *object) {
+  if (object == NULL) {
+    return strdup("NULL");
+  }
+
   if (object->interface->to_string != NULL) {
     return object->interface->to_string(object);
   }
