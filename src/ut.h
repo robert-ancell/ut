@@ -11,6 +11,7 @@
 #include "http/ut-http-client.h"
 #include "http/ut-http-header.h"
 #include "http/ut-http-response.h"
+#include "opentype/ut-open-type-file.h"
 #include "png/ut-png-decoder.h"
 #include "png/ut-png-error.h"
 #include "png/ut-png-image.h"

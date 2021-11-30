@@ -23,6 +23,7 @@ ut_sources = [
   'png/ut-png-image.c',
   'json/ut-json.c',
   'json/ut-json-encoder.c',
+  'opentype/ut-open-type-file.c',
   'ut-assert.c',
   'ut-base64.c',
   'ut-boolean.c',
@@ -266,3 +267,8 @@ dbus_client_test = executable('ut-dbus-client-test',
                              'dbus/ut-dbus-client-test.c',
                              link_with: ut_lib)
 #test('DBus Client', dbus_client_test)
+
+open_type_file_test = executable('ut-open-type-file-test',
+                                 'opentype/ut-open-type-file-test.c',
+                                 link_with: ut_lib)
+#test('OpenType file', open_type_file_test)
