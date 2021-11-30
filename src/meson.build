@@ -23,6 +23,9 @@ ut_sources = [
   'png/ut-png-image.c',
   'json/ut-json.c',
   'json/ut-json-encoder.c',
+  'ttf/ut-true-type-decoder.c',
+  'ttf/ut-true-type-error.c',
+  'ttf/ut-true-type-font.c',
   'ut-assert.c',
   'ut-base64.c',
   'ut-boolean.c',
@@ -254,3 +257,8 @@ dbus_client_test = executable('ut-dbus-client-test',
                              'dbus/ut-dbus-client-test.c',
                              link_with: ut_lib)
 #test('DBus Client', dbus_client_test)
+
+true_type_decoder_test = executable('ut-true-type-decoder-test',
+                                    'ttf/ut-true-type-decoder-test.c',
+                                    link_with: ut_lib)
+#test('TrueType decoder', true_type_decoder_test)
