@@ -59,6 +59,8 @@ ut_sources = [
   'ut-object-array.c',
   'ut-object-list.c',
   'ut-output-stream.c',
+  'ut-shared-memory-array.c',
+  'ut-shared-memory-subarray.c',
   'ut-string.c',
   'ut-string-array.c',
   'ut-string-list.c',
@@ -146,6 +148,11 @@ const_utf8_string_test = executable('ut-constant-utf8-string-test',
                                     'ut-constant-utf8-string-test.c',
                                     link_with: ut_lib)
 test('Constant String', const_utf8_string_test)
+
+shared_memory_array_test = executable('ut-shared-memory-array-test',
+                              'ut-shared-memory-array-test.c',
+                              link_with: ut_lib)
+test('Shared Memory Array', shared_memory_array_test)
 
 base64_test = executable('ut-base64-test',
                          'ut-base64-test.c',

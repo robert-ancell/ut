@@ -41,6 +41,7 @@
 #include "ut-object-list.h"
 #include "ut-object.h"
 #include "ut-output-stream.h"
+#include "ut-shared-memory-array.h"
 #include "ut-string-array.h"
 #include "ut-string-list.h"
 #include "ut-string.h"
