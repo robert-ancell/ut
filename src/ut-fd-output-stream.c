@@ -73,22 +73,25 @@ static void write_cb(void *user_data) {
   // Write remaining data.
   size_t block_length = ut_list_get_length(block->data);
   size_t n_to_write = block_length - block->n_written;
-  const uint8_t *buffer;
+  UtObject *data;
   UtObject *file_descriptors = NULL;
-  uint8_t *allocated_buffer = NULL;
-  if (ut_object_is_uint8_array(block->data)) {
-    buffer = ut_uint8_array_get_data(block->data) + block->n_written;
-  } else if (ut_object_is_constant_uint8_array(block->data)) {
-    buffer = ut_constant_uint8_array_get_data(block->data) + block->n_written;
-  } else if (ut_object_is_uint8_array_with_fds(block->data)) {
-    UtObject *uint8_data = ut_uint8_array_with_fds_get_data(block->data);
-    buffer = ut_constant_uint8_array_get_data(uint8_data) + block->n_written;
+  if (ut_object_is_uint8_array_with_fds(block->data)) {
+    data = ut_uint8_array_with_fds_get_data(block->data);
     file_descriptors = ut_uint8_array_with_fds_get_fds(block->data);
+  } else {
+    data = block->data;
+  }
+  const uint8_t *buffer;
+  uint8_t *allocated_buffer = NULL;
+  if (ut_object_is_uint8_array(data)) {
+    buffer = ut_uint8_array_get_data(data) + block->n_written;
+  } else if (ut_object_is_constant_uint8_array(data)) {
+    buffer = ut_constant_uint8_array_get_data(data) + block->n_written;
   } else {
     allocated_buffer = malloc(sizeof(uint8_t) * n_to_write);
     for (size_t i = 0; i < n_to_write; i++) {
       allocated_buffer[i] =
-          ut_uint8_list_get_element(block->data, block->n_written + i);
+          ut_uint8_list_get_element(data, block->n_written + i);
     }
     buffer = allocated_buffer;
   }
