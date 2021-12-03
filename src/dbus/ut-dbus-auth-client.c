@@ -5,6 +5,7 @@
 #include "ut-cancel.h"
 #include "ut-cstring.h"
 #include "ut-dbus-auth-client.h"
+#include "ut-general-error.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-output-stream.h"
@@ -24,6 +25,8 @@ typedef struct {
   UtObject *output_stream;
   UtObject *read_cancel;
   AuthState state;
+  char *guid;
+  UtObject *error;
   UtAuthCompleteCallback complete_callback;
   void *complete_user_data;
   UtObject *complete_cancel;
@@ -54,6 +57,16 @@ static void send_auth_end(UtDBusAuthClient *self) {
   send_auth_message(self, "BEGIN");
 }
 
+static void done(UtDBusAuthClient *self) {
+  self->state = AUTH_STATE_DONE;
+  ut_cancel_activate(self->read_cancel);
+
+  if (!ut_cancel_is_active(self->complete_cancel)) {
+    self->complete_callback(self->complete_user_data, self->guid,
+                            ut_object_ref(self->error));
+  }
+}
+
 static void process_line(UtDBusAuthClient *self, const char *line) {
   char *command_end = strchr(line, ' ');
   ut_cstring_ref command = NULL;
@@ -71,17 +84,20 @@ static void process_line(UtDBusAuthClient *self, const char *line) {
       self->state = AUTH_STATE_AUTH_EXTERNAL;
       send_auth_external(self);
     } else {
-      assert(false);
+      self->error = ut_general_error_new("No supported auth mechanism");
+      done(self);
     }
   } else if (strcmp(command, "OK") == 0) {
     assert(self->state == AUTH_STATE_AUTH_EXTERNAL);
+    free(self->guid);
+    self->guid = strdup(args);
     self->state = AUTH_STATE_DONE;
     ut_cancel_activate(self->read_cancel);
     send_auth_end(self);
-
-    self->complete_callback(self->complete_user_data, args, NULL);
+    done(self);
   } else if (strcmp(command, "ERROR") == 0) {
-    send_auth_end(self);
+    self->error = ut_general_error_new("Error during authentication: %s", args);
+    done(self);
   } else {
     assert(false);
   }
@@ -128,6 +144,8 @@ static void ut_dbus_auth_client_init(UtObject *object) {
   self->output_stream = NULL;
   self->read_cancel = ut_cancel_new();
   self->state = AUTH_STATE_IDLE;
+  self->guid = NULL;
+  self->error = NULL;
   self->complete_callback = NULL;
   self->complete_user_data = NULL;
   self->complete_cancel = NULL;
@@ -138,6 +156,8 @@ static void ut_dbus_auth_client_cleanup(UtObject *object) {
   ut_object_unref(self->input_stream);
   ut_object_unref(self->output_stream);
   ut_object_unref(self->read_cancel);
+  free(self->guid);
+  ut_object_unref(self->error);
   ut_object_unref(self->complete_cancel);
 }
 
