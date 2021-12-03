@@ -16,6 +16,7 @@ typedef enum {
   AUTH_STATE_IDLE,
   AUTH_STATE_PROBE_MECHANISMS,
   AUTH_STATE_AUTH_EXTERNAL,
+  AUTH_STATE_NEGOTIATE_UNIX_FD,
   AUTH_STATE_DONE
 } AuthState;
 
@@ -23,9 +24,11 @@ typedef struct {
   UtObject object;
   UtObject *input_stream;
   UtObject *output_stream;
+  bool negotiate_unix_fd;
   UtObject *read_cancel;
   AuthState state;
   char *guid;
+  bool unix_fd_supported;
   UtObject *error;
   UtAuthCompleteCallback complete_callback;
   void *complete_user_data;
@@ -53,6 +56,10 @@ static void send_auth_external(UtDBusAuthClient *self) {
   send_auth_message(self, ut_string_get_text(message));
 }
 
+static void send_negotiate_unix_fd(UtDBusAuthClient *self) {
+  send_auth_message(self, "NEGOTIATE_UNIX_FD");
+}
+
 static void send_auth_end(UtDBusAuthClient *self) {
   send_auth_message(self, "BEGIN");
 }
@@ -63,6 +70,7 @@ static void done(UtDBusAuthClient *self) {
 
   if (!ut_cancel_is_active(self->complete_cancel)) {
     self->complete_callback(self->complete_user_data, self->guid,
+                            self->unix_fd_supported,
                             ut_object_ref(self->error));
   }
 }
@@ -91,13 +99,27 @@ static void process_line(UtDBusAuthClient *self, const char *line) {
     assert(self->state == AUTH_STATE_AUTH_EXTERNAL);
     free(self->guid);
     self->guid = strdup(args);
-    self->state = AUTH_STATE_DONE;
-    ut_cancel_activate(self->read_cancel);
+    if (self->negotiate_unix_fd) {
+      self->state = AUTH_STATE_NEGOTIATE_UNIX_FD;
+      send_negotiate_unix_fd(self);
+    } else {
+      send_auth_end(self);
+      done(self);
+    }
+  } else if (strcmp(command, "AGREE_UNIX_FD") == 0) {
+    assert(self->state == AUTH_STATE_NEGOTIATE_UNIX_FD);
+    self->unix_fd_supported = true;
     send_auth_end(self);
     done(self);
   } else if (strcmp(command, "ERROR") == 0) {
-    self->error = ut_general_error_new("Error during authentication: %s", args);
-    done(self);
+    if (self->state == AUTH_STATE_NEGOTIATE_UNIX_FD) {
+      send_auth_end(self);
+      done(self);
+    } else {
+      self->error =
+          ut_general_error_new("Error during authentication: %s", args);
+      done(self);
+    }
   } else {
     assert(false);
   }
@@ -142,8 +164,10 @@ static void ut_dbus_auth_client_init(UtObject *object) {
   UtDBusAuthClient *self = (UtDBusAuthClient *)object;
   self->input_stream = NULL;
   self->output_stream = NULL;
+  self->negotiate_unix_fd = false;
   self->read_cancel = ut_cancel_new();
   self->state = AUTH_STATE_IDLE;
+  self->unix_fd_supported = false;
   self->guid = NULL;
   self->error = NULL;
   self->complete_callback = NULL;
@@ -174,6 +198,13 @@ UtObject *ut_dbus_auth_client_new(UtObject *input_stream,
   self->input_stream = ut_object_ref(input_stream);
   self->output_stream = ut_object_ref(output_stream);
   return object;
+}
+
+void ut_dbus_auth_client_set_negotiate_unix_fd(UtObject *object,
+                                               bool negotiate_unix_fd) {
+  assert(ut_object_is_dbus_auth_client(object));
+  UtDBusAuthClient *self = (UtDBusAuthClient *)object;
+  self->negotiate_unix_fd = negotiate_unix_fd;
 }
 
 void ut_dbus_auth_client_run(UtObject *object, UtAuthCompleteCallback callback,

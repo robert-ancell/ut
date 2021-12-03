@@ -138,7 +138,7 @@ static size_t messages_cb(void *user_data, UtObject *messages, bool complete) {
 }
 
 static void auth_complete_cb(void *user_data, const char *guid,
-                             UtObject *error) {
+                             bool unix_fd_supported, UtObject *error) {
   UtDBusClient *self = user_data;
 
   self->authenticated = true;

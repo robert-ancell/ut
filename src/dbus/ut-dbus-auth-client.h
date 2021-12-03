@@ -5,10 +5,13 @@
 #pragma once
 
 typedef void (*UtAuthCompleteCallback)(void *user_data, const char *guid,
-                                       UtObject *error);
+                                       bool unix_fd_supported, UtObject *error);
 
 UtObject *ut_dbus_auth_client_new(UtObject *input_stream,
                                   UtObject *output_strea);
+
+void ut_dbus_auth_client_set_negotiate_unix_fd(UtObject *object,
+                                               bool negotiate_unix_fd);
 
 void ut_dbus_auth_client_run(UtObject *object, UtAuthCompleteCallback callback,
                              void *user_data, UtObject *cancel);
