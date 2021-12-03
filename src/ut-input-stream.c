@@ -100,7 +100,9 @@ void ut_input_stream_set_active(UtObject *object, bool active) {
   UtInputStreamInterface *stream_interface =
       ut_object_get_interface(object, &ut_input_stream_id);
   assert(stream_interface != NULL);
-  stream_interface->set_active(object, active);
+  if (stream_interface->set_active != NULL) {
+    stream_interface->set_active(object, active);
+  }
 }
 
 bool ut_object_implements_input_stream(UtObject *object) {
