@@ -11,6 +11,7 @@
 #include "ut-dbus-message-decoder.h"
 #include "ut-dbus-message-encoder.h"
 #include "ut-dbus-message.h"
+#include "ut-input-stream-multiplexer.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
 #include "ut-object-list.h"
@@ -55,6 +56,9 @@ typedef struct {
   UtObject *cancel;
   char *address;
   UtObject *socket;
+  UtObject *multiplexer;
+  UtObject *auth_input_stream;
+  UtObject *message_input_stream;
   UtObject *auth_client;
   UtObject *message_decoder;
   UtObject *message_encoder;
@@ -139,7 +143,10 @@ static void auth_complete_cb(void *user_data, const char *guid,
 
   self->authenticated = true;
 
-  self->message_decoder = ut_dbus_message_decoder_new(self->socket);
+  self->message_decoder =
+      ut_dbus_message_decoder_new(self->message_input_stream);
+  ut_input_stream_multiplexer_set_active(self->multiplexer,
+                                         self->message_input_stream);
   ut_input_stream_read(self->message_decoder, messages_cb, self,
                        self->read_cancel);
 
@@ -179,7 +186,15 @@ static void connect(UtDBusClient *self) {
   self->socket = ut_unix_domain_socket_client_new(path);
   ut_unix_domain_socket_client_connect(self->socket);
 
-  self->auth_client = ut_dbus_auth_client_new(self->socket);
+  self->multiplexer = ut_input_stream_multiplexer_new(self->socket);
+  self->auth_input_stream = ut_input_stream_multiplexer_add(self->multiplexer);
+  self->message_input_stream =
+      ut_input_stream_multiplexer_add(self->multiplexer);
+
+  ut_input_stream_multiplexer_set_active(self->multiplexer,
+                                         self->auth_input_stream);
+  self->auth_client =
+      ut_dbus_auth_client_new(self->auth_input_stream, self->socket);
 
   call_method(self, "org.freedesktop.DBus", "/org/freedesktop/DBus",
               "org.freedesktop.DBus", "Hello", NULL, hello_cb, self,
@@ -229,6 +244,9 @@ static void ut_dbus_client_init(UtObject *object) {
   self->cancel = ut_cancel_new();
   self->address = NULL;
   self->socket = NULL;
+  self->multiplexer = NULL;
+  self->auth_input_stream = NULL;
+  self->message_input_stream = NULL;
   self->auth_client = NULL;
   self->message_decoder = NULL;
   self->message_encoder = ut_dbus_message_encoder_new();
@@ -245,6 +263,9 @@ static void ut_dbus_client_cleanup(UtObject *object) {
   ut_object_unref(self->cancel);
   free(self->address);
   ut_object_unref(self->socket);
+  ut_object_unref(self->multiplexer);
+  ut_object_unref(self->auth_input_stream);
+  ut_object_unref(self->message_input_stream);
   ut_object_unref(self->auth_client);
   ut_object_unref(self->message_decoder);
   ut_object_unref(self->message_encoder);

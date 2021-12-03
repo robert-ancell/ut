@@ -20,7 +20,8 @@ typedef enum {
 
 typedef struct {
   UtObject object;
-  UtObject *socket;
+  UtObject *input_stream;
+  UtObject *output_stream;
   UtObject *read_cancel;
   AuthState state;
   UtAuthCompleteCallback complete_callback;
@@ -32,7 +33,7 @@ static void send_auth_message(UtDBusAuthClient *self, const char *message) {
   UtObjectRef text = ut_string_new(message);
   ut_string_append(text, "\r\n");
   UtObjectRef utf8 = ut_string_get_utf8(text);
-  ut_output_stream_write(self->socket, utf8);
+  ut_output_stream_write(self->output_stream, utf8);
 }
 
 static void send_auth_start(UtDBusAuthClient *self) {
@@ -123,7 +124,8 @@ static size_t read_cb(void *user_data, UtObject *data, bool complete) {
 
 static void ut_dbus_auth_client_init(UtObject *object) {
   UtDBusAuthClient *self = (UtDBusAuthClient *)object;
-  self->socket = NULL;
+  self->input_stream = NULL;
+  self->output_stream = NULL;
   self->read_cancel = ut_cancel_new();
   self->state = AUTH_STATE_IDLE;
   self->complete_callback = NULL;
@@ -133,7 +135,8 @@ static void ut_dbus_auth_client_init(UtObject *object) {
 
 static void ut_dbus_auth_client_cleanup(UtObject *object) {
   UtDBusAuthClient *self = (UtDBusAuthClient *)object;
-  ut_object_unref(self->socket);
+  ut_object_unref(self->input_stream);
+  ut_object_unref(self->output_stream);
   ut_object_unref(self->read_cancel);
   ut_object_unref(self->complete_cancel);
 }
@@ -144,10 +147,12 @@ static UtObjectInterface object_interface = {.type_name = "UtDBusAuthClient",
                                                  ut_dbus_auth_client_cleanup,
                                              .interfaces = {{NULL, NULL}}};
 
-UtObject *ut_dbus_auth_client_new(UtObject *socket) {
+UtObject *ut_dbus_auth_client_new(UtObject *input_stream,
+                                  UtObject *output_stream) {
   UtObject *object = ut_object_new(sizeof(UtDBusAuthClient), &object_interface);
   UtDBusAuthClient *self = (UtDBusAuthClient *)object;
-  self->socket = ut_object_ref(socket);
+  self->input_stream = ut_object_ref(input_stream);
+  self->output_stream = ut_object_ref(output_stream);
   return object;
 }
 
@@ -164,12 +169,12 @@ void ut_dbus_auth_client_run(UtObject *object, UtAuthCompleteCallback callback,
   self->complete_user_data = user_data;
   self->complete_cancel = ut_object_ref(cancel);
 
-  ut_input_stream_read(self->socket, read_cb, self, self->read_cancel);
+  ut_input_stream_read(self->input_stream, read_cb, self, self->read_cancel);
 
   // Send empty byte, which was used for sending credentials (no longer
   // required).
   UtObjectRef start = ut_uint8_list_new_with_data(1, 0);
-  ut_output_stream_write(self->socket, start);
+  ut_output_stream_write(self->output_stream, start);
 
   send_auth_start(self);
 }

@@ -7,7 +7,8 @@
 typedef void (*UtAuthCompleteCallback)(void *user_data, const char *guid,
                                        UtObject *error);
 
-UtObject *ut_dbus_auth_client_new(UtObject *socket);
+UtObject *ut_dbus_auth_client_new(UtObject *input_stream,
+                                  UtObject *output_strea);
 
 void ut_dbus_auth_client_run(UtObject *object, UtAuthCompleteCallback callback,
                              void *user_data, UtObject *cancel);
