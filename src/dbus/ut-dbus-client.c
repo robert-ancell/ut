@@ -195,6 +195,7 @@ static void connect(UtDBusClient *self) {
                                          self->auth_input_stream);
   self->auth_client =
       ut_dbus_auth_client_new(self->auth_input_stream, self->socket);
+  ut_dbus_auth_client_set_negotiate_unix_fd(self->auth_client, true);
 
   call_method(self, "org.freedesktop.DBus", "/org/freedesktop/DBus",
               "org.freedesktop.DBus", "Hello", NULL, hello_cb, self,

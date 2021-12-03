@@ -14,6 +14,7 @@
 #include "ut-file-descriptor.h"
 #include "ut-float64.h"
 #include "ut-int16.h"
+#include "ut-int32-list.h"
 #include "ut-int32.h"
 #include "ut-int64.h"
 #include "ut-list.h"
@@ -24,6 +25,7 @@
 #include "ut-uint16.h"
 #include "ut-uint32.h"
 #include "ut-uint64.h"
+#include "ut-uint8-array-with-fds.h"
 #include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
 #include "ut-uint8.h"
@@ -151,7 +153,8 @@ static char *get_signature(UtObject *value) {
   }
 }
 
-static void write_value(UtObject *buffer, UtObject *value) {
+static void write_value(UtObject *buffer, UtObject *file_descriptors,
+                        UtObject *value) {
   if (ut_object_is_uint8(value)) {
     ut_uint8_list_append(buffer, ut_uint8_get_value(value));
   } else if (ut_object_is_boolean(value)) {
@@ -193,14 +196,16 @@ static void write_value(UtObject *buffer, UtObject *value) {
     size_t start = ut_list_get_length(buffer);
     size_t length = ut_list_get_length(value);
     for (size_t i = 0; i < length; i++) {
-      write_value(buffer, ut_object_list_get_element(value, i));
+      write_value(buffer, file_descriptors,
+                  ut_object_list_get_element(value, i));
     }
     rewrite_length(buffer, length_offset, ut_list_get_length(buffer) - start);
   } else if (ut_object_is_dbus_struct(value)) {
     write_align_padding(buffer, 8);
     size_t length = ut_list_get_length(value);
     for (size_t i = 0; i < length; i++) {
-      write_value(buffer, ut_object_list_get_element(value, i));
+      write_value(buffer, file_descriptors,
+                  ut_object_list_get_element(value, i));
     }
   } else if (ut_object_is_dbus_dict(value)) {
     write_align_padding(buffer, 4);
@@ -216,16 +221,19 @@ static void write_value(UtObject *buffer, UtObject *value) {
       UtObjectRef key = ut_map_item_get_key(item);
       UtObjectRef value = ut_map_item_get_value(item);
       UtObjectRef element = ut_dbus_struct_new(key, value, NULL);
-      write_value(buffer, element);
+      write_value(buffer, file_descriptors, element);
     }
     rewrite_length(buffer, length_offset, ut_list_get_length(buffer) - start);
   } else if (ut_object_is_dbus_variant(value)) {
     UtObject *child_value = ut_dbus_variant_get_value(value);
     ut_cstring_ref signature = get_signature(child_value);
     write_signature(buffer, signature);
-    write_value(buffer, child_value);
+    write_value(buffer, file_descriptors, child_value);
   } else if (ut_object_is_file_descriptor(value)) {
-    assert(false);
+    write_align_padding(buffer, 4);
+    ut_uint8_list_append_uint32_le(buffer,
+                                   ut_list_get_length(file_descriptors));
+    ut_list_append(file_descriptors, value);
   } else {
     assert(false);
   }
@@ -241,6 +249,8 @@ UtObject *ut_dbus_message_encoder_new() {
 UtObject *ut_dbus_message_encoder_encode(UtObject *object, UtObject *message) {
   assert(ut_object_is_dbus_message_encoder(object));
 
+  UtObjectRef file_descriptors = ut_int32_list_new();
+
   UtObject *args = ut_dbus_message_get_args(message);
   UtObjectRef args_data = ut_uint8_array_new();
   UtObjectRef signature = NULL;
@@ -249,7 +259,7 @@ UtObject *ut_dbus_message_encoder_encode(UtObject *object, UtObject *message) {
     size_t args_length = ut_list_get_length(args);
     for (size_t i = 0; i < args_length; i++) {
       UtObjectRef arg = ut_list_get_element(args, i);
-      write_value(args_data, arg);
+      write_value(args_data, file_descriptors, arg);
       ut_cstring_ref arg_signature = get_signature(arg);
       ut_string_append(signature_string, arg_signature);
     }
@@ -303,13 +313,22 @@ UtObject *ut_dbus_message_encoder_encode(UtObject *object, UtObject *message) {
   if (signature != NULL) {
     ut_list_append_take(header_fields, header_field_new(8, signature));
   }
-  write_value(data, header_fields);
+  if (ut_list_get_length(file_descriptors) > 0) {
+    ut_list_append_take(header_fields,
+                        header_field_new(9, ut_uint32_new(ut_list_get_length(
+                                                file_descriptors))));
+  }
+  write_value(data, file_descriptors, header_fields);
 
   // Data
   write_align_padding(data, 8);
   ut_list_append_list(data, args_data);
 
-  return ut_object_ref(data);
+  if (ut_list_get_length(file_descriptors) > 0) {
+    return ut_uint8_array_with_fds_new(data, file_descriptors);
+  } else {
+    return ut_object_ref(data);
+  }
 }
 
 bool ut_object_is_dbus_message_encoder(UtObject *object) {

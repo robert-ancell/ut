@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "ut-boolean.h"
 #include "ut-cstring.h"
@@ -24,6 +25,7 @@
 #include "ut-uint16.h"
 #include "ut-uint32.h"
 #include "ut-uint64.h"
+#include "ut-uint8-array-with-fds.h"
 #include "ut-uint8-list.h"
 #include "ut-uint8-subarray.h"
 #include "ut-uint8.h"
@@ -31,15 +33,16 @@
 typedef struct {
   UtObject object;
   UtObject *input_stream;
+  UtObject *fds;
   UtObject *messages;
   UtInputStreamCallback callback;
   void *user_data;
 } UtDBusMessageDecoder;
 
-static UtObject *read_value(UtObject *data, size_t *offset,
+static UtObject *read_value(UtObject *data, UtObject *fds, size_t *offset,
                             const char *signature);
 
-static UtObject *read_values(UtObject *data, size_t *offset,
+static UtObject *read_values(UtObject *data, UtObject *fds, size_t *offset,
                              const char *signature);
 
 static size_t get_remaining(UtObject *data, size_t *offset) {
@@ -219,13 +222,13 @@ static UtObject *read_signature(UtObject *data, size_t *offset) {
   return ut_dbus_signature_new(value);
 }
 
-static UtObject *read_struct(UtObject *data, size_t *offset,
+static UtObject *read_struct(UtObject *data, UtObject *fds, size_t *offset,
                              const char *signatures) {
   size_t o = *offset;
   if (!read_align_padding(data, &o, 8)) {
     return NULL;
   }
-  UtObjectRef values = read_values(data, &o, signatures);
+  UtObjectRef values = read_values(data, fds, &o, signatures);
   if (values == NULL) {
     return NULL;
   }
@@ -233,7 +236,7 @@ static UtObject *read_struct(UtObject *data, size_t *offset,
   return ut_dbus_struct_new_from_list(values);
 }
 
-static UtObject *read_array(UtObject *data, size_t *offset,
+static UtObject *read_array(UtObject *data, UtObject *fds, size_t *offset,
                             const char *signature) {
   size_t o = *offset;
   UtObjectRef length_object = read_uint32(data, &o);
@@ -250,7 +253,7 @@ static UtObject *read_array(UtObject *data, size_t *offset,
   size_t end_offset = o + length;
   UtObjectRef result = ut_dbus_array_new(signature);
   while (o < end_offset) {
-    UtObjectRef value = read_value(data, &o, signature);
+    UtObjectRef value = read_value(data, fds, &o, signature);
     ut_list_append(result, value);
   }
   assert(o <= end_offset);
@@ -258,22 +261,31 @@ static UtObject *read_array(UtObject *data, size_t *offset,
   return ut_object_ref(result);
 }
 
-static UtObject *read_variant(UtObject *data, size_t *offset) {
+static UtObject *read_variant(UtObject *data, UtObject *fds, size_t *offset) {
   UtObjectRef signature = read_signature(data, offset);
   if (signature == NULL) {
     return NULL;
   }
   UtObjectRef value =
-      read_value(data, offset, ut_dbus_signature_get_value(signature));
+      read_value(data, fds, offset, ut_dbus_signature_get_value(signature));
   if (value == NULL) {
     return NULL;
   }
   return ut_dbus_variant_new(value);
 }
 
-static UtObject *read_unix_fd(UtObject *data, size_t *offset) { assert(false); }
+static UtObject *read_unix_fd(UtObject *data, UtObject *fds, size_t *offset) {
+  UtObjectRef index_object = read_uint32(data, offset);
+  if (index_object == NULL) {
+    return NULL;
+  }
+  size_t index = ut_uint32_get_value(index_object);
+  assert(fds != NULL);
+  assert(index < ut_list_get_length(fds));
+  return ut_list_get_element(fds, index);
+}
 
-static UtObject *read_dict(UtObject *data, size_t *offset,
+static UtObject *read_dict(UtObject *data, UtObject *fds, size_t *offset,
                            const char *signature) {
   UtObjectRef signature_object = ut_dbus_signature_new(signature);
   UtObjectRef signatures = ut_dbus_signature_split(signature_object);
@@ -300,7 +312,7 @@ static UtObject *read_dict(UtObject *data, size_t *offset,
       ut_dbus_dict_new(ut_dbus_signature_get_value(key_signature),
                        ut_dbus_signature_get_value(value_signature));
   while (o < end_offset) {
-    UtObjectRef entry = read_struct(data, &o, signature);
+    UtObjectRef entry = read_struct(data, fds, &o, signature);
     ut_map_insert(result, ut_dbus_struct_get_value(entry, 0),
                   ut_dbus_struct_get_value(entry, 1));
   }
@@ -309,7 +321,7 @@ static UtObject *read_dict(UtObject *data, size_t *offset,
   return ut_object_ref(result);
 }
 
-static UtObject *read_value(UtObject *data, size_t *offset,
+static UtObject *read_value(UtObject *data, UtObject *fds, size_t *offset,
                             const char *signature) {
   if (strcmp(signature, "y") == 0) {
     return read_byte(data, offset);
@@ -339,35 +351,35 @@ static UtObject *read_value(UtObject *data, size_t *offset,
     assert(ut_cstring_ends_with(signature, ")"));
     ut_cstring_ref struct_signature =
         ut_cstring_substring(signature, 1, strlen(signature) - 1);
-    return read_struct(data, offset, struct_signature);
+    return read_struct(data, fds, offset, struct_signature);
   } else if (strncmp(signature, "a{", 2) == 0) {
     assert(ut_cstring_ends_with(signature, "}"));
     ut_cstring_ref element_signature =
         ut_cstring_substring(signature, 2, strlen(signature) - 1);
-    return read_dict(data, offset, element_signature);
+    return read_dict(data, fds, offset, element_signature);
   } else if (strncmp(signature, "a", 1) == 0) {
-    return read_array(data, offset, signature + 1);
+    return read_array(data, fds, offset, signature + 1);
   } else if (strcmp(signature, "v") == 0) {
-    return read_variant(data, offset);
+    return read_variant(data, fds, offset);
   } else if (strcmp(signature, "h") == 0) {
-    return read_unix_fd(data, offset);
+    return read_unix_fd(data, fds, offset);
   } else {
     assert(false);
   }
 }
 
-static UtObject *read_values(UtObject *data, size_t *offset,
+static UtObject *read_values(UtObject *data, UtObject *fds, size_t *offset,
                              const char *signature) {
   UtObjectRef signature_object = ut_dbus_signature_new(signature);
   UtObjectRef signatures = ut_dbus_signature_split(signature_object);
   size_t signatures_length = ut_list_get_length(signatures);
 
-  UtObjectRef values = ut_object_list_new();
+  UtObjectRef values = ut_list_new();
   size_t o = *offset;
   for (size_t i = 0; i < signatures_length; i++) {
     UtObjectRef value_signature = ut_list_get_element(signatures, i);
     UtObjectRef value =
-        read_value(data, &o, ut_dbus_signature_get_value(value_signature));
+        read_value(data, fds, &o, ut_dbus_signature_get_value(value_signature));
     if (value == NULL) {
       return NULL;
     }
@@ -378,9 +390,10 @@ static UtObject *read_values(UtObject *data, size_t *offset,
   return ut_object_ref(values);
 }
 
-static UtObject *read_message(UtObject *data, size_t *offset) {
+static UtObject *read_message(UtDBusMessageDecoder *self, UtObject *data,
+                              size_t *offset) {
   size_t o = *offset;
-  UtObjectRef header = read_values(data, &o, "yyyyuua(yv)");
+  UtObjectRef header = read_values(data, NULL, &o, "yyyyuua(yv)");
   if (header == NULL) {
     return NULL;
   }
@@ -404,6 +417,7 @@ static UtObject *read_message(UtObject *data, size_t *offset) {
              *sender = NULL;
   bool has_reply_serial = false;
   uint32_t reply_serial = 0;
+  size_t fds_length = 0;
   for (size_t i = 0; i < header_fields_length; i++) {
     UtObject *header_field = ut_object_list_get_element(header_fields, i);
     uint8_t code =
@@ -417,41 +431,50 @@ static UtObject *read_message(UtObject *data, size_t *offset) {
       break;
     case 1:
       assert(ut_object_is_dbus_object_path(value));
+      assert(path == NULL);
       path = ut_dbus_object_path_get_value(value);
       break;
     case 2:
       assert(ut_object_implements_string(value));
+      assert(interface == NULL);
       interface = ut_string_get_text(value);
       break;
     case 3:
       assert(ut_object_implements_string(value));
+      assert(member == NULL);
       member = ut_string_get_text(value);
       break;
     case 4:
       assert(ut_object_implements_string(value));
+      assert(error_name == NULL);
       error_name = ut_string_get_text(value);
       break;
     case 5:
       assert(ut_object_is_uint32(value));
+      assert(!has_reply_serial);
       has_reply_serial = true;
       reply_serial = ut_uint32_get_value(value);
       break;
     case 6:
       assert(ut_object_implements_string(value));
+      assert(destination == NULL);
       destination = ut_string_get_text(value);
       break;
     case 7:
       assert(ut_object_implements_string(value));
+      assert(sender == NULL);
       sender = ut_string_get_text(value);
       break;
     case 8:
       assert(ut_object_is_dbus_signature(value));
+      assert(body_signature == NULL);
       body_signature = ut_dbus_signature_get_value(value);
       break;
     case 9:
       assert(ut_object_is_uint32(value));
-      // Unix Fds
-      assert(ut_uint32_get_value(value) == 0);
+      assert(fds_length == 0);
+      fds_length = ut_uint32_get_value(value);
+      assert(ut_list_get_length(self->fds) >= fds_length);
       break;
     }
   }
@@ -464,16 +487,20 @@ static UtObject *read_message(UtObject *data, size_t *offset) {
     return NULL;
   }
 
+  UtObjectRef fds = ut_list_get_sublist(self->fds, 0, fds_length);
+
   size_t body_end = o + body_length;
   UtObjectRef args = NULL;
   if (body_signature != NULL) {
-    args = read_values(data, &o, body_signature);
+    args = read_values(data, fds, &o, body_signature);
     assert(args != NULL);
     assert(o <= body_end);
   } else {
     assert(body_length == 0);
   }
   *offset = body_end;
+
+  ut_list_remove(self->fds, 0, fds_length);
 
   UtObject *message = ut_dbus_message_new(type);
   ut_dbus_message_set_flags(message, flags);
@@ -495,12 +522,17 @@ static UtObject *read_message(UtObject *data, size_t *offset) {
 static size_t read_cb(void *user_data, UtObject *data, bool complete) {
   UtDBusMessageDecoder *self = user_data;
 
+  if (ut_object_is_uint8_array_with_fds(data)) {
+    ut_list_append_list(self->fds, ut_uint8_array_with_fds_get_fds(data));
+    data = ut_uint8_array_with_fds_get_data(data);
+  }
+
   size_t offset = 0;
   size_t data_length = ut_list_get_length(data);
   while (true) {
     UtObjectRef d = ut_uint8_subarray_new(data, offset, data_length - offset);
     size_t o = 0;
-    UtObjectRef message = read_message(d, &o);
+    UtObjectRef message = read_message(self, d, &o);
     if (message == NULL) {
       break;
     }
@@ -521,6 +553,7 @@ static size_t read_cb(void *user_data, UtObject *data, bool complete) {
 static void ut_dbus_message_decoder_init(UtObject *object) {
   UtDBusMessageDecoder *self = (UtDBusMessageDecoder *)object;
   self->input_stream = NULL;
+  self->fds = ut_object_list_new();
   self->messages = ut_object_list_new();
   self->callback = NULL;
   self->user_data = NULL;
