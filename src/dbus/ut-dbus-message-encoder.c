@@ -205,12 +205,27 @@ UtObject *ut_dbus_message_encoder_new() {
 UtObject *ut_dbus_message_encoder_encode(UtObject *object, UtObject *message) {
   assert(ut_object_is_dbus_message_encoder(object));
 
+  UtObject *args = ut_dbus_message_get_args(message);
+  UtObjectRef args_data = ut_uint8_array_new();
+  UtObjectRef signature = NULL;
+  if (args != NULL) {
+    UtObjectRef signature_string = ut_string_new("");
+    size_t args_length = ut_list_get_length(args);
+    for (size_t i = 0; i < args_length; i++) {
+      UtObjectRef arg = ut_list_get_element(args, i);
+      write_value(args_data, arg);
+      ut_cstring_ref arg_signature = get_signature(arg);
+      ut_string_append(signature_string, arg_signature);
+    }
+    signature = ut_dbus_signature_new(ut_string_get_text(signature_string));
+  }
+
   UtObjectRef data = ut_uint8_array_new();
   ut_uint8_list_append(data, 'l'); // Little endian.
   ut_uint8_list_append(data, ut_dbus_message_get_type(message));
   ut_uint8_list_append(data, ut_dbus_message_get_flags(message));
-  ut_uint8_list_append(data, 1);           // Protocol version.
-  ut_uint8_list_append_uint32_le(data, 0); // data length
+  ut_uint8_list_append(data, 1); // Protocol version.
+  ut_uint8_list_append_uint32_le(data, ut_list_get_length(args_data));
   ut_uint8_list_append_uint32_le(data, ut_dbus_message_get_serial(message));
   UtObjectRef header_fields = ut_dbus_array_new("(yv)");
   const char *path = ut_dbus_message_get_path(message);
@@ -249,10 +264,14 @@ UtObject *ut_dbus_message_encoder_encode(UtObject *object, UtObject *message) {
     ut_list_append_take(header_fields,
                         header_field_new(7, ut_string_new(sender)));
   }
+  if (signature != NULL) {
+    ut_list_append_take(header_fields, header_field_new(8, signature));
+  }
   write_value(data, header_fields);
 
   // Data
   write_align_padding(data, 8);
+  ut_list_append_list(data, args_data);
 
   return ut_object_ref(data);
 }
