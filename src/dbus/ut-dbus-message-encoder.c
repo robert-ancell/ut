@@ -16,6 +16,8 @@
 #include "ut-int32.h"
 #include "ut-int64.h"
 #include "ut-list.h"
+#include "ut-map-item.h"
+#include "ut-map.h"
 #include "ut-object-list.h"
 #include "ut-string.h"
 #include "ut-uint16.h"
@@ -168,7 +170,21 @@ static void write_value(UtObject *buffer, UtObject *value) {
       write_value(buffer, ut_object_list_get_element(value, i));
     }
   } else if (ut_object_is_dbus_dict(value)) {
-    assert(false);
+    write_align_padding(buffer, 4);
+    // Length will be overwritten later.
+    size_t length_offset = ut_list_get_length(buffer);
+    ut_uint8_list_append_uint32_le(buffer, 0);
+    UtObjectRef items = ut_map_get_items(value);
+    size_t length = ut_list_get_length(items);
+    for (size_t i = 0; i < length; i++) {
+      UtObjectRef item = ut_list_get_element(items, i);
+      UtObjectRef key = ut_map_item_get_key(item);
+      UtObjectRef value = ut_map_item_get_value(item);
+      UtObjectRef element = ut_dbus_struct_new(key, value, NULL);
+      write_value(buffer, element);
+    }
+    rewrite_length(buffer, length_offset,
+                   ut_list_get_length(buffer) - length_offset - 4);
   } else if (ut_object_is_dbus_variant(value)) {
     UtObject *child_value = ut_dbus_variant_get_value(value);
     ut_cstring_ref signature = get_signature(child_value);
