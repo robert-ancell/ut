@@ -230,6 +230,11 @@ x11_client_test = executable('ut-x11-client-test',
                              link_with: ut_lib)
 #test('X11 Client', x11_client_test)
 
+dbus_message_encoder_test = executable('ut-dbus-message-encoder-test',
+                                       'dbus/ut-dbus-message-encoder-test.c',
+				       link_with: ut_lib)
+test('DBus Message Encoder', dbus_message_encoder_test)
+
 dbus_client_test = executable('ut-dbus-client-test',
                              'dbus/ut-dbus-client-test.c',
                              link_with: ut_lib)
