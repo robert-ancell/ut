@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -19,6 +20,10 @@ typedef struct {
 extern int ut_list_id;
 
 UtObject *ut_list_new();
+
+UtObject *ut_list_new_with_data(UtObject *item0, ...);
+
+UtObject *ut_list_new_with_data_take(UtObject *item0, ...);
 
 size_t ut_list_get_length(UtObject *object);
 

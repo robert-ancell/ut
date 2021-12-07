@@ -11,6 +11,48 @@ int ut_list_id = 0;
 
 UtObject *ut_list_new() { return ut_object_array_new(); }
 
+UtObject *ut_list_new_with_data(UtObject *item0, ...) {
+  UtObject *object = ut_list_new();
+  if (item0 == NULL) {
+    return object;
+  }
+
+  va_list ap;
+  va_start(ap, item0);
+  ut_list_append(object, item0);
+  while (true) {
+    UtObject *value = va_arg(ap, UtObject *);
+    if (value == NULL) {
+      break;
+    }
+    ut_list_append(object, value);
+  }
+  va_end(ap);
+
+  return object;
+}
+
+UtObject *ut_list_new_with_data_take(UtObject *item0, ...) {
+  UtObject *object = ut_list_new();
+  if (item0 == NULL) {
+    return object;
+  }
+
+  va_list ap;
+  va_start(ap, item0);
+  ut_list_append_take(object, item0);
+  while (true) {
+    UtObject *value = va_arg(ap, UtObject *);
+    if (value == NULL) {
+      break;
+    }
+    ut_list_append_take(object, value);
+  }
+  va_end(ap);
+
+  return object;
+}
+
 size_t ut_list_get_length(UtObject *object) {
   UtListInterface *list_interface =
       ut_object_get_interface(object, &ut_list_id);
