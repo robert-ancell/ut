@@ -118,14 +118,29 @@ UtObject *ut_object_array_new() {
   return ut_object_new(sizeof(UtObjectArray), &object_interface);
 }
 
-UtObject *ut_object_array_new_with_data(size_t length, ...) {
+UtObject *ut_object_array_new_with_data(UtObject *item0, ...) {
   UtObject *object = ut_object_array_new();
+  if (item0 == NULL) {
+    return object;
+  }
+
   UtObjectArray *self = (UtObjectArray *)object;
 
-  self->data = realloc(self->data, sizeof(UtObject *) * length);
   va_list ap;
-  va_start(ap, length);
-  for (size_t i = 0; i < length; i++) {
+  va_list ap2;
+  va_copy(ap2, ap);
+
+  size_t length = 1;
+  va_start(ap2, item0);
+  while (va_arg(ap, UtObject *) != NULL) {
+    length++;
+  }
+  va_end(ap);
+
+  self->data = realloc(self->data, sizeof(UtObject *) * length);
+  va_start(ap, item0);
+  self->data[0] = ut_object_ref(item0);
+  for (size_t i = 1; i < length; i++) {
     self->data[i] = ut_object_ref(va_arg(ap, UtObject *));
   }
   va_end(ap);
@@ -133,14 +148,29 @@ UtObject *ut_object_array_new_with_data(size_t length, ...) {
   return object;
 }
 
-UtObject *ut_object_array_new_with_data_take(size_t length, ...) {
+UtObject *ut_object_array_new_with_data_take(UtObject *item0, ...) {
   UtObject *object = ut_object_array_new();
+  if (item0 == NULL) {
+    return object;
+  }
+
   UtObjectArray *self = (UtObjectArray *)object;
 
-  self->data = realloc(self->data, sizeof(UtObject *) * length);
   va_list ap;
-  va_start(ap, length);
-  for (size_t i = 0; i < length; i++) {
+  va_list ap2;
+  va_copy(ap2, ap);
+
+  size_t length = 1;
+  va_start(ap2, item0);
+  while (va_arg(ap, UtObject *) != NULL) {
+    length++;
+  }
+  va_end(ap);
+
+  self->data = realloc(self->data, sizeof(UtObject *) * length);
+  va_start(ap, item0);
+  self->data[0] = item0;
+  for (size_t i = 1; i < length; i++) {
     self->data[i] = va_arg(ap, UtObject *);
   }
   va_end(ap);
