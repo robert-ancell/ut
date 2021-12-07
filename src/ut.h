@@ -4,6 +4,7 @@
 #include "dbus/ut-dbus-object-path.h"
 #include "dbus/ut-dbus-signature.h"
 #include "dbus/ut-dbus-struct.h"
+#include "dbus/ut-dbus-unix-fd.h"
 #include "deflate/ut-deflate-decoder.h"
 #include "deflate/ut-deflate-error.h"
 #include "gzip/ut-gzip-decoder.h"

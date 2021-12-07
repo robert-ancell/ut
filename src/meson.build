@@ -12,6 +12,7 @@ ut_sources = [
   'dbus/ut-dbus-object-path.c',
   'dbus/ut-dbus-signature.c',
   'dbus/ut-dbus-struct.c',
+  'dbus/ut-dbus-unix-fd.c',
   'dbus/ut-dbus-variant.c',
   'gzip/ut-gzip-decoder.c',
   'gzip/ut-gzip-error.c',

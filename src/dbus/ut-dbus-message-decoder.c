@@ -9,6 +9,7 @@
 #include "ut-dbus-object-path.h"
 #include "ut-dbus-signature.h"
 #include "ut-dbus-struct.h"
+#include "ut-dbus-unix-fd.h"
 #include "ut-dbus-variant.h"
 #include "ut-float64.h"
 #include "ut-input-stream.h"
@@ -237,6 +238,8 @@ static UtObject *read_variant(UtObject *data, size_t *offset) {
   return ut_dbus_variant_new(value);
 }
 
+static UtObject *read_unix_fd(UtObject *data, size_t *offset) { assert(false); }
+
 static UtObject *read_dict(UtObject *data, size_t *offset,
                            const char *signature) {
   size_t o = *offset;
@@ -287,6 +290,8 @@ static UtObject *read_value(UtObject *data, size_t *offset,
     return read_array(data, offset, signature + 1);
   } else if (strcmp(signature, "v") == 0) {
     return read_variant(data, offset);
+  } else if (strcmp(signature, "h") == 0) {
+    return read_unix_fd(data, offset);
   } else {
     assert(false);
   }
@@ -385,7 +390,9 @@ static UtObject *read_message(UtObject *data, size_t *offset) {
       body_signature = ut_dbus_signature_get_value(value);
       break;
     case 9:
+      assert(ut_object_is_uint32(value));
       // Unix Fds
+      assert(ut_uint32_get_value(value) == 0);
       break;
     }
   }
