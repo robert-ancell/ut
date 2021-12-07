@@ -146,11 +146,11 @@ void ut_uint8_list_append_uint16_be(UtObject *object, uint16_t value) {
 }
 
 void ut_uint8_list_append_int16_le(UtObject *object, int16_t value) {
-  ut_uint8_list_append_int16_le(object, (uint16_t)value);
+  ut_uint8_list_append_uint16_le(object, (uint16_t)value);
 }
 
 void ut_uint8_list_append_int16_be(UtObject *object, int16_t value) {
-  ut_uint8_list_append_int16_be(object, (uint16_t)value);
+  ut_uint8_list_append_uint16_be(object, (uint16_t)value);
 }
 
 void ut_uint8_list_append_uint32_le(UtObject *object, uint32_t value) {
@@ -166,11 +166,11 @@ void ut_uint8_list_append_uint32_be(UtObject *object, uint32_t value) {
 }
 
 void ut_uint8_list_append_int32_le(UtObject *object, int32_t value) {
-  ut_uint8_list_append_int32_le(object, (uint32_t)value);
+  ut_uint8_list_append_uint32_le(object, (uint32_t)value);
 }
 
 void ut_uint8_list_append_int32_be(UtObject *object, int32_t value) {
-  ut_uint8_list_append_int32_be(object, (uint32_t)value);
+  ut_uint8_list_append_uint32_be(object, (uint32_t)value);
 }
 
 void ut_uint8_list_append_uint64_le(UtObject *object, uint64_t value) {
@@ -190,11 +190,11 @@ void ut_uint8_list_append_uint64_be(UtObject *object, uint64_t value) {
 }
 
 void ut_uint8_list_append_int64_le(UtObject *object, int64_t value) {
-  ut_uint8_list_append_int64_le(object, (uint64_t)value);
+  ut_uint8_list_append_uint64_le(object, (uint64_t)value);
 }
 
 void ut_uint8_list_append_int64_be(UtObject *object, int64_t value) {
-  ut_uint8_list_append_int64_be(object, (uint64_t)value);
+  ut_uint8_list_append_uint64_be(object, (uint64_t)value);
 }
 
 void ut_uint8_list_append_float64_le(UtObject *object, double value) {
