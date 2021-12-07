@@ -4,6 +4,7 @@
 #include "ut-boolean.h"
 #include "ut-cstring.h"
 #include "ut-dbus-array.h"
+#include "ut-dbus-dict.h"
 #include "ut-dbus-message-decoder.h"
 #include "ut-dbus-message.h"
 #include "ut-dbus-object-path.h"
@@ -17,6 +18,7 @@
 #include "ut-int32.h"
 #include "ut-int64.h"
 #include "ut-list.h"
+#include "ut-map.h"
 #include "ut-object-list.h"
 #include "ut-string.h"
 #include "ut-uint16.h"
@@ -242,12 +244,35 @@ static UtObject *read_unix_fd(UtObject *data, size_t *offset) { assert(false); }
 
 static UtObject *read_dict(UtObject *data, size_t *offset,
                            const char *signature) {
+  UtObjectRef signature_object = ut_dbus_signature_new(signature);
+  UtObjectRef signatures = ut_dbus_signature_split(signature_object);
+  size_t signatures_length = ut_list_get_length(signatures);
+  assert(signatures_length == 2);
+  UtObjectRef key_signature = ut_list_get_element(signatures, 0);
+  UtObjectRef value_signature = ut_list_get_element(signatures, 1);
+  // FIXME: check key_signature is a basic type
+
   size_t o = *offset;
-  if (!read_align_padding(data, &o, 8) || get_remaining(data, &o) < 8) {
+  UtObjectRef length_object = read_uint32(data, &o);
+  if (length_object == NULL) {
     return NULL;
   }
-  *offset = o + 8;
-  return ut_float64_new(0);
+  size_t length = ut_uint32_get_value(length_object);
+  if (get_remaining(data, &o) < length) {
+    return NULL;
+  }
+  size_t end_offset = o + length;
+  UtObjectRef result =
+      ut_dbus_dict_new(ut_dbus_signature_get_value(key_signature),
+                       ut_dbus_signature_get_value(value_signature));
+  while (o < end_offset) {
+    UtObjectRef entry = read_struct(data, &o, signature);
+    ut_map_insert(result, ut_dbus_struct_get_value(entry, 0),
+                  ut_dbus_struct_get_value(entry, 1));
+  }
+  assert(o <= end_offset);
+  *offset = end_offset;
+  return ut_object_ref(result);
 }
 
 static UtObject *read_value(UtObject *data, size_t *offset,
