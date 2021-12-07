@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ut-cstring.h"
 #include "ut-dbus-struct.h"
 #include "ut-list.h"
 #include "ut-object-list.h"
@@ -10,6 +11,22 @@ typedef struct {
   UtObject object;
   UtObject *values;
 } UtDBusStruct;
+
+static void ut_dbus_struct_init(UtObject *object) {
+  UtDBusStruct *self = (UtDBusStruct *)object;
+  self->values = ut_object_list_new();
+}
+
+static char *ut_dbus_struct_to_string(UtObject *object) {
+  UtDBusStruct *self = (UtDBusStruct *)object;
+  ut_cstring_ref values_string = ut_object_to_string(self->values);
+  return ut_cstring_new_printf("<UtDBusStruct>(%s)", values_string);
+}
+
+static void ut_dbus_struct_cleanup(UtObject *object) {
+  UtDBusStruct *self = (UtDBusStruct *)object;
+  ut_object_unref(self->values);
+}
 
 static size_t ut_dbus_struct_get_length(UtObject *object) {
   UtDBusStruct *self = (UtDBusStruct *)object;
@@ -27,16 +44,6 @@ static UtObject *ut_dbus_struct_get_element_ref(UtObject *object,
   return ut_list_get_element(self->values, index);
 }
 
-static void ut_dbus_struct_init(UtObject *object) {
-  UtDBusStruct *self = (UtDBusStruct *)object;
-  self->values = ut_object_list_new();
-}
-
-static void ut_dbus_struct_cleanup(UtObject *object) {
-  UtDBusStruct *self = (UtDBusStruct *)object;
-  ut_object_unref(self->values);
-}
-
 static UtObjectListInterface object_list_interface = {
     .get_element = ut_dbus_struct_get_element};
 
@@ -48,6 +55,7 @@ static UtListInterface list_interface = {
 static UtObjectInterface object_interface = {
     .type_name = "UtDBusStruct",
     .init = ut_dbus_struct_init,
+    .to_string = ut_dbus_struct_to_string,
     .cleanup = ut_dbus_struct_cleanup,
     .interfaces = {{&ut_object_list_id, &object_list_interface},
                    {&ut_list_id, &list_interface},

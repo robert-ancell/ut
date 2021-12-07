@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ut-cstring.h"
 #include "ut-dbus-dict.h"
 #include "ut-map-item.h"
 #include "ut-map.h"
@@ -18,6 +19,14 @@ static void ut_dbus_dict_init(UtObject *object) {
   self->key_signature = NULL;
   self->value_signature = NULL;
   self->data = ut_map_new();
+}
+
+static char *ut_dbus_dict_to_string(UtObject *object) {
+  UtDBusDict *self = (UtDBusDict *)object;
+  ut_cstring_ref data_string = ut_object_to_string(self->data);
+  return ut_cstring_new_printf("<UtDBusDict>(\"%s\", \"%s\", %s)",
+                               self->key_signature, self->value_signature,
+                               data_string);
 }
 
 static void ut_dbus_dict_cleanup(UtObject *object) {
@@ -74,6 +83,7 @@ static UtMapInterface map_interface = {.get_length = ut_dbus_dict_get_length,
 static UtObjectInterface object_interface = {
     .type_name = "UtDBusDict",
     .init = ut_dbus_dict_init,
+    .to_string = ut_dbus_dict_to_string,
     .cleanup = ut_dbus_dict_cleanup,
     .interfaces = {{&ut_map_id, &map_interface}, {NULL, NULL}}};
 
