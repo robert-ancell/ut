@@ -55,6 +55,34 @@ static UtObject *read_byte(UtObject *data, size_t *offset) {
   return ut_uint8_new(value);
 }
 
+static size_t get_alignment(const char *signature) {
+  switch (signature[0]) {
+  case 'y': // byte
+  case 'g': // signature
+  case 'v': // variant
+    return 1;
+  case 'n': // int16
+  case 'q': // uint16
+    return 2;
+  case 'b': // boolean
+  case 'i': // int32
+  case 'u': // uint32
+  case 's': // string
+  case 'o': // object path
+  case 'a': // array
+  case 'h': // unix fd
+    return 4;
+  case 'x': // int64
+  case 't': // uint64
+  case 'd': // double
+  case '(': // struct
+  case '{': // dict entry
+    return 8;
+  default:
+    return 1;
+  }
+}
+
 static bool read_align_padding(UtObject *data, size_t *offset,
                                size_t alignment) {
   size_t extra = *offset % alignment;
@@ -212,6 +240,9 @@ static UtObject *read_array(UtObject *data, size_t *offset,
   if (length_object == NULL) {
     return NULL;
   }
+  if (!read_align_padding(data, &o, get_alignment(signature))) {
+    return NULL;
+  }
   size_t length = ut_uint32_get_value(length_object);
   if (get_remaining(data, &o) < length) {
     return NULL;
@@ -255,6 +286,9 @@ static UtObject *read_dict(UtObject *data, size_t *offset,
   size_t o = *offset;
   UtObjectRef length_object = read_uint32(data, &o);
   if (length_object == NULL) {
+    return NULL;
+  }
+  if (!read_align_padding(data, &o, 8)) {
     return NULL;
   }
   size_t length = ut_uint32_get_value(length_object);

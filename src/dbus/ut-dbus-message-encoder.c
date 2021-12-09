@@ -43,6 +43,34 @@ static void write_padding(UtObject *buffer, size_t count) {
   }
 }
 
+static size_t get_alignment(const char *signature) {
+  switch (signature[0]) {
+  case 'y': // byte
+  case 'g': // signature
+  case 'v': // variant
+    return 1;
+  case 'n': // int16
+  case 'q': // uint16
+    return 2;
+  case 'b': // boolean
+  case 'i': // int32
+  case 'u': // uint32
+  case 's': // string
+  case 'o': // object path
+  case 'a': // array
+  case 'h': // unix fd
+    return 4;
+  case 'x': // int64
+  case 't': // uint64
+  case 'd': // double
+  case '(': // struct
+  case '{': // dict entry
+    return 8;
+  default:
+    return 1;
+  }
+}
+
 static void write_align_padding(UtObject *buffer, size_t alignment) {
   size_t extra = ut_list_get_length(buffer) % alignment;
   if (extra != 0) {
@@ -160,12 +188,14 @@ static void write_value(UtObject *buffer, UtObject *value) {
     // Length will be overwritten later.
     size_t length_offset = ut_list_get_length(buffer);
     ut_uint8_list_append_uint32_le(buffer, 0);
+    write_align_padding(
+        buffer, get_alignment(ut_dbus_array_get_value_signature(value)));
+    size_t start = ut_list_get_length(buffer);
     size_t length = ut_list_get_length(value);
     for (size_t i = 0; i < length; i++) {
       write_value(buffer, ut_object_list_get_element(value, i));
     }
-    rewrite_length(buffer, length_offset,
-                   ut_list_get_length(buffer) - length_offset - 4);
+    rewrite_length(buffer, length_offset, ut_list_get_length(buffer) - start);
   } else if (ut_object_is_dbus_struct(value)) {
     write_align_padding(buffer, 8);
     size_t length = ut_list_get_length(value);
@@ -177,6 +207,8 @@ static void write_value(UtObject *buffer, UtObject *value) {
     // Length will be overwritten later.
     size_t length_offset = ut_list_get_length(buffer);
     ut_uint8_list_append_uint32_le(buffer, 0);
+    write_align_padding(buffer, 8);
+    size_t start = ut_list_get_length(buffer);
     UtObjectRef items = ut_map_get_items(value);
     size_t length = ut_list_get_length(items);
     for (size_t i = 0; i < length; i++) {
@@ -186,8 +218,7 @@ static void write_value(UtObject *buffer, UtObject *value) {
       UtObjectRef element = ut_dbus_struct_new(key, value, NULL);
       write_value(buffer, element);
     }
-    rewrite_length(buffer, length_offset,
-                   ut_list_get_length(buffer) - length_offset - 4);
+    rewrite_length(buffer, length_offset, ut_list_get_length(buffer) - start);
   } else if (ut_object_is_dbus_variant(value)) {
     UtObject *child_value = ut_dbus_variant_get_value(value);
     ut_cstring_ref signature = get_signature(child_value);
