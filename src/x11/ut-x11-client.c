@@ -256,34 +256,6 @@ static Request *find_request(UtX11Client *self, uint16_t sequence_number) {
   return NULL;
 }
 
-static size_t decode_setup_failed(UtX11Client *self, UtObject *data) {
-  size_t data_length = ut_list_get_length(data);
-  if (data_length < 8) {
-    return 0;
-  }
-
-  size_t offset = 0;
-  assert(ut_x11_buffer_get_card8(data, &offset) == 0);
-  uint8_t reason_length = ut_x11_buffer_get_card8(data, &offset);
-  /*uint16_t protocol_major_version = */ ut_x11_buffer_get_card16(data,
-                                                                  &offset);
-  /*uint16_t protocol_minor_version = */ ut_x11_buffer_get_card16(data,
-                                                                  &offset);
-  uint16_t length = ut_x11_buffer_get_card16(data, &offset);
-  size_t message_length = (length + 2) * 4;
-  if (data_length < message_length) {
-    return 0;
-  }
-  ut_cstring_ref reason =
-      ut_x11_buffer_get_string8(data, &offset, reason_length);
-
-  UtObjectRef error =
-      ut_general_error_new("Failed to connect to X server: %s", reason);
-  self->connect_callback(self->connect_user_data, error);
-
-  return offset;
-}
-
 static void big_requests_enable_cb(void *user_data,
                                    uint32_t maximum_request_length,
                                    UtObject *error) {
@@ -372,6 +344,34 @@ static void send_request(UtObject *object, uint8_t opcode, uint8_t data0,
   }
 
   ut_output_stream_write(self->socket, request);
+}
+
+static size_t decode_setup_failed(UtX11Client *self, UtObject *data) {
+  size_t data_length = ut_list_get_length(data);
+  if (data_length < 8) {
+    return 0;
+  }
+
+  size_t offset = 0;
+  assert(ut_x11_buffer_get_card8(data, &offset) == 0);
+  uint8_t reason_length = ut_x11_buffer_get_card8(data, &offset);
+  /*uint16_t protocol_major_version = */ ut_x11_buffer_get_card16(data,
+                                                                  &offset);
+  /*uint16_t protocol_minor_version = */ ut_x11_buffer_get_card16(data,
+                                                                  &offset);
+  uint16_t length = ut_x11_buffer_get_card16(data, &offset);
+  size_t message_length = (length + 2) * 4;
+  if (data_length < message_length) {
+    return 0;
+  }
+  ut_cstring_ref reason =
+      ut_x11_buffer_get_string8(data, &offset, reason_length);
+
+  UtObjectRef error =
+      ut_general_error_new("Failed to connect to X server: %s", reason);
+  self->connect_callback(self->connect_user_data, error);
+
+  return offset;
 }
 
 static size_t decode_setup_success(UtX11Client *self, UtObject *data) {
