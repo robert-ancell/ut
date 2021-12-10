@@ -212,6 +212,7 @@ typedef struct {
 
 struct _UtX11Client {
   UtObject object;
+  UtObject *cancel;
   UtObject *socket;
   UtObject *read_cancel;
 
@@ -283,6 +284,16 @@ static size_t decode_setup_failed(UtX11Client *self, UtObject *data) {
   return offset;
 }
 
+static void big_requests_enable_cb(void *user_data,
+                                   uint32_t maximum_request_length,
+                                   UtObject *error) {
+  UtX11Client *self = user_data;
+
+  if (error == NULL) {
+    self->maximum_request_length = maximum_request_length;
+  }
+}
+
 static void decode_query_extension_reply(UtObject *object, uint8_t data0,
                                          UtObject *data) {
   QueryExtensionData *query_extension_data = (QueryExtensionData *)object;
@@ -300,6 +311,10 @@ static void decode_query_extension_reply(UtObject *object, uint8_t data0,
       self->big_requests_extension =
           ut_x11_big_requests_extension_new((UtObject *)self, major_opcode);
       ut_list_append(self->extensions, self->big_requests_extension);
+
+      ut_x11_big_requests_extension_enable(self->big_requests_extension,
+                                           big_requests_enable_cb, self,
+                                           self->cancel);
     } else if (strcmp(query_extension_data->name, "MIT-SHM") == 0) {
       self->mit_shm_extension = ut_x11_mit_shm_extension_new(
           (UtObject *)self, major_opcode, first_event, first_error);
@@ -335,15 +350,17 @@ static void send_request(UtObject *object, uint8_t opcode, uint8_t data0,
   assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
 
-  size_t data_length = ut_list_get_length(data);
+  size_t data_length = data != NULL ? ut_list_get_length(data) : 0;
   assert(data_length % 4 == 0);
 
   UtObjectRef request = ut_x11_buffer_new();
   ut_x11_buffer_append_card8(request, opcode);
   ut_x11_buffer_append_card8(request, data0);
   ut_x11_buffer_append_card16(request, 1 + data_length / 4);
-  ut_uint8_list_append_block(request, ut_uint8_array_get_data(data),
-                             data_length);
+  if (data != NULL) {
+    ut_uint8_list_append_block(request, ut_uint8_array_get_data(data),
+                               data_length);
+  }
 
   self->sequence_number++;
 
@@ -1023,6 +1040,7 @@ static size_t read_cb(void *user_data, UtObject *data, bool complete) {
 
 static void ut_x11_client_init(UtObject *object) {
   UtX11Client *self = (UtX11Client *)object;
+  self->cancel = ut_cancel_new();
   self->socket = NULL;
   self->read_cancel = ut_cancel_new();
   self->extensions = ut_object_list_new();
@@ -1052,12 +1070,16 @@ static void ut_x11_client_init(UtObject *object) {
 static void ut_x11_client_cleanup(UtObject *object) {
   UtX11Client *self = (UtX11Client *)object;
 
+  ut_cancel_activate(self->cancel);
+  ut_cancel_activate(self->read_cancel);
+
   size_t extensions_length = ut_list_get_length(self->extensions);
   for (size_t i = 0; i < extensions_length; i++) {
     UtObject *extension = ut_object_list_get_element(self->extensions, i);
     ut_x11_extension_close(extension);
   }
 
+  ut_object_unref(self->cancel);
   ut_object_unref(self->socket);
   ut_object_unref(self->read_cancel);
   ut_object_unref(self->extensions);
