@@ -9,6 +9,8 @@ UtObject *ut_x11_buffer_new_with_data(UtObject *data);
 
 void ut_x11_buffer_append_card8(UtObject *object, uint8_t value);
 
+void ut_x11_buffer_append_bool(UtObject *buffer, bool value);
+
 void ut_x11_buffer_append_padding(UtObject *object, size_t count);
 
 void ut_x11_buffer_append_align_padding(UtObject *object, size_t alignment);
