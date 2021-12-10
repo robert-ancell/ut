@@ -1356,6 +1356,12 @@ void ut_x11_client_list_extensions(UtObject *object,
       cancel);
 }
 
+UtObject *ut_x11_client_get_mit_shm_extension(UtObject *object) {
+  assert(ut_object_is_x11_client(object));
+  UtX11Client *self = (UtX11Client *)object;
+  return self->mit_shm_extension;
+}
+
 bool ut_object_is_x11_client(UtObject *object) {
   return ut_object_is_type(object, &object_interface);
 }

@@ -79,4 +79,6 @@ void ut_x11_client_list_extensions(UtObject *object,
                                    UtX11ListExtensionsCallback callback,
                                    void *user_data, UtObject *cancel);
 
+UtObject *ut_x11_client_get_mit_shm_extension(UtObject *object);
+
 bool ut_object_is_x11_client(UtObject *object);
