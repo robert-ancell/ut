@@ -81,4 +81,6 @@ void ut_x11_client_list_extensions(UtObject *object,
 
 UtObject *ut_x11_client_get_mit_shm_extension(UtObject *object);
 
+UtObject *ut_x11_client_get_present_extension(UtObject *object);
+
 bool ut_object_is_x11_client(UtObject *object);

@@ -112,6 +112,7 @@ ut_sources = [
   'x11/ut-x11-motion-notify.c',
   'x11/ut-x11-name-error.c',
   'x11/ut-x11-pixmap-error.c',
+  'x11/ut-x11-present-extension.c',
   'x11/ut-x11-property-notify.c',
   'x11/ut-x11-request-error.c',
   'x11/ut-x11-unknown-error.c',

@@ -87,6 +87,7 @@
 #include "x11/ut-x11-motion-notify.h"
 #include "x11/ut-x11-name-error.h"
 #include "x11/ut-x11-pixmap-error.h"
+#include "x11/ut-x11-present-extension.h"
 #include "x11/ut-x11-property-notify.h"
 #include "x11/ut-x11-unknown-error.h"
 #include "x11/ut-x11-unknown-event.h"

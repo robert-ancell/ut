@@ -38,6 +38,7 @@
 #include "ut-x11-motion-notify.h"
 #include "ut-x11-name-error.h"
 #include "ut-x11-pixmap-error.h"
+#include "ut-x11-present-extension.h"
 #include "ut-x11-property-notify.h"
 #include "ut-x11-request-error.h"
 #include "ut-x11-unknown-error.h"
@@ -219,6 +220,7 @@ struct _UtX11Client {
   UtObject *extensions;
   UtObject *big_requests_extension;
   UtObject *mit_shm_extension;
+  UtObject *present_extension;
 
   UtX11ClientEventCallback event_callback;
   void *event_user_data;
@@ -266,6 +268,9 @@ static void big_requests_enable_cb(void *user_data,
   }
 }
 
+static void present_enable_cb(void *user_data, uint32_t major_version,
+                              uint32_t minor_version, UtObject *error) {}
+
 static void decode_query_extension_reply(UtObject *object, uint8_t data0,
                                          UtObject *data) {
   QueryExtensionData *query_extension_data = (QueryExtensionData *)object;
@@ -291,6 +296,14 @@ static void decode_query_extension_reply(UtObject *object, uint8_t data0,
       self->mit_shm_extension = ut_x11_mit_shm_extension_new(
           (UtObject *)self, major_opcode, first_event, first_error);
       ut_list_append(self->extensions, self->mit_shm_extension);
+    } else if (strcmp(query_extension_data->name, "Present") == 0) {
+      self->present_extension =
+          ut_x11_present_extension_new((UtObject *)self, major_opcode);
+      ut_list_append(self->extensions, self->present_extension);
+
+      ut_x11_present_extension_enable(self->present_extension,
+                                      present_enable_cb, self, self->cancel);
+
       // FIXME: More reliably do this on the last setup request.
       self->connect_callback(self->connect_user_data, NULL);
     }
@@ -481,6 +494,7 @@ static size_t decode_setup_success(UtX11Client *self, UtObject *data) {
 
   query_extension(self, "BIG-REQUESTS");
   query_extension(self, "MIT-SHM");
+  query_extension(self, "Present");
 
   return offset;
 }
@@ -1046,6 +1060,7 @@ static void ut_x11_client_init(UtObject *object) {
   self->extensions = ut_object_list_new();
   self->big_requests_extension = NULL;
   self->mit_shm_extension = NULL;
+  self->present_extension = NULL;
   self->event_callback = NULL;
   self->event_user_data = NULL;
   self->event_cancel = NULL;
@@ -1085,6 +1100,7 @@ static void ut_x11_client_cleanup(UtObject *object) {
   ut_object_unref(self->extensions);
   ut_object_unref(self->big_requests_extension);
   ut_object_unref(self->mit_shm_extension);
+  ut_object_unref(self->present_extension);
   ut_object_unref(self->event_cancel);
   ut_object_unref(self->connect_cancel);
   free(self->vendor);
@@ -1382,6 +1398,12 @@ UtObject *ut_x11_client_get_mit_shm_extension(UtObject *object) {
   assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
   return self->mit_shm_extension;
+}
+
+UtObject *ut_x11_client_get_present_extension(UtObject *object) {
+  assert(ut_object_is_x11_client(object));
+  UtX11Client *self = (UtX11Client *)object;
+  return self->present_extension;
 }
 
 bool ut_object_is_x11_client(UtObject *object) {
