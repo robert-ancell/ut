@@ -6,8 +6,6 @@
 #pragma once
 
 typedef void (*UtX11ClientPresentEnableCallback)(void *user_data,
-                                                 uint32_t major_version,
-                                                 uint32_t minor_version,
                                                  UtObject *error);
 
 UtObject *ut_x11_present_extension_new(UtObject *client, uint8_t major_opcode);

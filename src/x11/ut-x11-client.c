@@ -272,8 +272,7 @@ static void big_requests_enable_cb(void *user_data,
   }
 }
 
-static void present_enable_cb(void *user_data, uint32_t major_version,
-                              uint32_t minor_version, UtObject *error) {}
+static void present_enable_cb(void *user_data, UtObject *error) {}
 
 static void decode_query_extension_reply(UtObject *object, uint8_t data0,
                                          UtObject *data) {

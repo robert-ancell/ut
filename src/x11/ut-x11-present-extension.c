@@ -33,13 +33,13 @@ static void enable_reply_cb(UtObject *object, uint8_t data0, UtObject *data) {
   CallbackData *callback_data = (CallbackData *)object;
 
   size_t offset = 0;
-  uint32_t major_version = ut_x11_buffer_get_card32(data, &offset);
-  uint32_t minor_version = ut_x11_buffer_get_card32(data, &offset);
+  /*uint32_t major_version = */ ut_x11_buffer_get_card32(data, &offset);
+  /*uint32_t minor_version = */ ut_x11_buffer_get_card32(data, &offset);
 
   if (callback_data->callback != NULL) {
     UtX11ClientPresentEnableCallback callback =
         (UtX11ClientPresentEnableCallback)callback_data->callback;
-    callback(callback_data->user_data, major_version, minor_version, NULL);
+    callback(callback_data->user_data, NULL);
   }
 }
 
@@ -49,7 +49,7 @@ static void enable_error_cb(UtObject *object, UtObject *error) {
   if (callback_data->callback != NULL) {
     UtX11ClientPresentEnableCallback callback =
         (UtX11ClientPresentEnableCallback)callback_data->callback;
-    callback(callback_data->user_data, 0, 0, error);
+    callback(callback_data->user_data, error);
   }
 }
 
