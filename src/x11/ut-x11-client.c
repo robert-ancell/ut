@@ -327,6 +327,36 @@ static void query_extension(UtX11Client *self, const char *name) {
       NULL); // FIXME: Cancel
 }
 
+static void send_request(UtObject *object, uint8_t opcode, uint8_t data0,
+                         UtObject *data,
+                         UtX11ClientDecodeReplyFunction decode_reply_function,
+                         UtX11ClientHandleErrorFunction handle_error_function,
+                         UtObject *callback_object, UtObject *cancel) {
+  assert(ut_object_is_x11_client(object));
+  UtX11Client *self = (UtX11Client *)object;
+
+  size_t data_length = ut_list_get_length(data);
+  assert(data_length % 4 == 0);
+
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card8(request, opcode);
+  ut_x11_buffer_append_card8(request, data0);
+  ut_x11_buffer_append_card16(request, 1 + data_length / 4);
+  ut_uint8_list_append_block(request, ut_uint8_array_get_data(data),
+                             data_length);
+
+  self->sequence_number++;
+
+  if (decode_reply_function != NULL) {
+    UtObjectRef request =
+        request_new(self->sequence_number, decode_reply_function,
+                    handle_error_function, callback_object, cancel);
+    ut_list_append(self->requests, request);
+  }
+
+  ut_output_stream_write(self->socket, request);
+}
+
 static size_t decode_setup_success(UtX11Client *self, UtObject *data) {
   size_t data_length = ut_list_get_length(data);
   if (data_length < 8) {
@@ -1108,8 +1138,7 @@ uint32_t ut_x11_client_create_resource_id(UtObject *object) {
 
 void ut_x11_client_send_request(UtObject *object, uint8_t opcode, uint8_t data0,
                                 UtObject *data) {
-  ut_x11_client_send_request_with_reply(object, opcode, data0, data, NULL, NULL,
-                                        NULL, NULL);
+  send_request(object, opcode, data0, data, NULL, NULL, NULL, NULL);
 }
 
 void ut_x11_client_send_request_with_reply(
@@ -1117,29 +1146,8 @@ void ut_x11_client_send_request_with_reply(
     UtX11ClientDecodeReplyFunction decode_reply_function,
     UtX11ClientHandleErrorFunction handle_error_function,
     UtObject *callback_object, UtObject *cancel) {
-  assert(ut_object_is_x11_client(object));
-  UtX11Client *self = (UtX11Client *)object;
-
-  size_t data_length = ut_list_get_length(data);
-  assert(data_length % 4 == 0);
-
-  UtObjectRef request = ut_x11_buffer_new();
-  ut_x11_buffer_append_card8(request, opcode);
-  ut_x11_buffer_append_card8(request, data0);
-  ut_x11_buffer_append_card16(request, 1 + data_length / 4);
-  ut_uint8_list_append_block(request, ut_uint8_array_get_data(data),
-                             data_length);
-
-  self->sequence_number++;
-
-  if (decode_reply_function != NULL) {
-    UtObjectRef request =
-        request_new(self->sequence_number, decode_reply_function,
-                    handle_error_function, callback_object, cancel);
-    ut_list_append(self->requests, request);
-  }
-
-  ut_output_stream_write(self->socket, request);
+  send_request(object, opcode, data0, data, decode_reply_function,
+               handle_error_function, callback_object, cancel);
 }
 
 uint32_t ut_x11_client_create_window(UtObject *object, int16_t x, int16_t y,
