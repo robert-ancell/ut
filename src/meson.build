@@ -101,6 +101,7 @@ ut_sources = [
   'x11/ut-x11-event.c',
   'x11/ut-x11-expose.c',
   'x11/ut-x11-extension.c',
+  'x11/ut-x11-generic-event-extension.c',
   'x11/ut-x11-id-choice-error.c',
   'x11/ut-x11-implementation-error.c',
   'x11/ut-x11-key-press.c',

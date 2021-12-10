@@ -27,6 +27,7 @@
 #include "ut-x11-enter-notify.h"
 #include "ut-x11-expose.h"
 #include "ut-x11-extension.h"
+#include "ut-x11-generic-event-extension.h"
 #include "ut-x11-id-choice-error.h"
 #include "ut-x11-implementation-error.h"
 #include "ut-x11-key-press.h"
@@ -218,6 +219,7 @@ struct _UtX11Client {
   UtObject *read_cancel;
 
   UtObject *extensions;
+  UtObject *generic_event_extension;
   UtObject *big_requests_extension;
   UtObject *mit_shm_extension;
   UtObject *present_extension;
@@ -258,6 +260,8 @@ static Request *find_request(UtX11Client *self, uint16_t sequence_number) {
   return NULL;
 }
 
+static void generic_event_enable_cb(void *user_data, UtObject *error) {}
+
 static void big_requests_enable_cb(void *user_data,
                                    uint32_t maximum_request_length,
                                    UtObject *error) {
@@ -284,7 +288,15 @@ static void decode_query_extension_reply(UtObject *object, uint8_t data0,
   ut_x11_buffer_get_padding(data, &offset, 20);
 
   if (present) {
-    if (strcmp(query_extension_data->name, "BIG-REQUESTS") == 0) {
+    if (strcmp(query_extension_data->name, "Generic Event Extension") == 0) {
+      self->generic_event_extension =
+          ut_x11_generic_event_extension_new((UtObject *)self, major_opcode);
+      ut_list_append(self->extensions, self->generic_event_extension);
+
+      ut_x11_generic_event_extension_enable(self->generic_event_extension,
+                                            generic_event_enable_cb, self,
+                                            self->cancel);
+    } else if (strcmp(query_extension_data->name, "BIG-REQUESTS") == 0) {
       self->big_requests_extension =
           ut_x11_big_requests_extension_new((UtObject *)self, major_opcode);
       ut_list_append(self->extensions, self->big_requests_extension);
@@ -492,6 +504,7 @@ static size_t decode_setup_success(UtX11Client *self, UtObject *data) {
 
   self->setup_complete = true;
 
+  query_extension(self, "Generic Event Extension");
   query_extension(self, "BIG-REQUESTS");
   query_extension(self, "MIT-SHM");
   query_extension(self, "Present");
@@ -1058,6 +1071,7 @@ static void ut_x11_client_init(UtObject *object) {
   self->socket = NULL;
   self->read_cancel = ut_cancel_new();
   self->extensions = ut_object_list_new();
+  self->generic_event_extension = NULL;
   self->big_requests_extension = NULL;
   self->mit_shm_extension = NULL;
   self->present_extension = NULL;
@@ -1098,6 +1112,7 @@ static void ut_x11_client_cleanup(UtObject *object) {
   ut_object_unref(self->socket);
   ut_object_unref(self->read_cancel);
   ut_object_unref(self->extensions);
+  ut_object_unref(self->generic_event_extension);
   ut_object_unref(self->big_requests_extension);
   ut_object_unref(self->mit_shm_extension);
   ut_object_unref(self->present_extension);
