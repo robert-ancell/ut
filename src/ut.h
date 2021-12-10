@@ -91,6 +91,7 @@
 #include "x11/ut-x11-property-notify.h"
 #include "x11/ut-x11-unknown-error.h"
 #include "x11/ut-x11-unknown-event.h"
+#include "x11/ut-x11-unknown-generic-event.h"
 #include "x11/ut-x11-value-error.h"
 #include "x11/ut-x11-window-error.h"
 #include "xml/ut-xml-document.h"

@@ -44,6 +44,7 @@
 #include "ut-x11-request-error.h"
 #include "ut-x11-unknown-error.h"
 #include "ut-x11-unknown-event.h"
+#include "ut-x11-unknown-generic-event.h"
 #include "ut-x11-value-error.h"
 #include "ut-x11-window-error.h"
 
@@ -972,6 +973,39 @@ static UtObject *decode_property_notify(UtObject *data) {
   return ut_x11_property_notify_new(window, atom);
 }
 
+static UtObject *decode_generic_event(UtX11Client *self, UtObject *data,
+                                      size_t *length) {
+  size_t offset = 0;
+  assert(ut_x11_buffer_get_card8(data, &offset) == 35);
+  uint8_t major_opcode = ut_x11_buffer_get_card8(data, &offset);
+  ut_x11_buffer_get_card16(data, &offset); // sequence_number
+  uint32_t extra_length = ut_x11_buffer_get_card32(data, &offset);
+  uint16_t code = ut_x11_buffer_get_card16(data, &offset);
+
+  size_t total_length = 32 + extra_length * 4;
+  if (ut_list_get_length(data) < total_length) {
+    return NULL;
+  }
+  UtObjectRef event_data = ut_list_get_sublist(data, 10, total_length);
+
+  UtObjectRef event = NULL;
+  size_t extensions_length = ut_list_get_length(self->extensions);
+  for (size_t i = 0; i < extensions_length; i++) {
+    UtObject *extension = ut_object_list_get_element(self->extensions, i);
+    event = ut_x11_extension_decode_generic_event(extension, major_opcode, code,
+                                                  event_data);
+    if (event != NULL) {
+      break;
+    }
+  }
+  if (event == NULL) {
+    event = ut_x11_unknown_generic_event_new(major_opcode, code);
+  }
+
+  *length = total_length;
+  return event;
+}
+
 static size_t decode_event(UtX11Client *self, UtObject *data) {
   if (ut_list_get_length(data) < 32) {
     return 0;
@@ -981,6 +1015,7 @@ static size_t decode_event(UtX11Client *self, UtObject *data) {
 
   uint8_t code = ut_uint8_list_get_element(event_data, 0);
   UtObjectRef event = NULL;
+  size_t length = 32;
   if (code == 2) {
     event = decode_key_press(event_data);
   } else if (code == 3) {
@@ -1001,6 +1036,8 @@ static size_t decode_event(UtX11Client *self, UtObject *data) {
     event = decode_configure_notify(event_data);
   } else if (code == 28) {
     event = decode_property_notify(event_data);
+  } else if (code == 35) {
+    event = decode_generic_event(self, data, &length);
   } else {
     size_t extensions_length = ut_list_get_length(self->extensions);
     for (size_t i = 0; i < extensions_length; i++) {
@@ -1015,12 +1052,16 @@ static size_t decode_event(UtX11Client *self, UtObject *data) {
     }
   }
 
+  if (event == NULL) {
+    return 0;
+  }
+
   if (self->event_callback != NULL &&
       !ut_cancel_is_active(self->event_cancel)) {
     self->event_callback(self->event_user_data, event);
   }
 
-  return 32;
+  return length;
 }
 
 static size_t decode_message(UtX11Client *self, UtObject *data) {

@@ -13,6 +13,18 @@ UtObject *ut_x11_extension_decode_event(UtObject *object, UtObject *data) {
              : 0;
 }
 
+UtObject *ut_x11_extension_decode_generic_event(UtObject *object,
+                                                uint8_t major_opcode,
+                                                uint16_t code, UtObject *data) {
+  UtX11ExtensionInterface *x11_extension_interface =
+      ut_object_get_interface(object, &ut_x11_extension_id);
+  assert(x11_extension_interface != NULL);
+  return x11_extension_interface->decode_generic_event != NULL
+             ? x11_extension_interface->decode_generic_event(
+                   object, major_opcode, code, data)
+             : 0;
+}
+
 UtObject *ut_x11_extension_decode_error(UtObject *object, UtObject *data) {
   UtX11ExtensionInterface *x11_extension_interface =
       ut_object_get_interface(object, &ut_x11_extension_id);

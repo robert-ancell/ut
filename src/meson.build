@@ -118,6 +118,7 @@ ut_sources = [
   'x11/ut-x11-request-error.c',
   'x11/ut-x11-unknown-error.c',
   'x11/ut-x11-unknown-event.c',
+  'x11/ut-x11-unknown-generic-event.c',
   'x11/ut-x11-value-error.c',
   'x11/ut-x11-window-error.c',
   'xml/ut-xml-document.c',
