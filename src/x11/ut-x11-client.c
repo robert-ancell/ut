@@ -32,6 +32,7 @@
 #include "ut-x11-key-release.h"
 #include "ut-x11-leave-notify.h"
 #include "ut-x11-length-error.h"
+#include "ut-x11-map-notify.h"
 #include "ut-x11-match-error.h"
 #include "ut-x11-mit-shm-extension.h"
 #include "ut-x11-motion-notify.h"
@@ -39,6 +40,7 @@
 #include "ut-x11-pixmap-error.h"
 #include "ut-x11-present-extension.h"
 #include "ut-x11-property-notify.h"
+#include "ut-x11-reparent-notify.h"
 #include "ut-x11-request-error.h"
 #include "ut-x11-unknown-error.h"
 #include "ut-x11-unknown-event.h"
@@ -941,6 +943,36 @@ static UtObject *decode_expose(UtObject *data) {
   return ut_x11_expose_new(window, x, y, width, height);
 }
 
+static UtObject *decode_map_notify(UtObject *data) {
+  size_t offset = 0;
+  assert((ut_x11_buffer_get_card8(data, &offset) & 0x7f) == 19);
+  ut_x11_buffer_get_padding(data, &offset, 1);
+  ut_x11_buffer_get_card16(data, &offset); // sequence_number
+  uint32_t event = ut_x11_buffer_get_card32(data, &offset);
+  uint32_t window = ut_x11_buffer_get_card32(data, &offset);
+  bool override_redirect = ut_x11_buffer_get_bool(data, &offset);
+  ut_x11_buffer_get_padding(data, &offset, 19);
+
+  return ut_x11_map_notify_new(event, window, override_redirect);
+}
+
+static UtObject *decode_reparent_notify(UtObject *data) {
+  size_t offset = 0;
+  assert((ut_x11_buffer_get_card8(data, &offset) & 0x7f) == 21);
+  ut_x11_buffer_get_padding(data, &offset, 1);
+  ut_x11_buffer_get_card16(data, &offset); // sequence_number
+  uint32_t event = ut_x11_buffer_get_card32(data, &offset);
+  uint32_t window = ut_x11_buffer_get_card32(data, &offset);
+  uint32_t parent = ut_x11_buffer_get_card32(data, &offset);
+  int16_t x = ut_x11_buffer_get_int16(data, &offset);
+  int16_t y = ut_x11_buffer_get_int16(data, &offset);
+  bool override_redirect = ut_x11_buffer_get_bool(data, &offset);
+  ut_x11_buffer_get_padding(data, &offset, 11);
+
+  return ut_x11_reparent_notify_new(event, window, parent, x, y,
+                                    override_redirect);
+}
+
 static UtObject *decode_configure_notify(UtObject *data) {
   size_t offset = 0;
   assert((ut_x11_buffer_get_card8(data, &offset) & 0x7f) == 22);
@@ -1035,6 +1067,10 @@ static size_t decode_event(UtX11Client *self, UtObject *data) {
     event = decode_leave_notify(event_data);
   } else if (code == 12) {
     event = decode_expose(event_data);
+  } else if (code == 19) {
+    event = decode_map_notify(event_data);
+  } else if (code == 21) {
+    event = decode_reparent_notify(event_data);
   } else if (code == 22) {
     event = decode_configure_notify(event_data);
   } else if (code == 28) {
