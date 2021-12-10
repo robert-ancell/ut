@@ -289,8 +289,8 @@ static void decode_query_extension_reply(UtObject *object, uint8_t data0,
   UtX11Client *self = query_extension_data->client;
 
   size_t offset = 0;
-  uint8_t major_opcode = ut_x11_buffer_get_card8(data, &offset);
   bool present = ut_x11_buffer_get_bool(data, &offset);
+  uint8_t major_opcode = ut_x11_buffer_get_card8(data, &offset);
   uint8_t first_event = ut_x11_buffer_get_card8(data, &offset);
   uint8_t first_error = ut_x11_buffer_get_card8(data, &offset);
   ut_x11_buffer_get_padding(data, &offset, 20);
