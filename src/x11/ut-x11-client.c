@@ -787,7 +787,7 @@ static size_t decode_reply(UtX11Client *self, UtObject *data) {
 
 static UtObject *decode_key_press(UtObject *data) {
   size_t offset = 0;
-  assert(ut_x11_buffer_get_card8(data, &offset) == 2);
+  assert((ut_x11_buffer_get_card8(data, &offset) & 0x7f) == 2);
   uint8_t keycode = ut_x11_buffer_get_card8(data, &offset);
   ut_x11_buffer_get_card16(data, &offset); // sequence_number
   ut_x11_buffer_get_card32(data, &offset); // time
@@ -807,7 +807,7 @@ static UtObject *decode_key_press(UtObject *data) {
 
 static UtObject *decode_key_release(UtObject *data) {
   size_t offset = 0;
-  assert(ut_x11_buffer_get_card8(data, &offset) == 3);
+  assert((ut_x11_buffer_get_card8(data, &offset) & 0x7f) == 3);
   uint8_t keycode = ut_x11_buffer_get_card8(data, &offset);
   ut_x11_buffer_get_card16(data, &offset); // sequence_number
   ut_x11_buffer_get_card32(data, &offset); // time
@@ -827,7 +827,7 @@ static UtObject *decode_key_release(UtObject *data) {
 
 static UtObject *decode_button_press(UtObject *data) {
   size_t offset = 0;
-  assert(ut_x11_buffer_get_card8(data, &offset) == 4);
+  assert((ut_x11_buffer_get_card8(data, &offset) & 0x7f) == 4);
   uint8_t button = ut_x11_buffer_get_card8(data, &offset);
   ut_x11_buffer_get_card16(data, &offset); // sequence_number
   ut_x11_buffer_get_card32(data, &offset); // time
@@ -847,7 +847,7 @@ static UtObject *decode_button_press(UtObject *data) {
 
 static UtObject *decode_button_release(UtObject *data) {
   size_t offset = 0;
-  assert(ut_x11_buffer_get_card8(data, &offset) == 5);
+  assert((ut_x11_buffer_get_card8(data, &offset) & 0x7f) == 5);
   uint8_t button = ut_x11_buffer_get_card8(data, &offset);
   ut_x11_buffer_get_card16(data, &offset); // sequence_number
   ut_x11_buffer_get_card32(data, &offset); // time
@@ -867,7 +867,7 @@ static UtObject *decode_button_release(UtObject *data) {
 
 static UtObject *decode_motion_notify(UtObject *data) {
   size_t offset = 0;
-  assert(ut_x11_buffer_get_card8(data, &offset) == 6);
+  assert((ut_x11_buffer_get_card8(data, &offset) & 0x7f) == 6);
   ut_x11_buffer_get_card8(data, &offset);  // detail
   ut_x11_buffer_get_card16(data, &offset); // sequence_number
   ut_x11_buffer_get_card32(data, &offset); // time
@@ -887,7 +887,7 @@ static UtObject *decode_motion_notify(UtObject *data) {
 
 static UtObject *decode_enter_notify(UtObject *data) {
   size_t offset = 0;
-  assert(ut_x11_buffer_get_card8(data, &offset) == 7);
+  assert((ut_x11_buffer_get_card8(data, &offset) & 0x7f) == 7);
   ut_x11_buffer_get_card8(data, &offset);  // detail
   ut_x11_buffer_get_card16(data, &offset); // sequence_number
   ut_x11_buffer_get_card32(data, &offset); // time
@@ -907,7 +907,7 @@ static UtObject *decode_enter_notify(UtObject *data) {
 
 static UtObject *decode_leave_notify(UtObject *data) {
   size_t offset = 0;
-  assert(ut_x11_buffer_get_card8(data, &offset) == 8);
+  assert((ut_x11_buffer_get_card8(data, &offset) & 0x7f) == 8);
   ut_x11_buffer_get_card8(data, &offset);  // detail
   ut_x11_buffer_get_card16(data, &offset); // sequence_number
   ut_x11_buffer_get_card32(data, &offset); // time
@@ -927,7 +927,7 @@ static UtObject *decode_leave_notify(UtObject *data) {
 
 static UtObject *decode_expose(UtObject *data) {
   size_t offset = 0;
-  assert(ut_x11_buffer_get_card8(data, &offset) == 12);
+  assert((ut_x11_buffer_get_card8(data, &offset) & 0x7f) == 12);
   ut_x11_buffer_get_padding(data, &offset, 1);
   ut_x11_buffer_get_card16(data, &offset); // sequence_number
   uint32_t window = ut_x11_buffer_get_card32(data, &offset);
@@ -943,7 +943,7 @@ static UtObject *decode_expose(UtObject *data) {
 
 static UtObject *decode_configure_notify(UtObject *data) {
   size_t offset = 0;
-  assert(ut_x11_buffer_get_card8(data, &offset) == 22);
+  assert((ut_x11_buffer_get_card8(data, &offset) & 0x7f) == 22);
   ut_x11_buffer_get_padding(data, &offset, 1);
   ut_x11_buffer_get_card16(data, &offset); // sequence_number
   ut_x11_buffer_get_card32(data, &offset); // event
@@ -962,7 +962,7 @@ static UtObject *decode_configure_notify(UtObject *data) {
 
 static UtObject *decode_property_notify(UtObject *data) {
   size_t offset = 0;
-  assert(ut_x11_buffer_get_card8(data, &offset) == 28);
+  assert((ut_x11_buffer_get_card8(data, &offset) & 0x7f) == 28);
   ut_x11_buffer_get_padding(data, &offset, 1);
   ut_x11_buffer_get_card16(data, &offset); // sequence_number
   uint32_t window = ut_x11_buffer_get_card32(data, &offset);
@@ -977,7 +977,7 @@ static UtObject *decode_property_notify(UtObject *data) {
 static UtObject *decode_generic_event(UtX11Client *self, UtObject *data,
                                       size_t *length) {
   size_t offset = 0;
-  assert(ut_x11_buffer_get_card8(data, &offset) == 35);
+  assert((ut_x11_buffer_get_card8(data, &offset) & 0x7f) == 35);
   uint8_t major_opcode = ut_x11_buffer_get_card8(data, &offset);
   ut_x11_buffer_get_card16(data, &offset); // sequence_number
   uint32_t extra_length = ut_x11_buffer_get_card32(data, &offset);
@@ -1015,6 +1015,8 @@ static size_t decode_event(UtX11Client *self, UtObject *data) {
   UtObjectRef event_data = ut_list_get_sublist(data, 0, 32);
 
   uint8_t code = ut_uint8_list_get_element(event_data, 0);
+  // bool from_send_event = (code & 0x80) != 0;
+  code &= 0x7f;
   UtObjectRef event = NULL;
   size_t length = 32;
   if (code == 2) {
