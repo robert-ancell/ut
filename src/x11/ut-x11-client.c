@@ -1570,6 +1570,13 @@ void ut_x11_client_list_extensions(UtObject *object,
       cancel);
 }
 
+void ut_x11_client_bell(UtObject *object) {
+  assert(ut_object_is_x11_client(object));
+
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_client_send_request(object, 108, 0, request);
+}
+
 UtObject *ut_x11_client_get_mit_shm_extension(UtObject *object) {
   assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
