@@ -1577,6 +1577,15 @@ void ut_x11_client_bell(UtObject *object) {
   ut_x11_client_send_request(object, 108, 0, request);
 }
 
+void ut_x11_client_kill_client(UtObject *object, uint32_t resource) {
+  assert(ut_object_is_x11_client(object));
+
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card32(request, resource);
+
+  ut_x11_client_send_request(object, 113, 0, request);
+}
+
 UtObject *ut_x11_client_get_mit_shm_extension(UtObject *object) {
   assert(ut_object_is_x11_client(object));
   UtX11Client *self = (UtX11Client *)object;
