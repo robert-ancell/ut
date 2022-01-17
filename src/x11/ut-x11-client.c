@@ -224,8 +224,9 @@ struct _UtX11Client {
   UtObject *present_extension;
 
   UtX11ClientEventCallback event_callback;
-  void *event_user_data;
-  UtObject *event_cancel;
+  UtX11ClientErrorCallback error_callback;
+  void *callback_user_data;
+  UtObject *callback_cancel;
 
   UtX11ClientConnectCallback connect_callback;
   void *connect_user_data;
@@ -587,9 +588,9 @@ static size_t decode_error(UtX11Client *self, UtObject *data) {
     if (!ut_cancel_is_active(request->cancel)) {
       request->handle_error_function(request->callback_object, error);
     }
-  } /* else if (self->handle{
-      self->
-   }*/
+  } else if (self->error_callback != NULL) {
+    self->error_callback(self->callback_user_data, error);
+  }
 
   return 32;
 }
@@ -1096,8 +1097,8 @@ static size_t decode_event(UtX11Client *self, UtObject *data) {
   }
 
   if (self->event_callback != NULL &&
-      !ut_cancel_is_active(self->event_cancel)) {
-    self->event_callback(self->event_user_data, event);
+      !ut_cancel_is_active(self->callback_cancel)) {
+    self->event_callback(self->callback_user_data, event);
   }
 
   return length;
@@ -1153,8 +1154,8 @@ static void ut_x11_client_init(UtObject *object) {
   self->mit_shm_extension = NULL;
   self->present_extension = NULL;
   self->event_callback = NULL;
-  self->event_user_data = NULL;
-  self->event_cancel = NULL;
+  self->callback_user_data = NULL;
+  self->callback_cancel = NULL;
   self->connect_callback = NULL;
   self->connect_user_data = NULL;
   self->connect_cancel = NULL;
@@ -1191,7 +1192,7 @@ static void ut_x11_client_cleanup(UtObject *object) {
   ut_object_unref(self->extensions);
   ut_object_unref(self->mit_shm_extension);
   ut_object_unref(self->present_extension);
-  ut_object_unref(self->event_cancel);
+  ut_object_unref(self->callback_cancel);
   ut_object_unref(self->connect_cancel);
   free(self->vendor);
   for (size_t i = 0; i < self->pixmap_formats_length; i++) {
@@ -1215,13 +1216,15 @@ static UtObjectInterface object_interface = {.type_name = "UtX11Client",
                                              .interfaces = {{NULL, NULL}}};
 
 UtObject *ut_x11_client_new(UtX11ClientEventCallback event_callback,
+                            UtX11ClientErrorCallback error_callback,
                             void *user_data, UtObject *cancel) {
   UtObject *object = ut_object_new(sizeof(UtX11Client), &object_interface);
   UtX11Client *self = (UtX11Client *)object;
   self->socket = ut_unix_domain_socket_client_new("/tmp/.X11-unix/X0");
   self->event_callback = event_callback;
-  self->event_user_data = user_data;
-  self->event_cancel = ut_object_ref(cancel);
+  self->error_callback = error_callback;
+  self->callback_user_data = user_data;
+  self->callback_cancel = ut_object_ref(cancel);
   return object;
 }
 
