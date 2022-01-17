@@ -1475,6 +1475,89 @@ void ut_x11_client_free_pixmap(UtObject *object, uint32_t pixmap) {
   ut_x11_client_send_request(object, 54, 0, request);
 }
 
+uint32_t ut_x11_client_create_gc(UtObject *object, uint32_t drawable) {
+  assert(ut_object_is_x11_client(object));
+
+  uint32_t id = ut_x11_client_create_resource_id(object);
+
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card32(request, id);
+  ut_x11_buffer_append_card32(request, drawable);
+  uint32_t mask = 0x00000000;
+  ut_x11_buffer_append_card32(request, mask);
+  // FIXME: values
+
+  ut_x11_client_send_request(object, 55, 0, request);
+
+  return id;
+}
+
+void ut_x11_client_free_gc(UtObject *object, uint32_t gc) {
+  assert(ut_object_is_x11_client(object));
+
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card32(request, gc);
+
+  ut_x11_client_send_request(object, 60, 0, request);
+}
+
+void ut_x11_client_clear_area(UtObject *object, uint32_t window, int16_t x,
+                              int16_t y, uint16_t width, uint16_t height,
+                              bool exposures) {
+  assert(ut_object_is_x11_client(object));
+
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card32(request, window);
+  ut_x11_buffer_append_int16(request, x);
+  ut_x11_buffer_append_int16(request, y);
+  ut_x11_buffer_append_card16(request, width);
+  ut_x11_buffer_append_card16(request, height);
+
+  ut_x11_client_send_request(object, 61, exposures ? 1 : 0, request);
+}
+
+void ut_x11_client_copy_area(UtObject *object, uint32_t src_drawable,
+                             uint32_t dst_drawable, uint32_t gc, int16_t src_x,
+                             int16_t src_y, int16_t dst_x, int16_t dst_y,
+                             uint16_t width, uint16_t height) {
+  assert(ut_object_is_x11_client(object));
+
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card32(request, src_drawable);
+  ut_x11_buffer_append_card32(request, dst_drawable);
+  ut_x11_buffer_append_card32(request, gc);
+  ut_x11_buffer_append_int16(request, src_x);
+  ut_x11_buffer_append_int16(request, src_y);
+  ut_x11_buffer_append_int16(request, dst_x);
+  ut_x11_buffer_append_int16(request, dst_y);
+  ut_x11_buffer_append_card16(request, width);
+  ut_x11_buffer_append_card16(request, height);
+
+  ut_x11_client_send_request(object, 62, 0, request);
+}
+
+void ut_x11_client_put_image(UtObject *object, uint32_t drawable, uint32_t gc,
+                             UtX11ImageFormat format, uint16_t width,
+                             uint16_t height, uint8_t depth, int16_t dst_x,
+                             int16_t dst_y, uint8_t *data, size_t data_length) {
+  assert(ut_object_is_x11_client(object));
+
+  UtObjectRef request = ut_x11_buffer_new();
+  ut_x11_buffer_append_card32(request, drawable);
+  ut_x11_buffer_append_card32(request, gc);
+  ut_x11_buffer_append_card16(request, width);
+  ut_x11_buffer_append_card16(request, height);
+  ut_x11_buffer_append_int16(request, dst_x);
+  ut_x11_buffer_append_int16(request, dst_y);
+  ut_x11_buffer_append_card8(request, 0); // left_pad);
+  ut_x11_buffer_append_card8(request, depth);
+  ut_x11_buffer_append_padding(request, 2);
+  ut_uint8_list_append_block(request, data, data_length);
+  ut_x11_buffer_append_align_padding(request, 4);
+
+  ut_x11_client_send_request(object, 72, format, request);
+}
+
 void ut_x11_client_list_extensions(UtObject *object,
                                    UtX11ListExtensionsCallback callback,
                                    void *user_data, UtObject *cancel) {

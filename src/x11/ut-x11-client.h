@@ -19,6 +19,12 @@ typedef void (*UtX11ListPropertiesCallback)(void *user_data, UtObject *atoms,
 typedef void (*UtX11ListExtensionsCallback)(void *user_data, UtObject *names,
                                             UtObject *error);
 
+typedef enum {
+  UT_X11_IMAGE_FORMAT_BITMAP,
+  UT_X11_IMAGE_FORMAT_XY_PIXMAP,
+  UT_X11_IMAGE_FORMAT_Z_PIXMAP
+} UtX11ImageFormat;
+
 UtObject *ut_x11_client_new(UtX11ClientEventCallback event_callback,
                             UtX11ClientErrorCallback error_callback,
                             void *user_data, UtObject *cancel);
@@ -76,6 +82,24 @@ uint32_t ut_x11_client_create_pixmap(UtObject *object, uint32_t drawable,
                                      uint8_t depth);
 
 void ut_x11_client_free_pixmap(UtObject *object, uint32_t pixmap);
+
+uint32_t ut_x11_client_create_gc(UtObject *object, uint32_t drawable);
+
+void ut_x11_client_free_gc(UtObject *object, uint32_t gc);
+
+void ut_x11_client_clear_area(UtObject *object, uint32_t window, int16_t x,
+                              int16_t y, uint16_t width, uint16_t height,
+                              bool exposures);
+
+void ut_x11_client_copy_area(UtObject *object, uint32_t src_drawable,
+                             uint32_t dst_drawable, uint32_t gc, int16_t src_x,
+                             int16_t src_y, int16_t dst_x, int16_t dst_y,
+                             uint16_t width, uint16_t height);
+
+void ut_x11_client_put_image(UtObject *object, uint32_t drawable, uint32_t gc,
+                             UtX11ImageFormat format, uint16_t width,
+                             uint16_t height, uint8_t depth, int16_t dst_x,
+                             int16_t dst_y, uint8_t *data, size_t data_length);
 
 void ut_x11_client_list_extensions(UtObject *object,
                                    UtX11ListExtensionsCallback callback,
