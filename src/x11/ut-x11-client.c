@@ -15,17 +15,21 @@
 #include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
 #include "ut-unix-domain-socket-client.h"
+#include "ut-x11-access-error.h"
+#include "ut-x11-alloc-error.h"
 #include "ut-x11-atom-error.h"
 #include "ut-x11-buffer.h"
 #include "ut-x11-button-press.h"
 #include "ut-x11-button-release.h"
 #include "ut-x11-client-private.h"
 #include "ut-x11-client.h"
+#include "ut-x11-colormap-error.h"
 #include "ut-x11-configure-notify.h"
 #include "ut-x11-drawable-error.h"
 #include "ut-x11-enter-notify.h"
 #include "ut-x11-expose.h"
 #include "ut-x11-extension.h"
+#include "ut-x11-gcontext-error.h"
 #include "ut-x11-id-choice-error.h"
 #include "ut-x11-implementation-error.h"
 #include "ut-x11-key-press.h"
@@ -561,6 +565,14 @@ static size_t decode_error(UtX11Client *self, UtObject *data) {
     error = ut_x11_match_error_new();
   } else if (code == 9) {
     error = ut_x11_drawable_error_new(value);
+  } else if (code == 10) {
+    error = ut_x11_access_error_new();
+  } else if (code == 11) {
+    error = ut_x11_alloc_error_new();
+  } else if (code == 12) {
+    error = ut_x11_colormap_error_new(value);
+  } else if (code == 13) {
+    error = ut_x11_gcontext_error_new(value);
   } else if (code == 14) {
     error = ut_x11_id_choice_error_new(value);
   } else if (code == 15) {
