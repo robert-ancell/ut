@@ -363,7 +363,10 @@ static void send_request(UtObject *object, uint8_t opcode, uint8_t data0,
   ut_x11_buffer_append_card8(request, data0);
   ut_x11_buffer_append_card16(request, 1 + data_length / 4);
   if (data != NULL) {
-    ut_list_append_list(request, data);
+    ut_list_append_list(ut_x11_buffer_get_data(request),
+                        ut_x11_buffer_get_data(data));
+    ut_list_append_list(ut_x11_buffer_get_fds(request),
+                        ut_x11_buffer_get_fds(data));
   }
 
   self->sequence_number++;
@@ -1564,7 +1567,7 @@ void ut_x11_client_put_image(UtObject *object, uint32_t drawable, uint32_t gc,
   ut_x11_buffer_append_card8(request, 0); // left_pad);
   ut_x11_buffer_append_card8(request, depth);
   ut_x11_buffer_append_padding(request, 2);
-  ut_uint8_list_append_block(request, data, data_length);
+  ut_x11_buffer_append_block(request, data, data_length);
   ut_x11_buffer_append_align_padding(request, 4);
 
   ut_x11_client_send_request(object, 72, format, request);
