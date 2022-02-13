@@ -106,6 +106,7 @@ void ut_unix_domain_socket_client_connect(UtObject *object) {
                  sizeof(address)) == 0);
 
   self->input_stream = ut_fd_input_stream_new(self->fd);
+  ut_fd_input_stream_set_receive_fds(self->input_stream, true);
   self->output_stream = ut_fd_output_stream_new(self->fd);
 }
 
