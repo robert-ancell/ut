@@ -94,7 +94,7 @@ static UtObjectInterface object_interface = {
 
 UtObject *ut_uint8_array_with_fds_new(UtObject *data, UtObject *fds) {
   assert(data != NULL);
-  assert(ut_object_is_uint8_array(data));
+  assert(ut_object_implements_uint8_list(data));
   assert(fds != NULL);
   assert(ut_object_implements_int32_list(fds));
   UtObject *object =
