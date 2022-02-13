@@ -45,4 +45,8 @@ uint32_t ut_x11_buffer_get_card32(UtObject *object, size_t *offset);
 char *ut_x11_buffer_get_string8(UtObject *object, size_t *offset,
                                 size_t length);
 
+size_t ut_x11_buffer_get_fd_count(UtObject *object);
+
+int ut_x11_buffer_take_fd(UtObject *object);
+
 bool ut_object_is_x11_buffer(UtObject *object);

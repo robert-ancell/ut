@@ -1,6 +1,8 @@
 #include <assert.h>
 
+#include "ut-int32-list.h"
 #include "ut-list.h"
+#include "ut-uint8-array-with-fds.h"
 #include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
 #include "ut-x11-buffer.h"
@@ -107,6 +109,30 @@ char *ut_x11_buffer_get_string8(UtObject *buffer, size_t *offset,
   }
   ut_uint8_list_append(value, '\0');
   return (char *)ut_uint8_list_take_data(value);
+}
+
+size_t ut_x11_buffer_get_fd_count(UtObject *object) {
+  if (!ut_object_is_uint8_array_with_fds(object)) {
+    return 0;
+  }
+
+  UtObject *fds = ut_uint8_array_with_fds_get_fds(object);
+  return ut_list_get_length(fds);
+}
+
+int ut_x11_buffer_take_fd(UtObject *object) {
+  if (!ut_object_is_uint8_array_with_fds(object)) {
+    return -1;
+  }
+
+  UtObject *fds = ut_uint8_array_with_fds_get_fds(object);
+  if (ut_list_get_length(fds) == 0) {
+    return -1;
+  }
+  int fd = ut_int32_list_get_element(fds, 0);
+  ut_list_remove(fds, 0, 1);
+
+  return fd;
 }
 
 bool ut_object_is_x11_buffer(UtObject *object) {
