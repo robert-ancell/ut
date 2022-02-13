@@ -7,6 +7,8 @@ UtObject *ut_x11_buffer_new();
 
 UtObject *ut_x11_buffer_new_with_data(UtObject *data);
 
+uint8_t *ut_x11_buffer_get_data(UtObject *object);
+
 void ut_x11_buffer_append_card8(UtObject *object, uint8_t value);
 
 void ut_x11_buffer_append_bool(UtObject *object, bool value);

@@ -363,8 +363,7 @@ static void send_request(UtObject *object, uint8_t opcode, uint8_t data0,
   ut_x11_buffer_append_card8(request, data0);
   ut_x11_buffer_append_card16(request, 1 + data_length / 4);
   if (data != NULL) {
-    ut_uint8_list_append_block(request, ut_uint8_array_get_data(data),
-                               data_length);
+    ut_list_append_list(request, data); // FIXME: Keep fds
   }
 
   self->sequence_number++;
@@ -1132,7 +1131,8 @@ static size_t read_cb(void *user_data, UtObject *data, bool complete) {
 
   size_t offset = 0;
   if (!self->setup_complete) {
-    offset = decode_setup_message(self, data);
+    UtObjectRef buffer = ut_x11_buffer_new_with_data(data);
+    offset = decode_setup_message(self, buffer);
     if (offset == 0) {
       return 0;
     }
@@ -1256,7 +1256,7 @@ void ut_x11_client_connect(UtObject *object,
   ut_unix_domain_socket_client_connect(self->socket);
   ut_input_stream_read(self->socket, read_cb, self, self->read_cancel);
 
-  UtObjectRef setup = ut_uint8_array_new();
+  UtObjectRef setup = ut_x11_buffer_new();
   ut_x11_buffer_append_card8(setup, 0x6c); // Little endian.
   ut_x11_buffer_append_padding(setup, 1);
   ut_x11_buffer_append_card16(setup, 11); // Protocol major version.
