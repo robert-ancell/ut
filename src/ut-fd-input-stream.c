@@ -21,6 +21,7 @@ typedef struct {
   int fd;
   bool receive_fds;
   UtObject *read_buffer;
+  UtObject *fds;
   bool active;
   bool complete;
   size_t block_size;
@@ -45,7 +46,6 @@ static void read_cb(void *user_data) {
 
   // Read a block.
   ssize_t n_read;
-  UtObjectRef fds = NULL;
   if (self->receive_fds) {
     struct iovec iov;
     iov.iov_base = ut_uint8_array_get_data(self->read_buffer) + buffer_length;
@@ -63,15 +63,11 @@ static void read_cb(void *user_data) {
     for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg); cmsg != NULL;
          cmsg = CMSG_NXTHDR(&msg, cmsg)) {
       if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
-        if (fds == NULL) {
-          fds = ut_int32_list_new();
-        }
-
         size_t cmsg_fds_length = cmsg->cmsg_len / sizeof(int);
         int cmsg_fds[cmsg_fds_length];
         memcpy(cmsg_fds, CMSG_DATA(cmsg), cmsg->cmsg_len);
         for (size_t i = 0; i < cmsg_fds_length; i++) {
-          ut_int32_list_append(fds, cmsg_fds[i]);
+          ut_int32_list_append(self->fds, cmsg_fds[i]);
         }
       }
     }
@@ -90,9 +86,10 @@ static void read_cb(void *user_data) {
     self->complete = true;
   }
 
-  UtObjectRef buffer = fds != NULL
-                           ? ut_uint8_array_with_fds_new(self->read_buffer, fds)
-                           : ut_object_ref(self->read_buffer);
+  UtObjectRef buffer =
+      ut_list_get_length(self->fds) > 0
+          ? ut_uint8_array_with_fds_new(self->read_buffer, self->fds)
+          : ut_object_ref(self->read_buffer);
   size_t n_used = self->callback(self->user_data, buffer, self->complete);
   assert(n_used <= buffer_length);
   ut_list_remove(self->read_buffer, 0, n_used);
@@ -108,6 +105,7 @@ static void ut_fd_input_stream_init(UtObject *object) {
   self->fd = -1;
   self->receive_fds = false;
   self->read_buffer = ut_uint8_array_new();
+  self->fds = ut_int32_list_new();
   self->active = false;
   self->complete = false;
   self->block_size = 4096;
@@ -119,7 +117,15 @@ static void ut_fd_input_stream_init(UtObject *object) {
 
 static void ut_fd_input_stream_cleanup(UtObject *object) {
   UtFdInputStream *self = (UtFdInputStream *)object;
+
+  // Close any unused fds.
+  for (size_t i = 0; i < ut_list_get_length(self->fds); i++) {
+    int fd = ut_int32_list_get_element(self->fds, i);
+    close(fd);
+  }
+
   ut_object_unref(self->read_buffer);
+  ut_object_unref(self->fds);
   if (self->watch_cancel != NULL) {
     ut_cancel_activate(self->watch_cancel);
   }
