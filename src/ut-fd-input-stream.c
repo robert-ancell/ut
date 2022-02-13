@@ -63,7 +63,9 @@ static void read_cb(void *user_data) {
     for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg); cmsg != NULL;
          cmsg = CMSG_NXTHDR(&msg, cmsg)) {
       if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
-        size_t cmsg_fds_length = cmsg->cmsg_len / sizeof(int);
+        size_t data_length =
+            cmsg->cmsg_len - ((uint8_t *)CMSG_DATA(cmsg) - (uint8_t *)cmsg);
+        size_t cmsg_fds_length = data_length / sizeof(int);
         int cmsg_fds[cmsg_fds_length];
         memcpy(cmsg_fds, CMSG_DATA(cmsg), cmsg->cmsg_len);
         for (size_t i = 0; i < cmsg_fds_length; i++) {
