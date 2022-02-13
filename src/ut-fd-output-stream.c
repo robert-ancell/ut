@@ -96,7 +96,8 @@ static void write_cb(void *user_data) {
     buffer = allocated_buffer;
   }
   ssize_t n_written;
-  if (!block->sent_fds && file_descriptors != NULL) {
+  if (!block->sent_fds && file_descriptors != NULL &&
+      ut_list_get_length(file_descriptors) > 0) {
     size_t file_descriptors_length = ut_list_get_length(file_descriptors);
     struct iovec iov;
     iov.iov_base = (void *)buffer;
