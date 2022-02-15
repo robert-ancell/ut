@@ -8,6 +8,7 @@
 
 #include "ut-cancel.h"
 #include "ut-cstring.h"
+#include "ut-file-descriptor.h"
 #include "ut-list.h"
 #include "ut-output-stream.h"
 #include "ut-shared-memory-array.h"
@@ -19,12 +20,12 @@
 
 typedef struct {
   UtObject object;
-  int fd;
+  UtObject *fd;
   uint8_t *data;
   size_t data_length;
 } UtSharedMemoryArray;
 
-static int create_shared_memory() {
+static UtObject *create_shared_memory() {
   char name[] = "/ut-XXXX";
   while (true) {
     for (size_t i = 4; i < 8; i++) {
@@ -33,10 +34,10 @@ static int create_shared_memory() {
     int fd = shm_open(name, O_CREAT | O_RDWR, 0666);
     if (fd >= 0) {
       shm_unlink(name);
-      return fd;
+      return ut_file_descriptor_new(fd);
     }
     if (errno != EEXIST) {
-      return -1;
+      return NULL;
     }
   }
 }
@@ -80,7 +81,7 @@ static UtObject *ut_shared_memory_array_copy(UtObject *object) {
 
 static void ut_shared_memory_array_init(UtObject *object) {
   UtSharedMemoryArray *self = (UtSharedMemoryArray *)object;
-  self->fd = -1;
+  self->fd = NULL;
   self->data = NULL;
   self->data_length = 0;
 }
@@ -93,7 +94,7 @@ static char *ut_shared_memory_array_to_string(UtObject *object) {
 
 static void ut_shared_memory_array_cleanup(UtObject *object) {
   UtSharedMemoryArray *self = (UtSharedMemoryArray *)object;
-  close(self->fd);
+  ut_object_unref(self->fd);
   munmap(self->data, self->data_length);
 }
 
@@ -124,16 +125,16 @@ UtObject *ut_shared_memory_array_new(size_t length) {
 
   self->fd = create_shared_memory();
 
-  ftruncate(self->fd, length);
+  ftruncate(ut_file_descriptor_get_fd(self->fd), length);
   self->data_length = length;
 
-  self->data =
-      mmap(NULL, length, PROT_READ | PROT_WRITE, MAP_SHARED, self->fd, 0);
+  self->data = mmap(NULL, length, PROT_READ | PROT_WRITE, MAP_SHARED,
+                    ut_file_descriptor_get_fd(self->fd), 0);
 
   return object;
 }
 
-int ut_shared_memory_array_get_fd(UtObject *object) {
+UtObject *ut_shared_memory_array_get_fd(UtObject *object) {
   assert(ut_object_is_shared_memory_array(object));
   UtSharedMemoryArray *self = (UtSharedMemoryArray *)object;
   return self->fd;
