@@ -1,9 +1,8 @@
 #include <assert.h>
 
 #include "ut-cstring.h"
-#include "ut-int32-array.h"
-#include "ut-int32-list.h"
 #include "ut-list.h"
+#include "ut-object-list.h"
 #include "ut-uint8-array-with-fds.h"
 #include "ut-uint8-array.h"
 #include "ut-uint8-list.h"
@@ -96,7 +95,7 @@ UtObject *ut_uint8_array_with_fds_new(UtObject *data, UtObject *fds) {
   assert(data != NULL);
   assert(ut_object_implements_uint8_list(data));
   assert(fds != NULL);
-  assert(ut_object_implements_int32_list(fds));
+  assert(ut_object_implements_object_list(fds));
   UtObject *object =
       ut_object_new(sizeof(UtUint8ArrayWithFds), &object_interface);
   UtUint8ArrayWithFds *self = (UtUint8ArrayWithFds *)object;
