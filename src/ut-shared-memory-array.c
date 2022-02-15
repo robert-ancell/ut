@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "ut-cancel.h"
@@ -25,7 +26,7 @@ typedef struct {
   size_t data_length;
 } UtSharedMemoryArray;
 
-static UtObject *create_shared_memory() {
+static UtObject *create_shared_memory(size_t length) {
   char name[] = "/ut-XXXX";
   while (true) {
     for (size_t i = 4; i < 8; i++) {
@@ -34,6 +35,7 @@ static UtObject *create_shared_memory() {
     int fd = shm_open(name, O_CREAT | O_RDWR, 0666);
     if (fd >= 0) {
       shm_unlink(name);
+      ftruncate(fd, length);
       return ut_file_descriptor_new(fd);
     }
     if (errno != EEXIST) {
@@ -119,21 +121,21 @@ static UtObjectInterface object_interface = {
                    {NULL, NULL}}};
 
 UtObject *ut_shared_memory_array_new(size_t length) {
-  UtObjectRef fd = create_shared_memory();
-  return ut_shared_memory_array_new_from_fd(fd, length);
+  UtObjectRef fd = create_shared_memory(length);
+  return ut_shared_memory_array_new_from_fd(fd);
 }
 
-UtObject *ut_shared_memory_array_new_from_fd(UtObject *fd, size_t length) {
+UtObject *ut_shared_memory_array_new_from_fd(UtObject *fd) {
   UtObject *object =
       ut_object_new(sizeof(UtSharedMemoryArray), &object_interface);
   UtSharedMemoryArray *self = (UtSharedMemoryArray *)object;
 
   self->fd = ut_object_ref(fd);
+  struct stat stat_result;
+  fstat(ut_file_descriptor_get_fd(self->fd), &stat_result);
+  self->data_length = stat_result.st_size;
 
-  ftruncate(ut_file_descriptor_get_fd(self->fd), length);
-  self->data_length = length;
-
-  self->data = mmap(NULL, length, PROT_READ | PROT_WRITE, MAP_SHARED,
+  self->data = mmap(NULL, self->data_length, PROT_READ | PROT_WRITE, MAP_SHARED,
                     ut_file_descriptor_get_fd(self->fd), 0);
 
   return object;
