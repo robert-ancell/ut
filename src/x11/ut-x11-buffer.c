@@ -1,6 +1,6 @@
 #include <assert.h>
 
-#include "ut-int32-list.h"
+#include "ut-file-descriptor.h"
 #include "ut-list.h"
 #include "ut-uint8-array-with-fds.h"
 #include "ut-uint8-array.h"
@@ -129,10 +129,10 @@ int ut_x11_buffer_take_fd(UtObject *object) {
   if (ut_list_get_length(fds) == 0) {
     return -1;
   }
-  int fd = ut_int32_list_get_element(fds, 0);
+  UtObjectRef fd = ut_list_get_element(fds, 0);
   ut_list_remove(fds, 0, 1);
 
-  return fd;
+  return ut_file_descriptor_get_fd(fd);
 }
 
 bool ut_object_is_x11_buffer(UtObject *object) {

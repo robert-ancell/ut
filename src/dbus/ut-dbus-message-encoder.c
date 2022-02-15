@@ -10,8 +10,8 @@
 #include "ut-dbus-object-path.h"
 #include "ut-dbus-signature.h"
 #include "ut-dbus-struct.h"
-#include "ut-dbus-unix-fd.h"
 #include "ut-dbus-variant.h"
+#include "ut-file-descriptor.h"
 #include "ut-float64.h"
 #include "ut-int16.h"
 #include "ut-int32.h"
@@ -144,7 +144,7 @@ static char *get_signature(UtObject *value) {
                                  ut_dbus_dict_get_value_signature(value));
   } else if (ut_object_is_dbus_variant(value)) {
     return strdup("v");
-  } else if (ut_object_is_dbus_unix_fd(value)) {
+  } else if (ut_object_is_file_descriptor(value)) {
     return strdup("h");
   } else {
     assert(false);
@@ -224,7 +224,7 @@ static void write_value(UtObject *buffer, UtObject *value) {
     ut_cstring_ref signature = get_signature(child_value);
     write_signature(buffer, signature);
     write_value(buffer, child_value);
-  } else if (ut_object_is_dbus_unix_fd(value)) {
+  } else if (ut_object_is_file_descriptor(value)) {
     assert(false);
   } else {
     assert(false);

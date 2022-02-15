@@ -9,7 +9,7 @@
 #include "ut-constant-uint8-array.h"
 #include "ut-event-loop.h"
 #include "ut-fd-output-stream.h"
-#include "ut-int32-list.h"
+#include "ut-file-descriptor.h"
 #include "ut-list.h"
 #include "ut-output-stream.h"
 #include "ut-uint8-array-with-fds.h"
@@ -117,7 +117,8 @@ static void write_cb(void *user_data) {
     cmsg->cmsg_len = CMSG_LEN(sizeof(int) * file_descriptors_length);
     int cmsg_fds[file_descriptors_length];
     for (size_t i = 0; i < file_descriptors_length; i++) {
-      cmsg_fds[i] = ut_int32_list_get_element(file_descriptors, i);
+      UtObjectRef fd = ut_list_get_element(file_descriptors, i);
+      cmsg_fds[i] = ut_file_descriptor_get_fd(fd);
     }
     memcpy(CMSG_DATA(cmsg), cmsg_fds, sizeof(cmsg_fds));
     n_written = sendmsg(self->fd, &msg, 0);

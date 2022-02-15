@@ -9,8 +9,8 @@
 #include "ut-constant-uint8-array.h"
 #include "ut-event-loop.h"
 #include "ut-fd-input-stream.h"
+#include "ut-file-descriptor.h"
 #include "ut-input-stream.h"
-#include "ut-int32-list.h"
 #include "ut-list.h"
 #include "ut-uint8-array-with-fds.h"
 #include "ut-uint8-array.h"
@@ -69,7 +69,7 @@ static void read_cb(void *user_data) {
         int cmsg_fds[cmsg_fds_length];
         memcpy(cmsg_fds, CMSG_DATA(cmsg), cmsg->cmsg_len);
         for (size_t i = 0; i < cmsg_fds_length; i++) {
-          ut_int32_list_append(self->fds, cmsg_fds[i]);
+          ut_list_append_take(self->fds, ut_file_descriptor_new(cmsg_fds[i]));
         }
       }
     }
@@ -107,7 +107,7 @@ static void ut_fd_input_stream_init(UtObject *object) {
   self->fd = -1;
   self->receive_fds = false;
   self->read_buffer = ut_uint8_array_new();
-  self->fds = ut_int32_list_new();
+  self->fds = ut_list_new();
   self->active = false;
   self->complete = false;
   self->block_size = 4096;
@@ -119,12 +119,6 @@ static void ut_fd_input_stream_init(UtObject *object) {
 
 static void ut_fd_input_stream_cleanup(UtObject *object) {
   UtFdInputStream *self = (UtFdInputStream *)object;
-
-  // Close any unused fds.
-  for (size_t i = 0; i < ut_list_get_length(self->fds); i++) {
-    int fd = ut_int32_list_get_element(self->fds, i);
-    close(fd);
-  }
 
   ut_object_unref(self->read_buffer);
   ut_object_unref(self->fds);
