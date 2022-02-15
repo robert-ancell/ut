@@ -14,8 +14,13 @@ UtObject *ut_x11_buffer_new() {
 }
 
 UtObject *ut_x11_buffer_new_with_data(UtObject *data) {
-  UtObjectRef fds = ut_list_new();
-  return ut_uint8_array_with_fds_new(data, fds);
+  if (ut_object_is_uint8_array_with_fds(data)) {
+    return ut_uint8_array_with_fds_new(ut_uint8_array_with_fds_get_data(data),
+                                       ut_uint8_array_with_fds_get_fds(data));
+  } else {
+    UtObjectRef fds = ut_list_new();
+    return ut_uint8_array_with_fds_new(data, fds);
+  }
 }
 
 UtObject *ut_x11_buffer_get_data(UtObject *object) {
