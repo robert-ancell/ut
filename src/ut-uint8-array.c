@@ -44,6 +44,8 @@ static void ut_uint8_array_insert(UtObject *object, size_t index,
                                   const uint8_t *data, size_t data_length) {
   UtUint8Array *self = (UtUint8Array *)object;
 
+  assert(index <= self->data_length);
+
   size_t orig_data_length = self->data_length;
   resize_list(self, self->data_length + data_length);
 
@@ -71,6 +73,34 @@ static void ut_uint8_array_insert_object(UtObject *object, size_t index,
   assert(ut_object_is_uint8(item));
   uint8_t value = ut_uint8_get_value(item);
   ut_uint8_array_insert(object, index, &value, 1);
+}
+
+static void ut_uint8_array_insert_list(UtObject *object, size_t index,
+                                       UtObject *list) {
+  UtUint8Array *self = (UtUint8Array *)object;
+
+  if (ut_object_is_uint8_array(list)) {
+    UtUint8Array *l = (UtUint8Array *)list;
+    ut_uint8_array_insert(object, index, l->data, l->data_length);
+  } else if (ut_object_implements_uint8_list(list)) {
+    size_t l_length = ut_list_get_length(list);
+    size_t orig_data_length = self->data_length;
+    resize_list(self, self->data_length + l_length);
+
+    // Shift existing data up
+    for (size_t i = index; i < orig_data_length; i++) {
+      size_t new_index = self->data_length - i - 1;
+      size_t old_index = new_index - l_length;
+      self->data[new_index] = self->data[old_index];
+    }
+
+    // Insert new data
+    for (size_t i = 0; i < l_length; i++) {
+      self->data[index + i] = ut_uint8_list_get_element(list, i);
+    }
+  } else {
+    assert(false);
+  }
 }
 
 static void ut_uint8_array_remove(UtObject *object, size_t index,
@@ -174,6 +204,7 @@ static UtListInterface list_interface = {
     .get_sublist = ut_uint8_array_get_sublist,
     .copy = ut_uint8_array_copy,
     .insert = ut_uint8_array_insert_object,
+    .insert_list = ut_uint8_array_insert_list,
     .remove = ut_uint8_array_remove,
     .resize = ut_uint8_array_resize};
 

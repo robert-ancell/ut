@@ -108,10 +108,8 @@ void ut_list_append_take(UtObject *object, UtObject *item) {
 }
 
 void ut_list_append_list(UtObject *object, UtObject *list) {
-  size_t length = ut_list_get_length(list);
-  for (size_t i = 0; i < length; i++) {
-    ut_list_append_take(object, ut_list_get_element(list, i));
-  }
+  size_t length = ut_list_get_length(object);
+  ut_list_insert_list(object, length, list);
 }
 
 void ut_list_prepend(UtObject *object, UtObject *item) {
@@ -141,9 +139,17 @@ void ut_list_insert_take(UtObject *object, size_t index, UtObject *item) {
 }
 
 void ut_list_insert_list(UtObject *object, size_t index, UtObject *list) {
-  size_t length = ut_list_get_length(list);
-  for (size_t i = 0; i < length; i++) {
-    ut_list_insert_take(object, index + i, ut_list_get_element(list, i));
+  UtListInterface *list_interface =
+      ut_object_get_interface(object, &ut_list_id);
+  assert(list_interface != NULL);
+  assert(list_interface->is_mutable);
+  if (list_interface->insert_list != NULL) {
+    list_interface->insert_list(object, index, list);
+  } else {
+    size_t length = ut_list_get_length(list);
+    for (size_t i = 0; i < length; i++) {
+      ut_list_insert_take(object, index + i, ut_list_get_element(list, i));
+    }
   }
 }
 

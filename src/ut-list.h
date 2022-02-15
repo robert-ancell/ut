@@ -13,6 +13,7 @@ typedef struct {
   UtObject *(*get_sublist)(UtObject *object, size_t index, size_t count);
   UtObject *(*copy)(UtObject *object);
   void (*insert)(UtObject *object, size_t index, UtObject *item);
+  void (*insert_list)(UtObject *object, size_t index, UtObject *list);
   void (*remove)(UtObject *object, size_t start, size_t count);
   void (*resize)(UtObject *object, size_t length);
 } UtListInterface;
