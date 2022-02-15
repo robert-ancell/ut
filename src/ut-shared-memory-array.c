@@ -119,11 +119,16 @@ static UtObjectInterface object_interface = {
                    {NULL, NULL}}};
 
 UtObject *ut_shared_memory_array_new(size_t length) {
+  UtObjectRef fd = create_shared_memory();
+  return ut_shared_memory_array_new_from_fd(fd, length);
+}
+
+UtObject *ut_shared_memory_array_new_from_fd(UtObject *fd, size_t length) {
   UtObject *object =
       ut_object_new(sizeof(UtSharedMemoryArray), &object_interface);
   UtSharedMemoryArray *self = (UtSharedMemoryArray *)object;
 
-  self->fd = create_shared_memory();
+  self->fd = ut_object_ref(fd);
 
   ftruncate(ut_file_descriptor_get_fd(self->fd), length);
   self->data_length = length;
