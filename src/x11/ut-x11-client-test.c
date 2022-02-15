@@ -45,8 +45,16 @@ static void list_extensions_cb(void *user_data, UtObject *names,
   }
 }
 
-static void create_segment_cb(void *user_data, UtObject *fd, UtObject *error) {
-  buffer = ut_shared_memory_array_new_from_fd(fd);
+static void connect_cb(void *user_data, UtObject *error) {
+  if (error != NULL) {
+    ut_cstring_ref description = ut_error_get_description(error);
+    printf("Error connecting: %s", description);
+    return;
+  }
+
+  printf("Connected\n");
+
+  buffer = ut_shared_memory_array_new(width * height * 4);
   uint8_t *pixmap_data = ut_shared_memory_array_get_data(buffer);
   for (size_t y = 0; y < height; y++) {
     for (size_t x = 0; x < width; x++) {
@@ -57,21 +65,6 @@ static void create_segment_cb(void *user_data, UtObject *fd, UtObject *error) {
       pixel[3] = 255;
     }
   }
-
-  UtObject *shm = ut_x11_client_get_mit_shm_extension(client);
-  pixmap = ut_x11_mit_shm_extension_create_pixmap(shm, window, width, height,
-                                                  24, segment, 0);
-  gc = ut_x11_client_create_gc(client, pixmap);
-}
-
-static void connect_cb(void *user_data, UtObject *error) {
-  if (error != NULL) {
-    ut_cstring_ref description = ut_error_get_description(error);
-    printf("Error connecting: %s", description);
-    return;
-  }
-
-  printf("Connected\n");
 
   ut_x11_client_intern_atom(client, "HELLO-WORLD", true, intern_atom_cb, NULL,
                             NULL);
@@ -84,8 +77,11 @@ static void connect_cb(void *user_data, UtObject *error) {
   ut_x11_client_map_window(client, window);
 
   UtObject *shm = ut_x11_client_get_mit_shm_extension(client);
-  segment = ut_x11_mit_shm_extension_create_segment(
-      shm, width * height * 4, false, create_segment_cb, NULL, NULL);
+  segment = ut_x11_mit_shm_extension_attach_fd(
+      shm, ut_shared_memory_array_get_fd(buffer), false);
+  pixmap = ut_x11_mit_shm_extension_create_pixmap(shm, window, width, height,
+                                                  24, segment, 0);
+  gc = ut_x11_client_create_gc(client, pixmap);
 }
 
 int main(int argc, char **argv) {
