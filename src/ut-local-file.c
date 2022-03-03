@@ -129,6 +129,12 @@ UtObject *ut_local_file_new(const char *path) {
   return object;
 }
 
+UtObject *ut_local_file_get_fd(UtObject *object) {
+  assert(ut_object_is_local_file(object));
+  UtLocalFile *self = (UtLocalFile *)object;
+  return self->fd;
+}
+
 bool ut_object_is_local_file(UtObject *object) {
   return ut_object_is_type(object, &object_interface);
 }

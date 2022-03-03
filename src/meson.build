@@ -55,6 +55,7 @@ ut_sources = [
   'ut-local-file.c',
   'ut-map.c',
   'ut-map-item.c',
+  'ut-memory-mapped-file.c',
   'ut-null.c',
   'ut-object.c',
   'ut-object-array.c',
@@ -218,6 +219,11 @@ local_file_test = executable('ut-local-file-test',
                              'ut-local-file-test.c',
                              link_with: ut_lib)
 #test('Local File', local_file_test)
+
+memory_mapped_file_test = executable('ut-memory-mapped-file-test',
+                                     'ut-memory-mapped-file-test.c',
+                                     link_with: ut_lib)
+#test('Memory Mapped File', memory_mapped_file_test)
 
 tcp_client_test = executable('ut-tcp-client-test',
                              'ut-tcp-client-test.c',
