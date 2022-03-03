@@ -25,13 +25,6 @@ typedef struct {
   UtObject *output_stream;
 } UtLocalFile;
 
-static void close_file(UtLocalFile *self) {
-  if (self->fd != NULL) {
-    ut_object_unref(self->fd);
-    self->fd = NULL;
-  }
-}
-
 static void ut_local_file_init(UtObject *object) {
   UtLocalFile *self = (UtLocalFile *)object;
   self->path = NULL;
@@ -45,9 +38,9 @@ static void ut_local_file_cleanup(UtObject *object) {
   // FIXME: Cancel read/writes
   free(self->path);
   self->path = NULL;
+  ut_object_unref(self->fd);
   ut_object_unref(self->input_stream);
   ut_object_unref(self->output_stream);
-  close_file(self);
 }
 
 static void ut_local_file_open_read(UtObject *object) {
@@ -75,7 +68,7 @@ static void ut_local_file_open_write(UtObject *object, bool create) {
 
 static void ut_local_file_close(UtObject *object) {
   UtLocalFile *self = (UtLocalFile *)object;
-  close_file(self);
+  ut_file_descriptor_close(self->fd);
 }
 
 static void ut_local_file_read(UtObject *object, UtInputStreamCallback callback,

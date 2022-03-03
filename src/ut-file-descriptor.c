@@ -54,6 +54,13 @@ int ut_file_descriptor_take_fd(UtObject *object) {
   return fd;
 }
 
+void ut_file_descriptor_close(UtObject *object) {
+  assert(ut_object_is_file_descriptor(object));
+  UtFileDescriptor *self = (UtFileDescriptor *)object;
+  close(self->fd);
+  self->fd = -1;
+}
+
 bool ut_object_is_file_descriptor(UtObject *object) {
   return ut_object_is_type(object, &object_interface);
 }
