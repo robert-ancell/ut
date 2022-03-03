@@ -9,6 +9,7 @@
 
 #include "ut-cancel.h"
 #include "ut-event-loop.h"
+#include "ut-file-descriptor.h"
 
 typedef struct _Timeout Timeout;
 struct _Timeout {
@@ -22,7 +23,7 @@ struct _Timeout {
 
 typedef struct _FdWatch FdWatch;
 struct _FdWatch {
-  int fd;
+  UtObject *fd;
   UtEventLoopCallback callback;
   void *user_data;
   UtObject *cancel;
@@ -116,10 +117,10 @@ static void add_timeout(EventLoop *loop, time_t seconds, bool repeat,
   insert_timeout(loop, t);
 }
 
-static FdWatch *fd_watch_new(int fd, UtEventLoopCallback callback,
+static FdWatch *fd_watch_new(UtObject *fd, UtEventLoopCallback callback,
                              void *user_data, UtObject *cancel) {
   FdWatch *watch = malloc(sizeof(FdWatch));
-  watch->fd = fd;
+  watch->fd = ut_object_ref(fd);
   watch->callback = callback;
   watch->user_data = user_data;
   watch->cancel = ut_object_ref(cancel);
@@ -128,6 +129,7 @@ static FdWatch *fd_watch_new(int fd, UtEventLoopCallback callback,
 }
 
 static void free_fd_watch(FdWatch *watch) {
+  ut_object_unref(watch->fd);
   ut_object_unref(watch->cancel);
   free(watch);
 }
@@ -209,7 +211,7 @@ void ut_event_loop_add_timer(time_t seconds, UtEventLoopCallback callback,
   add_timeout(loop, seconds, true, callback, user_data, cancel);
 }
 
-void ut_event_loop_add_read_watch(int fd, UtEventLoopCallback callback,
+void ut_event_loop_add_read_watch(UtObject *fd, UtEventLoopCallback callback,
                                   void *user_data, UtObject *cancel) {
   EventLoop *loop = get_loop();
   FdWatch *watch = fd_watch_new(fd, callback, user_data, cancel);
@@ -217,7 +219,7 @@ void ut_event_loop_add_read_watch(int fd, UtEventLoopCallback callback,
   loop->read_watches = watch;
 }
 
-void ut_event_loop_add_write_watch(int fd, UtEventLoopCallback callback,
+void ut_event_loop_add_write_watch(UtObject *fd, UtEventLoopCallback callback,
                                    void *user_data, UtObject *cancel) {
   EventLoop *loop = get_loop();
   FdWatch *watch = fd_watch_new(fd, callback, user_data, cancel);
@@ -320,14 +322,16 @@ UtObject *ut_event_loop_run() {
     loop->read_watches = remove_cancelled_watches(loop->read_watches);
     for (FdWatch *watch = loop->read_watches; watch != NULL;
          watch = watch->next) {
-      FD_SET(watch->fd, &read_fds);
-      max_fd = watch->fd > max_fd ? watch->fd : max_fd;
+      int fd = ut_file_descriptor_get_fd(watch->fd);
+      FD_SET(fd, &read_fds);
+      max_fd = fd > max_fd ? fd : max_fd;
     }
     loop->write_watches = remove_cancelled_watches(loop->write_watches);
     for (FdWatch *watch = loop->write_watches; watch != NULL;
          watch = watch->next) {
-      FD_SET(watch->fd, &write_fds);
-      max_fd = watch->fd > max_fd ? watch->fd : max_fd;
+      int fd = ut_file_descriptor_get_fd(watch->fd);
+      FD_SET(fd, &write_fds);
+      max_fd = fd > max_fd ? fd : max_fd;
     }
 
     // Wait for file descriptors or timeout.
@@ -363,14 +367,14 @@ UtObject *ut_event_loop_run() {
     for (FdWatch *watch = loop->read_watches; watch != NULL;
          watch = watch->next) {
       if (!ut_cancel_is_active(watch->cancel) &&
-          FD_ISSET(watch->fd, &read_fds)) {
+          FD_ISSET(ut_file_descriptor_get_fd(watch->fd), &read_fds)) {
         watch->callback(watch->user_data);
       }
     }
     for (FdWatch *watch = loop->write_watches; watch != NULL;
          watch = watch->next) {
       if (!ut_cancel_is_active(watch->cancel) &&
-          FD_ISSET(watch->fd, &write_fds)) {
+          FD_ISSET(ut_file_descriptor_get_fd(watch->fd), &write_fds)) {
         watch->callback(watch->user_data);
       }
     }

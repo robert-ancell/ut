@@ -12,6 +12,7 @@
 #include "ut-event-loop.h"
 #include "ut-fd-input-stream.h"
 #include "ut-fd-output-stream.h"
+#include "ut-file-descriptor.h"
 #include "ut-input-stream.h"
 #include "ut-output-stream.h"
 #include "ut-unix-domain-socket-client.h"
@@ -19,22 +20,22 @@
 typedef struct {
   UtObject object;
   char *path;
-  int fd;
+  UtObject *fd;
   UtObject *input_stream;
   UtObject *output_stream;
 } UtUnixDomainSocketClient;
 
 static void disconnect_client(UtUnixDomainSocketClient *self) {
-  if (self->fd >= 0) {
-    close(self->fd);
-    self->fd = -1;
+  if (self->fd != NULL) {
+    ut_object_unref(self->fd);
+    self->fd = NULL;
   }
 }
 
 static void ut_unix_domain_socket_client_init(UtObject *object) {
   UtUnixDomainSocketClient *self = (UtUnixDomainSocketClient *)object;
   self->path = NULL;
-  self->fd = -1;
+  self->fd = NULL;
   self->input_stream = NULL;
   self->output_stream = NULL;
 }
@@ -42,6 +43,7 @@ static void ut_unix_domain_socket_client_init(UtObject *object) {
 static void ut_unix_domain_socket_client_cleanup(UtObject *object) {
   UtUnixDomainSocketClient *self = (UtUnixDomainSocketClient *)object;
   free(self->path);
+  ut_object_unref(self->fd);
   ut_object_unref(self->input_stream);
   ut_object_unref(self->output_stream);
   disconnect_client(self);
@@ -94,16 +96,16 @@ UtObject *ut_unix_domain_socket_client_new(const char *path) {
 void ut_unix_domain_socket_client_connect(UtObject *object) {
   assert(ut_object_is_unix_domain_socket_client(object));
   UtUnixDomainSocketClient *self = (UtUnixDomainSocketClient *)object;
-  assert(self->fd == -1);
+  assert(self->fd == NULL);
 
-  self->fd = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0);
-  assert(self->fd >= 0);
+  int fd = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0);
+  assert(fd >= 0);
+  self->fd = ut_file_descriptor_new(fd);
 
   struct sockaddr_un address;
   address.sun_family = AF_UNIX;
   snprintf(address.sun_path, sizeof(address.sun_path), "%s", self->path);
-  assert(connect(self->fd, (const struct sockaddr *)&address,
-                 sizeof(address)) == 0);
+  assert(connect(fd, (const struct sockaddr *)&address, sizeof(address)) == 0);
 
   self->input_stream = ut_fd_input_stream_new(self->fd);
   ut_fd_input_stream_set_receive_fds(self->input_stream, true);

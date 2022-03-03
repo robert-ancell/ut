@@ -5,6 +5,6 @@
 
 #pragma once
 
-UtObject *ut_fd_output_stream_new(int fd);
+UtObject *ut_fd_output_stream_new(UtObject *fd);
 
 bool ut_object_is_fd_output_stream(UtObject *object);

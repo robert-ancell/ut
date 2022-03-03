@@ -8,6 +8,7 @@
 #include "ut-event-loop.h"
 #include "ut-fd-input-stream.h"
 #include "ut-fd-output-stream.h"
+#include "ut-file-descriptor.h"
 #include "ut-file.h"
 #include "ut-input-stream.h"
 #include "ut-list.h"
@@ -19,22 +20,22 @@
 typedef struct {
   UtObject object;
   char *path;
-  int fd;
+  UtObject *fd;
   UtObject *input_stream;
   UtObject *output_stream;
 } UtLocalFile;
 
 static void close_file(UtLocalFile *self) {
-  if (self->fd >= 0) {
-    close(self->fd);
-    self->fd = -1;
+  if (self->fd != NULL) {
+    ut_object_unref(self->fd);
+    self->fd = NULL;
   }
 }
 
 static void ut_local_file_init(UtObject *object) {
   UtLocalFile *self = (UtLocalFile *)object;
   self->path = NULL;
-  self->fd = -1;
+  self->fd = NULL;
   self->input_stream = NULL;
   self->output_stream = NULL;
 }
@@ -51,20 +52,24 @@ static void ut_local_file_cleanup(UtObject *object) {
 
 static void ut_local_file_open_read(UtObject *object) {
   UtLocalFile *self = (UtLocalFile *)object;
-  assert(self->fd == -1);
-  self->fd = open(self->path, O_RDONLY);
+  assert(self->fd == NULL);
+  int fd = open(self->path, O_RDONLY);
+  assert(fd >= 0);
+  self->fd = ut_file_descriptor_new(fd);
   self->input_stream = ut_fd_input_stream_new(self->fd);
 }
 
 static void ut_local_file_open_write(UtObject *object, bool create) {
   UtLocalFile *self = (UtLocalFile *)object;
-  assert(self->fd == -1);
+  assert(self->fd == NULL);
   int flags = O_TRUNC;
   if (create) {
     flags |= O_CREAT;
   }
-  self->fd = open(self->path, O_WRONLY | flags,
-                  S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+  int fd = open(self->path, O_WRONLY | flags,
+                S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+  assert(fd >= 0);
+  self->fd = ut_file_descriptor_new(fd);
   self->output_stream = ut_fd_output_stream_new(self->fd);
 }
 

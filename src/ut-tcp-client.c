@@ -14,6 +14,7 @@
 #include "ut-event-loop.h"
 #include "ut-fd-input-stream.h"
 #include "ut-fd-output-stream.h"
+#include "ut-file-descriptor.h"
 #include "ut-input-stream.h"
 #include "ut-output-stream.h"
 #include "ut-tcp-client.h"
@@ -22,7 +23,7 @@ typedef struct {
   UtObject object;
   char *address;
   uint16_t port;
-  int fd;
+  UtObject *fd;
   bool connecting;
   bool connected;
   UtObject *input_stream;
@@ -72,7 +73,8 @@ static void connect_cb(void *user_data) {
 
   int error; // FIXME: use
   socklen_t error_length = sizeof(error);
-  getsockopt(self->fd, SOL_SOCKET, SO_ERROR, &error, &error_length);
+  getsockopt(ut_file_descriptor_get_fd(self->fd), SOL_SOCKET, SO_ERROR, &error,
+             &error_length);
   assert(error == 0);
 
   if (!ut_cancel_is_active(data->cancel) && data->callback != NULL) {
@@ -101,21 +103,22 @@ static void lookup_result_cb(void *user_data, void *result) {
   assert(addresses != NULL);
   struct addrinfo *address = addresses;
 
-  self->fd = socket(address->ai_family, SOCK_STREAM | SOCK_NONBLOCK, 0);
-  assert(self->fd >= 0);
+  int fd = socket(address->ai_family, SOCK_STREAM | SOCK_NONBLOCK, 0);
+  assert(fd >= 0);
+  self->fd = ut_file_descriptor_new(fd);
 
   ut_event_loop_add_write_watch(self->fd, connect_cb, data, data->watch_cancel);
 
-  int connect_result = connect(self->fd, address->ai_addr, address->ai_addrlen);
+  int connect_result = connect(fd, address->ai_addr, address->ai_addrlen);
   assert(connect_result == 0 || errno == EINPROGRESS);
 
   freeaddrinfo(addresses);
 }
 
 static void disconnect_client(UtTcpClient *self) {
-  if (self->fd >= 0) {
-    close(self->fd);
-    self->fd = -1;
+  if (self->fd != NULL) {
+    ut_object_unref(self->fd);
+    self->fd = NULL;
   }
 }
 
@@ -123,7 +126,7 @@ static void ut_tcp_client_init(UtObject *object) {
   UtTcpClient *self = (UtTcpClient *)object;
   self->address = NULL;
   self->port = 0;
-  self->fd = -1;
+  self->fd = NULL;
   self->connecting = false;
   self->connected = false;
   self->input_stream = NULL;
@@ -133,6 +136,7 @@ static void ut_tcp_client_init(UtObject *object) {
 static void ut_tcp_client_cleanup(UtObject *object) {
   UtTcpClient *self = (UtTcpClient *)object;
   free(self->address);
+  ut_object_unref(self->fd);
   ut_object_unref(self->input_stream);
   ut_object_unref(self->output_stream);
   disconnect_client(self);

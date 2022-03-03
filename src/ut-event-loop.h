@@ -15,10 +15,10 @@ void ut_event_loop_add_delay(time_t seconds, UtEventLoopCallback callback,
 void ut_event_loop_add_timer(time_t seconds, UtEventLoopCallback callback,
                              void *user_data, UtObject *cancel);
 
-void ut_event_loop_add_read_watch(int fd, UtEventLoopCallback callback,
+void ut_event_loop_add_read_watch(UtObject *fd, UtEventLoopCallback callback,
                                   void *user_data, UtObject *cancel);
 
-void ut_event_loop_add_write_watch(int fd, UtEventLoopCallback callback,
+void ut_event_loop_add_write_watch(UtObject *fd, UtEventLoopCallback callback,
                                    void *user_data, UtObject *cancel);
 
 void ut_event_loop_add_worker_thread(UtThreadCallback thread_callback,

@@ -30,7 +30,7 @@ struct _WriteBlock {
 
 typedef struct {
   UtObject object;
-  int fd;
+  UtObject *fd;
   UtObject *watch_cancel;
   WriteBlock *blocks;
   WriteBlock *last_block;
@@ -121,12 +121,12 @@ static void write_cb(void *user_data) {
       cmsg_fds[i] = ut_file_descriptor_get_fd(fd);
     }
     memcpy(CMSG_DATA(cmsg), cmsg_fds, sizeof(cmsg_fds));
-    n_written = sendmsg(self->fd, &msg, 0);
+    n_written = sendmsg(ut_file_descriptor_get_fd(self->fd), &msg, 0);
     if (n_written >= 0) {
       block->sent_fds = true;
     }
   } else {
-    n_written = write(self->fd, buffer, n_to_write);
+    n_written = write(ut_file_descriptor_get_fd(self->fd), buffer, n_to_write);
   }
   free(allocated_buffer);
   assert(n_written >= 0);
@@ -155,7 +155,7 @@ static void write_cb(void *user_data) {
 
 static void ut_fd_output_stream_init(UtObject *object) {
   UtFdOutputStream *self = (UtFdOutputStream *)object;
-  self->fd = -1;
+  self->fd = NULL;
   self->watch_cancel = NULL;
   self->blocks = NULL;
   self->last_block = NULL;
@@ -163,6 +163,7 @@ static void ut_fd_output_stream_init(UtObject *object) {
 
 static void ut_fd_output_stream_cleanup(UtObject *object) {
   UtFdOutputStream *self = (UtFdOutputStream *)object;
+  ut_object_unref(self->fd);
   ut_object_unref(self->watch_cancel);
   WriteBlock *next_block;
   for (WriteBlock *b = self->blocks; b != NULL; b = next_block) {
@@ -176,7 +177,6 @@ static void ut_fd_output_stream_write(UtObject *object, UtObject *data,
                                       UtOutputStreamCallback callback,
                                       void *user_data, UtObject *cancel) {
   UtFdOutputStream *self = (UtFdOutputStream *)object;
-  assert(self->fd >= 0);
 
   add_block(self, data, callback, user_data, cancel);
 
@@ -196,10 +196,10 @@ static UtObjectInterface object_interface = {
     .interfaces = {{&ut_output_stream_id, &output_stream_interface},
                    {NULL, NULL}}};
 
-UtObject *ut_fd_output_stream_new(int fd) {
+UtObject *ut_fd_output_stream_new(UtObject *fd) {
   UtObject *object = ut_object_new(sizeof(UtFdOutputStream), &object_interface);
   UtFdOutputStream *self = (UtFdOutputStream *)object;
-  self->fd = fd;
+  self->fd = ut_object_ref(fd);
   return object;
 }
 

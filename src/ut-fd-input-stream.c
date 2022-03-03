@@ -18,7 +18,7 @@
 
 typedef struct {
   UtObject object;
-  int fd;
+  UtObject *fd;
   bool receive_fds;
   UtObject *read_buffer;
   UtObject *fds;
@@ -59,7 +59,7 @@ static void read_cb(void *user_data) {
     msg.msg_control = control_data;
     msg.msg_controllen = sizeof(control_data);
     msg.msg_flags = 0;
-    n_read = recvmsg(self->fd, &msg, 0);
+    n_read = recvmsg(ut_file_descriptor_get_fd(self->fd), &msg, 0);
     for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg); cmsg != NULL;
          cmsg = CMSG_NXTHDR(&msg, cmsg)) {
       if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
@@ -74,7 +74,7 @@ static void read_cb(void *user_data) {
       }
     }
   } else {
-    n_read = read(self->fd,
+    n_read = read(ut_file_descriptor_get_fd(self->fd),
                   ut_uint8_array_get_data(self->read_buffer) + buffer_length,
                   self->block_size);
   }
@@ -104,7 +104,7 @@ static void read_cb(void *user_data) {
 
 static void ut_fd_input_stream_init(UtObject *object) {
   UtFdInputStream *self = (UtFdInputStream *)object;
-  self->fd = -1;
+  self->fd = NULL;
   self->receive_fds = false;
   self->read_buffer = ut_uint8_array_new();
   self->fds = ut_list_new();
@@ -120,6 +120,7 @@ static void ut_fd_input_stream_init(UtObject *object) {
 static void ut_fd_input_stream_cleanup(UtObject *object) {
   UtFdInputStream *self = (UtFdInputStream *)object;
 
+  ut_object_unref(self->fd);
   ut_object_unref(self->read_buffer);
   ut_object_unref(self->fds);
   if (self->watch_cancel != NULL) {
@@ -133,7 +134,6 @@ static void ut_fd_input_stream_read(UtObject *object,
                                     UtInputStreamCallback callback,
                                     void *user_data, UtObject *cancel) {
   UtFdInputStream *self = (UtFdInputStream *)object;
-  assert(self->fd >= 0);
   assert(callback != NULL);
 
   assert(self->callback == NULL);
@@ -184,10 +184,10 @@ static UtObjectInterface object_interface = {
     .interfaces = {{&ut_input_stream_id, &input_stream_interface},
                    {NULL, NULL}}};
 
-UtObject *ut_fd_input_stream_new(int fd) {
+UtObject *ut_fd_input_stream_new(UtObject *fd) {
   UtObject *object = ut_object_new(sizeof(UtFdInputStream), &object_interface);
   UtFdInputStream *self = (UtFdInputStream *)object;
-  self->fd = fd;
+  self->fd = ut_object_ref(fd);
   return object;
 }
 

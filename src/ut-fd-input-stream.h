@@ -5,7 +5,7 @@
 
 #pragma once
 
-UtObject *ut_fd_input_stream_new(int fd);
+UtObject *ut_fd_input_stream_new(UtObject *fd);
 
 void ut_fd_input_stream_set_receive_fds(UtObject *object, bool receive_fds);
 
