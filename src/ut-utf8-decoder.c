@@ -48,10 +48,10 @@ static size_t read_cb(void *user_data, UtObject *data, bool complete) {
       uint8_t byte2 = ut_uint8_list_get_element(data, offset + 1);
       if ((byte2 & 0xc0) != 0x80) {
         code_point = 0xfffd;
+      } else {
+        code_point = (byte1 & 0x1f) << 6 | (byte2 & 0x3f);
       }
-      code_point = (byte1 & 0x1f) << 6 | (byte2 & 0x3f);
       offset += 2;
-      return true;
     } else if ((byte1 & 0xf0) == 0xe0) {
       if (offset + 3 > utf8_data_length) {
         break;
@@ -65,7 +65,6 @@ static size_t read_cb(void *user_data, UtObject *data, bool complete) {
             (byte1 & 0x0f) << 12 | (byte2 & 0x3f) << 6 | (byte3 & 0x3f);
       }
       offset += 3;
-      return true;
     } else if ((byte1 & 0xf8) == 0xf0) {
       if (offset + 4 > utf8_data_length) {
         break;
