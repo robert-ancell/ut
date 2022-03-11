@@ -1,4 +1,6 @@
 #include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 
@@ -68,10 +70,9 @@ static uint8_t ut_memory_mapped_file_get_element(UtObject *object,
 
 static uint8_t *ut_memory_mapped_file_take_data(UtObject *object) {
   UtMemoryMappedFile *self = (UtMemoryMappedFile *)object;
-  uint8_t *result = self->data;
-  self->data = NULL;
-  self->data_length = 0;
-  return result;
+  uint8_t *copy = malloc(sizeof(uint8_t) * self->data_length);
+  memcpy(copy, self->data, self->data_length);
+  return copy;
 }
 
 static size_t ut_memory_mapped_file_get_length(UtObject *object) {
