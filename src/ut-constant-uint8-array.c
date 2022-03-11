@@ -16,7 +16,8 @@ typedef struct {
   size_t data_length;
 } UtConstantUint8Array;
 
-uint8_t ut_constant_uint8_array_get_element(UtObject *object, size_t index) {
+static uint8_t ut_constant_uint8_array_get_element(UtObject *object,
+                                                   size_t index) {
   UtConstantUint8Array *self = (UtConstantUint8Array *)object;
   return self->data[index];
 }
