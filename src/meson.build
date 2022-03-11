@@ -85,6 +85,8 @@ ut_sources = [
   'ut-uint64-list.c',
   'ut-uint64-subarray.c',
   'ut-unix-domain-socket-client.c',
+  'ut-utf16-decoder.c',
+  'ut-utf16-encoder.c',
   'ut-utf8-decoder.c',
   'ut-utf8-encoder.c',
   'ut-utf8-string.c',
@@ -175,10 +177,20 @@ utf8_decoder_test = executable('ut-utf8-decoder-test',
                                link_with: ut_lib)
 test('UTF-8 Decoder', utf8_decoder_test)
 
+utf16_decoder_test = executable('ut-utf16-decoder-test',
+                                'ut-utf16-decoder-test.c',
+                                link_with: ut_lib)
+test('UTF-16 Decoder', utf16_decoder_test)
+
 utf8_encoder_test = executable('ut-utf8-encoder-test',
                                'ut-utf8-encoder-test.c',
                                link_with: ut_lib)
 test('UTF-8 Encoder', utf8_encoder_test)
+
+utf16_encoder_test = executable('ut-utf16-encoder-test',
+                                'ut-utf16-encoder-test.c',
+                                link_with: ut_lib)
+test('UTF-16 Encoder', utf16_encoder_test)
 
 xml_document_test = executable('ut-xml-document-test',
                                'xml/ut-xml-document-test.c',
