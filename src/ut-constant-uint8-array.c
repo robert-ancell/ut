@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "ut-constant-uint8-array.h"
 #include "ut-list.h"
@@ -18,6 +19,13 @@ typedef struct {
 uint8_t ut_constant_uint8_array_get_element(UtObject *object, size_t index) {
   UtConstantUint8Array *self = (UtConstantUint8Array *)object;
   return self->data[index];
+}
+
+static uint8_t *ut_constant_uint8_array_take_data(UtObject *object) {
+  UtConstantUint8Array *self = (UtConstantUint8Array *)object;
+  uint8_t *copy = malloc(sizeof(uint8_t) * self->data_length);
+  memcpy(copy, self->data, self->data_length);
+  return copy;
 }
 
 static size_t ut_constant_uint8_array_get_length(UtObject *object) {
@@ -68,7 +76,8 @@ static char *ut_constant_uint8_array_to_string(UtObject *object) {
 }
 
 static UtUint8ListInterface uint8_list_interface = {
-    .get_element = ut_constant_uint8_array_get_element};
+    .get_element = ut_constant_uint8_array_get_element,
+    .take_data = ut_constant_uint8_array_take_data};
 
 static UtListInterface list_interface = {
     .get_length = ut_constant_uint8_array_get_length,
