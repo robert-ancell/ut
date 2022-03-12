@@ -36,6 +36,34 @@ UtObject *ut_string_new_from_utf8(UtObject *utf8) {
   return ut_utf8_string_new_from_data(utf8);
 }
 
+UtObject *ut_string_new_from_utf16(UtObject *code_units) {
+  UtObject *string = ut_string_new("");
+  size_t code_units_length = ut_list_get_length(code_units);
+  for (size_t i = 0; i < code_units_length; i++) {
+    uint16_t code_unit = ut_uint16_list_get_element(code_units, i);
+    uint32_t code_point;
+    if (code_unit <= 0xd7ff || code_unit >= 0xe000) {
+      code_point = code_unit;
+    } else if ((code_unit & 0xfc00) == 0xd800) {
+      if (i == code_units_length - 1) {
+        code_point = 0xfffd;
+      } else {
+        uint16_t code_unit2 = ut_uint16_list_get_element(code_units, i);
+        if ((code_unit2 & 0xfc00) == 0xdc00) {
+          code_point =
+              0x10000 + ((code_unit & 0x3ff) << 10 | (code_unit2 & 0x3ff));
+        } else {
+          code_point = 0xfffd;
+        }
+      }
+    } else {
+      code_point = 0xfffd;
+    }
+    ut_string_append_code_point(string, code_point);
+  }
+  return string;
+}
+
 const char *ut_string_get_text(UtObject *object) {
   UtStringInterface *string_interface =
       ut_object_get_interface(object, &ut_string_id);

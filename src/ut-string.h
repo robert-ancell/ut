@@ -31,6 +31,8 @@ UtObject *ut_string_new_sized(const char *text, size_t length);
 
 UtObject *ut_string_new_from_utf8(UtObject *utf8);
 
+UtObject *ut_string_new_from_utf16(UtObject *code_units);
+
 const char *ut_string_get_text(UtObject *object);
 
 char *ut_string_take_text(UtObject *object);
