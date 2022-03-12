@@ -16,7 +16,6 @@ int main(int argc, char **argv) {
   UtObjectRef sync_decoder = ut_utf16_decoder_new(sync_input_stream);
   UtObjectRef sync_result = ut_input_stream_read_sync(sync_decoder);
   ut_assert_is_not_error(sync_result);
-  printf("%s\n", ut_object_to_string(sync_result));
   assert(ut_list_get_length(sync_result) == 1);
   assert(ut_uint32_list_get_element(sync_result, 0) == 0x1f600);
 
