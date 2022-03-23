@@ -23,6 +23,7 @@ ut_sources = [
   'png/ut-png-image.c',
   'json/ut-json.c',
   'json/ut-json-encoder.c',
+  'svg/ut-svg-document.c',
   'ut-assert.c',
   'ut-base64.c',
   'ut-boolean.c',
@@ -196,6 +197,11 @@ xml_document_test = executable('ut-xml-document-test',
                                'xml/ut-xml-document-test.c',
                                link_with: ut_lib)
 test('XML', xml_document_test)
+
+svg_document_test = executable('ut-svg-document-test',
+                               'svg/ut-svg-document-test.c',
+                               link_with: ut_lib)
+test('svg', svg_document_test)
 
 json_test = executable('ut-json-test',
                        'json/ut-json-test.c',
