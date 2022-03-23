@@ -14,6 +14,8 @@
 #include "png/ut-png-decoder.h"
 #include "png/ut-png-error.h"
 #include "png/ut-png-image.h"
+#include "rasterizer/ut-raster-image.h"
+#include "rasterizer/ut-rasterizer.h"
 #include "ut-assert.h"
 #include "ut-base64.h"
 #include "ut-boolean.h"

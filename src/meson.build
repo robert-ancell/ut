@@ -23,6 +23,8 @@ ut_sources = [
   'png/ut-png-image.c',
   'json/ut-json.c',
   'json/ut-json-encoder.c',
+  'rasterizer/ut-rasterizer.c',
+  'rasterizer/ut-raster-image.c',
   'ut-assert.c',
   'ut-base64.c',
   'ut-boolean.c',
@@ -256,6 +258,11 @@ x11_client_test = executable('ut-x11-client-test',
                              'x11/ut-x11-client-test.c',
                              link_with: ut_lib)
 #test('X11 Client', x11_client_test)
+
+rasterizer_test = executable('ut-rasterizer-test',
+                             'rasterizer/ut-rasterizer-test.c',
+                             link_with: ut_lib)
+test('Rasterizer', rasterizer_test)
 
 dbus_message_encoder_test = executable('ut-dbus-message-encoder-test',
                                        'dbus/ut-dbus-message-encoder-test.c',
