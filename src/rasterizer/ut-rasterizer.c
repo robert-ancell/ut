@@ -13,6 +13,18 @@ typedef struct {
   double a;
 } UtRasterizer;
 
+/*static bool contains_line(size_t x, size_t y, double x0, double y0, double x1,
+double y1)
+{
+   double top = x;
+   double bottom = x + 1;
+   double left = y;
+   double right = y + 1;
+
+   double dx = x1 - x0;
+   double dy = y1 - y0;
+}*/
+
 static void ut_rasterizer_init(UtObject *object) {
   UtRasterizer *self = (UtRasterizer *)object;
   self->image = NULL;
@@ -79,6 +91,41 @@ void ut_rasterizer_clear(UtObject *object) {
       d[1] = g;
       d[2] = b;
       d[3] = a;
+      d += 4;
+    }
+  }
+}
+
+void ut_rasterizer_render_circle(UtObject *object, double cx, double cy,
+                                 double radius) {
+  assert(ut_object_is_rasterizer(object));
+  UtRasterizer *self = (UtRasterizer *)object;
+
+  uint8_t r = self->r * 255;
+  uint8_t g = self->g * 255;
+  uint8_t b = self->b * 255;
+  uint8_t a = self->a * 255;
+
+  assert(ut_raster_image_get_format(self->image) ==
+         UT_RASTER_IMAGE_FORMAT_RGBA32);
+  size_t width = ut_raster_image_get_width(self->image);
+  size_t height = ut_raster_image_get_height(self->image);
+  uint8_t *data =
+      ut_uint8_array_get_data(ut_raster_image_get_data(self->image));
+
+  double r2 = radius * radius;
+  uint8_t *d = data;
+  for (size_t y = 0; y < height; y++) {
+    for (size_t x = 0; x < width; x++) {
+      double px = (x + 0.5) - cx;
+      double py = (y + 0.5) - cy;
+      double pr2 = px * px + py * py;
+      if (pr2 <= r2) {
+        d[0] = r;
+        d[1] = g;
+        d[2] = b;
+        d[3] = a;
+      }
       d += 4;
     }
   }

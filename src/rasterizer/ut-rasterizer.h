@@ -13,6 +13,9 @@ void ut_rasterizer_set_color(UtObject *object, double r, double g, double b,
 
 void ut_rasterizer_clear(UtObject *object);
 
+void ut_rasterizer_render_circle(UtObject *object, double cx, double cy,
+                                 double radius);
+
 void ut_rasterizer_render_line(UtObject *object, double x1, double y1,
                                double x2, double y2);
 
