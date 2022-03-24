@@ -10,10 +10,12 @@ int main(int argc, char **argv) {
   UtObjectRef image =
       ut_raster_image_new(width, height, UT_RASTER_IMAGE_FORMAT_RGBA32, data);
   UtObjectRef r = ut_rasterizer_new(image);
-  ut_rasterizer_set_color(r, 1.0, 0.0, 0.0, 1.0);
+  ut_rasterizer_set_color(r, 1.0, 1.0, 1.0, 1.0);
   ut_rasterizer_clear(r);
-  ut_rasterizer_set_color(r, 0.0, 1.0, 0.0, 1.0);
+  ut_rasterizer_set_color(r, 0.0, 0.0, 0.0, 1.0);
   ut_rasterizer_render_circle(r, width * 0.5, height * 0.5, width * 0.4);
+  ut_rasterizer_set_color(r, 1.0, 1.0, 1.0, 1.0);
+  ut_rasterizer_render_circle(r, width * 0.5, height * 0.5, width * 0.2);
 
   UtObjectRef ppm = ut_string_new("");
   ut_string_append(ppm, "P3\n");
