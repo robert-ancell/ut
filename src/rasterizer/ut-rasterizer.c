@@ -76,6 +76,18 @@ static double circle_overlap(double px, double py, double pixel_size, double cx,
   }
 }
 
+static bool edge_function(double x, double y, double x1, double y1, double x2,
+                          double y2) {
+  return (x - x1) * (y2 - y1) - (y - y1) * (x2 - x1) >= 0;
+}
+
+static bool inside_triangle(double x, double y, double x1, double y1, double x2,
+                            double y2, double x3, double y3) {
+  return edge_function(x, y, x1, y1, x2, y2) &&
+         edge_function(x, y, x2, y2, x3, y3) &&
+         edge_function(x, y, x3, y3, x1, y1);
+}
+
 static void ut_rasterizer_init(UtObject *object) {
   UtRasterizer *self = (UtRasterizer *)object;
   self->image = NULL;
@@ -171,6 +183,36 @@ void ut_rasterizer_render_circle(UtObject *object, double cx, double cy,
       double overlap = circle_overlap(x + 0.5, y + 0.5, 1.0, cx, cy, r2);
       if (overlap >= 0.0) {
         set_pixel(d, r, g, b, a * overlap);
+      }
+      d += 4;
+    }
+  }
+}
+
+void ut_rasterizer_render_triangle(UtObject *object, double x1, double y1,
+                                   double x2, double y2, double x3, double y3) {
+  assert(ut_object_is_rasterizer(object));
+  UtRasterizer *self = (UtRasterizer *)object;
+
+  uint8_t r = self->r * 255;
+  uint8_t g = self->g * 255;
+  uint8_t b = self->b * 255;
+  uint8_t a = self->a * 255;
+
+  assert(ut_raster_image_get_format(self->image) ==
+         UT_RASTER_IMAGE_FORMAT_RGBA32);
+  size_t width = ut_raster_image_get_width(self->image);
+  size_t height = ut_raster_image_get_height(self->image);
+  uint8_t *data =
+      ut_uint8_array_get_data(ut_raster_image_get_data(self->image));
+
+  // FIXME left, right, top, bottom
+
+  uint8_t *d = data;
+  for (size_t y = 0; y < height; y++) {
+    for (size_t x = 0; x < width; x++) {
+      if (inside_triangle(x + 0.5, y + 0.5, x1, y1, x2, y2, x3, y3)) {
+        set_pixel(d, r, g, b, a);
       }
       d += 4;
     }
