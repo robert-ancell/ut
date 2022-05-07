@@ -19,6 +19,9 @@ void ut_rasterizer_render_circle(UtObject *object, double cx, double cy,
 void ut_rasterizer_render_triangle(UtObject *object, double x1, double y1,
                                    double x2, double y2, double x3, double y3);
 
+void ut_rasterizer_render_rectangle(UtObject *object, double x, double y,
+                                    double width, double height);
+
 void ut_rasterizer_render_line(UtObject *object, double x1, double y1,
                                double x2, double y2);
 

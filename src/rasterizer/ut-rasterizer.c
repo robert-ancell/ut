@@ -219,6 +219,13 @@ void ut_rasterizer_render_triangle(UtObject *object, double x1, double y1,
   }
 }
 
+void ut_rasterizer_render_rectangle(UtObject *object, double x, double y,
+                                    double width, double height) {
+  ut_rasterizer_render_triangle(object, x, y, x, y + height, x + width, y);
+  ut_rasterizer_render_triangle(object, x, y + height, x + width, y + height,
+                                x + width, y);
+}
+
 void ut_rasterizer_render_line(UtObject *object, double x1, double y1,
                                double x2, double y2) {}
 

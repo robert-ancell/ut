@@ -17,6 +17,10 @@ int main(int argc, char **argv) {
   ut_rasterizer_set_color(r, 1.0, 1.0, 1.0, 1.0);
   ut_rasterizer_render_circle(r, width * 0.5, height * 0.5, width * 0.2);
 
+  ut_rasterizer_set_color(r, 0.0, 0.0, 1.0, 1.0);
+  ut_rasterizer_render_rectangle(r, width * 0.2, height * 0.2, width * 0.6,
+                                 height * 0.6);
+
   ut_rasterizer_set_color(r, 1.0, 0.0, 0.0, 1.0);
   ut_rasterizer_render_triangle(r, width * 0.5, height * 0.2, width * 0.2,
                                 height * 0.8, width * 0.8, height * 0.8);
