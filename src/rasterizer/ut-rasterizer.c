@@ -14,18 +14,6 @@ typedef struct {
   double a;
 } UtRasterizer;
 
-/*static bool contains_line(size_t x, size_t y, double x0, double y0, double x1,
-double y1)
-{
-   double top = x;
-   double bottom = x + 1;
-   double left = y;
-   double right = y + 1;
-
-   double dx = x1 - x0;
-   double dy = y1 - y0;
-}*/
-
 static void set_pixel(uint8_t *data, uint8_t r, uint8_t g, uint8_t b,
                       uint8_t a) {
   if (a == 255) {
