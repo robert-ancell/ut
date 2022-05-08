@@ -226,8 +226,22 @@ void ut_rasterizer_render_rectangle(UtObject *object, double x, double y,
                                 x + width, y);
 }
 
+#include <stdio.h>
+
 void ut_rasterizer_render_line(UtObject *object, double x1, double y1,
-                               double x2, double y2) {}
+                               double x2, double y2, double width) {
+  double dx = x2 - x1;
+  double dy = y2 - y1;
+
+  double length = sqrt(dx * dx + dy * dy);
+  double ox = dy * 0.5 * width / length;
+  double oy = -dx * 0.5 * width / length;
+
+  ut_rasterizer_render_triangle(object, x1 + ox, y1 + oy, x1 - ox, y1 - oy,
+                                x2 + ox, y2 + oy);
+  ut_rasterizer_render_triangle(object, x1 - ox, y1 - oy, x2 - ox, y2 - oy,
+                                x2 + ox, y2 + oy);
+}
 
 bool ut_object_is_rasterizer(UtObject *object) {
   return ut_object_is_type(object, &object_interface);

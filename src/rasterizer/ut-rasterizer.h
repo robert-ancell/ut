@@ -23,6 +23,6 @@ void ut_rasterizer_render_rectangle(UtObject *object, double x, double y,
                                     double width, double height);
 
 void ut_rasterizer_render_line(UtObject *object, double x1, double y1,
-                               double x2, double y2);
+                               double x2, double y2, double width);
 
 bool ut_object_is_rasterizer(UtObject *object);

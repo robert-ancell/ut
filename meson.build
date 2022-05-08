@@ -10,6 +10,7 @@ add_project_arguments(['-D_POSIX_C_SOURCE=200809L'], language: 'c')
 
 cc = meson.get_compiler('c')
 
+m_dep = cc.find_library('m', required: false)
 thread_dep = dependency('threads')
 rt_dep = cc.find_library('rt')
 

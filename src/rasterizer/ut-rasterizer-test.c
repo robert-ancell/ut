@@ -14,8 +14,6 @@ int main(int argc, char **argv) {
   ut_rasterizer_clear(r);
   ut_rasterizer_set_color(r, 0.0, 0.0, 0.0, 1.0);
   ut_rasterizer_render_circle(r, width * 0.5, height * 0.5, width * 0.4);
-  ut_rasterizer_set_color(r, 1.0, 1.0, 1.0, 1.0);
-  ut_rasterizer_render_circle(r, width * 0.5, height * 0.5, width * 0.2);
 
   ut_rasterizer_set_color(r, 0.0, 0.0, 1.0, 1.0);
   ut_rasterizer_render_rectangle(r, width * 0.2, height * 0.2, width * 0.6,
@@ -24,6 +22,10 @@ int main(int argc, char **argv) {
   ut_rasterizer_set_color(r, 1.0, 0.0, 0.0, 1.0);
   ut_rasterizer_render_triangle(r, width * 0.5, height * 0.2, width * 0.2,
                                 height * 0.8, width * 0.8, height * 0.8);
+
+  ut_rasterizer_set_color(r, 1.0, 1.0, 0.0, 1.0);
+  ut_rasterizer_render_line(r, width * 0.2, height * 0.2, width * 0.8,
+                            height * 0.8, 1.0);
 
   UtObjectRef ppm = ut_string_new("");
   ut_string_append(ppm, "P3\n");

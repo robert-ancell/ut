@@ -137,7 +137,7 @@ ut_sources = [
   'zlib/ut-zlib-error.c'
 ]
 
-ut_lib = static_library('ut', ut_sources, dependencies: [thread_dep, rt_dep])
+ut_lib = static_library('ut', ut_sources, dependencies: [m_dep, thread_dep, rt_dep])
 
 cstring_test = executable('ut-cstring-test',
                           'ut-cstring-test.c',
