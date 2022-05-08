@@ -5,6 +5,8 @@
 #include "ut-rasterizer.h"
 #include "ut-uint8-array.h"
 
+#define PI 3.14159265358979323846
+
 typedef struct {
   UtObject object;
   UtObject *image;
@@ -27,40 +29,6 @@ static void set_pixel(uint8_t *data, uint8_t r, uint8_t g, uint8_t b,
     data[1] = data[1] * (1.0 - a_) + g * a_;
     data[2] = data[2] * (1.0 - a_) + b * a_;
     data[3] = data[3] * (1.0 - a_) + a * a_;
-  }
-}
-
-static double circle_overlap(double px, double py, double pixel_size, double cx,
-                             double cy, double radius2) {
-  double dx = floor(fabs(px - cx));
-  double dy = floor(fabs(py - cy));
-  double pr2_min = dx * dx + dy * dy;
-  dx += pixel_size;
-  dy += pixel_size;
-  double pr2_max = dx * dx + dy * dy;
-
-  if (radius2 >= pr2_max) {
-    return 1.0;
-  } else if (pixel_size <= 0.125) {
-    return 0.5;
-  } else if (radius2 >= pr2_min) {
-    double subpixel_size = pixel_size * 0.5;
-    double subpixel_shift = pixel_size * 0.5;
-    return circle_overlap(px - subpixel_shift, py - subpixel_shift,
-                          subpixel_size, cx, cy, radius2) *
-               0.25 +
-           circle_overlap(px + subpixel_shift, py - subpixel_shift,
-                          subpixel_size, cx, cy, radius2) *
-               0.25 +
-           circle_overlap(px - subpixel_shift, py + subpixel_shift,
-                          subpixel_size, cx, cy, radius2) *
-               0.25 +
-           circle_overlap(px + subpixel_shift, py + subpixel_shift,
-                          subpixel_size, cx, cy, radius2) *
-               0.25;
-    return 0.5;
-  } else {
-    return 0.0;
   }
 }
 
@@ -147,33 +115,17 @@ void ut_rasterizer_clear(UtObject *object) {
 void ut_rasterizer_render_circle(UtObject *object, double cx, double cy,
                                  double radius) {
   assert(ut_object_is_rasterizer(object));
-  UtRasterizer *self = (UtRasterizer *)object;
 
-  uint8_t r = self->r * 255;
-  uint8_t g = self->g * 255;
-  uint8_t b = self->b * 255;
-  uint8_t a = self->a * 255;
-
-  assert(ut_raster_image_get_format(self->image) ==
-         UT_RASTER_IMAGE_FORMAT_RGBA32);
-  size_t width = ut_raster_image_get_width(self->image);
-  size_t height = ut_raster_image_get_height(self->image);
-  uint8_t *data =
-      ut_uint8_array_get_data(ut_raster_image_get_data(self->image));
-
-  // FIXME left, right, top, bottom
-  // FIXME: Skip center
-
-  double r2 = radius * radius;
-  uint8_t *d = data;
-  for (size_t y = 0; y < height; y++) {
-    for (size_t x = 0; x < width; x++) {
-      double overlap = circle_overlap(x + 0.5, y + 0.5, 1.0, cx, cy, r2);
-      if (overlap >= 0.0) {
-        set_pixel(d, r, g, b, a * overlap);
-      }
-      d += 4;
-    }
+  double px = cx;
+  double py = cy - radius;
+  size_t n_steps = 64;
+  for (size_t i = 0; i < n_steps; i++) {
+    double a = 2 * PI * i / (n_steps - 1);
+    double px2 = cx + sin(a) * radius;
+    double py2 = cy + cos(a) * radius;
+    ut_rasterizer_render_triangle(object, cx, cy, px, py, px2, py2);
+    px = px2;
+    py = py2;
   }
 }
 
@@ -214,10 +166,10 @@ void ut_rasterizer_render_rectangle(UtObject *object, double x, double y,
                                 x + width, y);
 }
 
-#include <stdio.h>
-
 void ut_rasterizer_render_line(UtObject *object, double x1, double y1,
                                double x2, double y2, double width) {
+  assert(ut_object_is_rasterizer(object));
+
   double dx = x2 - x1;
   double dy = y2 - y1;
 
