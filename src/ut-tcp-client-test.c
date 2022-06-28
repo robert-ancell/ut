@@ -4,6 +4,124 @@
 
 #include "ut.h"
 
+// https://datatracker.ietf.org/doc/html/rfc7748
+
+static uint8_t one[32] = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static uint8_t zero[32] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static uint8_t curve25519_a24[32] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static uint8_t curve25519_p_minus_2[32] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+static void set(const uint8_t *in, uint8_t *out) {
+  for (size_t i = 0; i < 32; i++) {
+    out[i] = in[i];
+  }
+}
+
+static void add(const uint8_t *a, const uint8_t *b, uint8_t *out) {
+  for (size_t i = 0; i < 32; i++) {
+    out[i] = a[i] + b[i];
+  }
+}
+
+static void sub(const uint8_t *a, const uint8_t *b, uint8_t *out) {
+  for (size_t i = 0; i < 32; i++) {
+    out[i] = a[i] - b[i];
+  }
+}
+
+static void mul(const uint8_t *a, const uint8_t *b, uint8_t *out) {}
+
+static void pow256(const uint8_t *a, const uint8_t *b, uint8_t *out) {}
+
+static void cswap(bool swap, uint8_t *x2, uint8_t *x3) {
+  uint8_t mask = swap ? 0xff : 0x00;
+  for (size_t i = 0; i < 32; i++) {
+    uint8_t dummy = mask & (x2[i] ^ x3[i]);
+    x2[i] = x2[i] ^ dummy;
+    x3[i] = x3[i] ^ dummy;
+  }
+}
+
+static void unknown(const uint8_t *k, const uint8_t *u, const uint8_t *a24,
+                    const uint8_t *p_minus_2, uint8_t *out) {
+  uint8_t x1[32], x2[32], z2[32], x3[32], z3[32];
+
+  set(u, x1);
+  set(one, x2);
+  set(zero, z2);
+  set(u, x3);
+  set(zero, z3);
+
+  uint8_t swap = 0;
+  for (ssize_t i = 254; i >= 0; i--) {
+    uint8_t a[32], aa[32], b[32], bb[32], e[32], c[32], d[32], da[32], cb[32],
+        t[32], t2[32];
+
+    uint8_t k_t = (k[i / 8] >> (i % 8)) & 0x1;
+    swap ^= k_t;
+    cswap(swap, x2, x3);
+    cswap(swap, z2, z3);
+    k_t = swap;
+
+    // A = x_2 + z_2
+    // AA = A^2
+    add(x2, z2, a);
+    mul(a, a, aa);
+
+    // B = x_2 - z_2
+    // BB = B^2
+    sub(x2, z2, b);
+    mul(b, b, bb);
+
+    // E = AA - BB
+    // C = x_3 + z_3
+    // D = x_3 - z_3
+    sub(aa, bb, e);
+    add(x3, z3, c);
+    sub(x3, z3, d);
+
+    // DA = D * A
+    // CB = C * B
+    mul(d, a, da);
+    mul(c, b, cb);
+
+    // x_3 = (DA + CB)^2
+    add(da, cb, t);
+    mul(t, t, x3);
+
+    // z_3 = x_1 * (DA - CB)^2
+    sub(da, cb, t);
+    mul(t, t, t2);
+    mul(x1, t2, z3);
+
+    // x_2 = AA * BB
+    mul(aa, bb, x2);
+
+    // z_2 = E * (AA + a24 * E)
+    mul(a24, e, t);
+    add(aa, t, t2);
+    mul(e, t2, z2);
+  }
+
+  cswap(swap, x2, x3);
+  cswap(swap, z2, z3);
+
+  // Return x_2 * (z_2^(p - 2))
+  uint8_t t[32];
+  pow256(z2, p_minus_2, t);
+  mul(x2, t, out);
+}
+
+static void x22519(const uint8_t *k, const uint8_t *u, uint8_t *out) {
+  unknown(k, u, curve25519_a24, curve25519_p_minus_2, out);
+}
+
 static bool decode_tls_change_cipher_spec(UtObject *data) {
   printf("change_cipher_spec\n");
   return true;
