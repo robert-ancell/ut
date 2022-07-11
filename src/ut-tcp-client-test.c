@@ -4,15 +4,21 @@
 
 #include "ut.h"
 
+// Curve25519:
 // https://datatracker.ietf.org/doc/html/rfc7748
+//
+// TLS 1.3:
+// https://datatracker.ietf.org/doc/html/rfc8446
 
 static uint8_t one[32] = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 static uint8_t zero[32] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-static uint8_t curve25519_a24[32] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+// a24 = 486662 - 2) / 4 = 121665
+static uint8_t curve25519_a24[32] = {64, 1, 219, 0, 0, 0, 0, 0, 0, 0, 0,
                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+// p = 2^255 - 19
 static uint8_t curve25519_p_minus_2[32] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -24,8 +30,11 @@ static void set(const uint8_t *in, uint8_t *out) {
 }
 
 static void add(const uint8_t *a, const uint8_t *b, uint8_t *out) {
+  uint8_t carry = 0;
   for (size_t i = 0; i < 32; i++) {
-    out[i] = a[i] + b[i];
+    uint16_t x = a[i] + b[i] + carry;
+    out[i] = x & 0xff;
+    carry = x >> 8;
   }
 }
 
@@ -35,7 +44,9 @@ static void sub(const uint8_t *a, const uint8_t *b, uint8_t *out) {
   }
 }
 
-static void mul(const uint8_t *a, const uint8_t *b, uint8_t *out) {}
+static void mul(const uint8_t *a, const uint8_t *b, uint8_t *out) {
+   
+}
 
 static void pow256(const uint8_t *a, const uint8_t *b, uint8_t *out) {}
 
@@ -49,7 +60,7 @@ static void cswap(bool swap, uint8_t *x2, uint8_t *x3) {
 }
 
 static void unknown(const uint8_t *k, const uint8_t *u, const uint8_t *a24,
-                    const uint8_t *p_minus_2, uint8_t *out) {
+                    const uint8_t *p_minus_2, uint8_t *u_out) {
   uint8_t x1[32], x2[32], z2[32], x3[32], z3[32];
 
   set(u, x1);
@@ -115,11 +126,11 @@ static void unknown(const uint8_t *k, const uint8_t *u, const uint8_t *a24,
   // Return x_2 * (z_2^(p - 2))
   uint8_t t[32];
   pow256(z2, p_minus_2, t);
-  mul(x2, t, out);
+  mul(x2, t, u_out);
 }
 
-static void x22519(const uint8_t *k, const uint8_t *u, uint8_t *out) {
-  unknown(k, u, curve25519_a24, curve25519_p_minus_2, out);
+static void x22519(const uint8_t *k, const uint8_t *u, uint8_t *u_out) {
+  unknown(k, u, curve25519_a24, curve25519_p_minus_2, u_out);
 }
 
 static bool decode_tls_change_cipher_spec(UtObject *data) {
