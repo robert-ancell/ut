@@ -16,17 +16,15 @@ static uint8_t zero[32] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 static uint8_t curve25519_a24[32] = {64, 1, 219, 0, 0, 0, 0, 0, 0, 0, 0,
                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-// p = 2^255 - 19 = 
-static uint8_t curve25519_p_minus_2[32] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+/// [out] = [in]
 static void set(const uint8_t *in, uint8_t *out) {
   for (int i = 0; i < 32; i++) {
     out[i] = in[i];
   }
 }
 
+/// [out] = [a] + [b]
 static void add(const uint8_t *a, const uint8_t *b, uint8_t *out) {
   uint8_t carry = 0;
   for (int i = 0; i < 32; i++) {
@@ -36,22 +34,33 @@ static void add(const uint8_t *a, const uint8_t *b, uint8_t *out) {
   }
 }
 
+/// [out] = [a] - [b]
 static void sub(const uint8_t *a, const uint8_t *b, uint8_t *out) {
+  // FIXME: overflow?!
   for (int i = 0; i < 32; i++) {
     out[i] = a[i] - b[i];
   }
 }
 
+/// [out] = [a] * [b]
 static void mul(const uint8_t *a, const uint8_t *b, uint8_t *out) {
-   
+   for (int i = 0; i < 32; i++) {
+      out[i] = 0;
+   }
+
+   uint16_t t = a[0] * b[0];
+   uint8_t r = t >> 8;
+   out[0] = t & 0xff;
 }
 
-// Returns a^(p-2)
+/// [out] = [a]^(p-2)
 static void pow25519(const uint8_t *a, uint8_t *out) {
    set(a, out);
+   uint8_t t[32];
    mul(a, a, t);
 }
 
+/// Swap the values of [x2] and [x3] if [swap] is true.
 static void cswap(bool swap, uint8_t *x2, uint8_t *x3) {
   uint8_t mask = swap ? 0xff : 0x00;
   for (int i = 0; i < 32; i++) {
@@ -133,7 +142,11 @@ static void x22519(const uint8_t *k, const uint8_t *u, uint8_t *u_out) {
 int main(int argc, char **argv) 
 {
    uint8_t k[32] = {0xa5, 0x46, 0xe3, 0x6b, 0xf0, 0x52, 0x7c, 0x9d, 0x3b, 0x16, 0x15, 0x4b, 0x82, 0x46, 0x5e, 0xdd, 0x62, 0x14, 0x4c, 0x0a, 0xc1, 0xfc, 0x5a, 0x18, 0x50, 0x6a, 0x22, 0x44, 0xba, 0x44, 0x9a, 0xc4};
+   k[0] &= 248;
+   k[31] &= 127;
+   k[31] |= 64;
    uint8_t u[32] = {0xe6, 0xdb, 0x68, 0x67, 0x58, 0x30, 0x30, 0xdb, 0x35, 0x94, 0xc1, 0xa4, 0x24, 0xb1, 0x5f, 0x7c, 0x72, 0x66, 0x24, 0xec, 0x26, 0xb3, 0x35, 0x3b, 0x10, 0xa9, 0x03, 0xa6, 0xd0, 0xab, 0x1c, 0x4c};
+   u[256] &= 0x7f;
    uint8_t u_out[32];
    x22519(k, u, u_out);
    // c3da55379de9c6908e94ea4df28d084f32eccf03491c71f754b4075577a28552
