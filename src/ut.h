@@ -52,6 +52,7 @@
 #include "ut-uint16-array.h"
 #include "ut-uint16-list.h"
 #include "ut-uint16.h"
+#include "ut-uint256.h"
 #include "ut-uint32-array.h"
 #include "ut-uint32-list.h"
 #include "ut-uint32.h"

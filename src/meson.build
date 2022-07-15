@@ -67,15 +67,16 @@ ut_sources = [
   'ut-string-array.c',
   'ut-string-list.c',
   'ut-tcp-client.c',
+  'ut-uint16.c',
+  'ut-uint16-array.c',
+  'ut-uint16-list.c',
+  'ut-uint16-subarray.c',
+  'ut-uint256.c',
   'ut-uint8.c',
   'ut-uint8-array.c',
   'ut-uint8-array-with-fds.c',
   'ut-uint8-list.c',
   'ut-uint8-subarray.c',
-  'ut-uint16.c',
-  'ut-uint16-array.c',
-  'ut-uint16-list.c',
-  'ut-uint16-subarray.c',
   'ut-uint32.c',
   'ut-uint32-array.c',
   'ut-uint32-list.c',
@@ -141,6 +142,11 @@ cstring_test = executable('ut-cstring-test',
                           'ut-cstring-test.c',
                           link_with: ut_lib)
 test('C String', cstring_test)
+
+uint256_test = executable('ut-uint256-test',
+                              'ut-uint256-test.c',
+                              link_with: ut_lib)
+test('Uint256', uint256_test)
 
 uint8_array_test = executable('ut-uint8-array-test',
                               'ut-uint8-array-test.c',
