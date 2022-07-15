@@ -67,8 +67,15 @@ void _ut_assert_equal(const char *file, int line, const char *a_name,
   fprintf(stderr,
           "%s:%d Strings %s and %s are not equal:\n"
           "  %s\n"
-          "  %s\n",
+          "  %s\n"
+          "  ",
           file, line, a_name, b_name, a_value_string, b_value_string);
+  for (size_t i = 0; a_value_string[i] != '\0' && b_value_string[i] != '\0' &&
+                     a_value_string[i] == b_value_string[i];
+       i++) {
+    fprintf(stderr, " ");
+  }
+  fprintf(stderr, "^\n");
 
   abort();
 }
@@ -118,8 +125,15 @@ void _ut_assert_cstring_equal(const char *file, int line, const char *a_name,
   fprintf(stderr,
           "%s:%d Strings %s and %s are not equal:\n"
           "  %s\n"
-          "  %s\n",
+          "  %s\n"
+          "  ",
           file, line, a_name, b_name, escaped_a_value, escaped_b_value);
+  for (size_t i = 0; escaped_a_value[i] != '\0' && escaped_b_value[i] != '\0' &&
+                     escaped_a_value[i] == escaped_b_value[i];
+       i++) {
+    fprintf(stderr, " ");
+  }
+  fprintf(stderr, "^\n");
 
   abort();
 }
