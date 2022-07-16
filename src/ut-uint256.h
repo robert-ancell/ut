@@ -19,6 +19,8 @@ UtObject *ut_uint256_new_from_uint8_list(UtObject *list);
 
 UtObject *ut_uint256_copy(UtObject *object);
 
+uint8_t ut_uint256_get_bit(UtObject *object, size_t n);
+
 bool ut_uint256_is_uint64(UtObject *object);
 
 uint64_t ut_uint256_to_uint64(UtObject *object);
@@ -38,5 +40,8 @@ void ut_uint256_add(UtObject *object, UtObject *a, UtObject *b);
 void ut_uint256_sub(UtObject *object, UtObject *a, UtObject *b);
 
 void ut_uint256_mul(UtObject *object, UtObject *a, UtObject *b);
+
+/// Swap the values of [object] and [a] if [swap] is true.
+void ut_uint256_cswap(UtObject *object, bool swap, UtObject *v);
 
 bool ut_object_is_uint256(UtObject *object);

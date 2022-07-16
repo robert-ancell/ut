@@ -133,6 +133,16 @@ UtObject *ut_uint256_copy(UtObject *object) {
   return copy;
 }
 
+uint8_t ut_uint256_get_bit(UtObject *object, size_t n) {
+  assert(ut_object_is_uint256(object));
+  uint32_t *v = ((UtUint256 *)object)->value;
+  if (n <= 255) {
+    return (v[n / 32] >> (n % 32)) & 0x1;
+  } else {
+    return 0;
+  }
+}
+
 // FIXME: Naming?
 bool ut_uint256_is_uint64(UtObject *object) {
   assert(ut_object_is_uint256(object));
@@ -341,6 +351,21 @@ void ut_uint256_mul(UtObject *object, UtObject *a_, UtObject *b_) {
                 (m61 & 0xffffffff) + (m70 & 0xffffffff);
   uint64_t m7c = (m7 & 0xffffffff) + (c6 & 0xffffffff);
   v[7] = m7c & 0xffffffff;
+}
+
+void ut_uint256_cswap(UtObject *object, bool swap, UtObject *a_) {
+  assert(ut_object_is_uint256(object));
+  assert(ut_object_is_uint256(a_));
+
+  uint32_t *v = ((UtUint256 *)object)->value;
+  uint32_t *a = ((UtUint256 *)a_)->value;
+
+  uint32_t mask = swap ? 0xffffffff : 0x00000000;
+  for (int i = 0; i < 8; i++) {
+    uint32_t dummy = mask & (v[i] ^ a[i]);
+    v[i] ^= dummy;
+    a[i] ^= dummy;
+  }
 }
 
 bool ut_object_is_uint256(UtObject *object) {

@@ -30,6 +30,7 @@ ut_sources = [
   'ut-constant-utf8-string.c',
   'ut-constant-uint8-array.c',
   'ut-cstring.c',
+  'ut-curve25519.c',
   'ut-event-loop.c',
   'ut-error.c',
   'ut-fd-input-stream.c',
@@ -257,6 +258,11 @@ http_client_test = executable('ut-http-client-test',
                               'http/ut-http-client-test.c',
                               link_with: ut_lib)
 #test('HTTP Client', http_client_test)
+
+curve25519_test = executable('ut-curve25519-test',
+                             'ut-curve25519-test.c',
+                             link_with: ut_lib)
+test('Curve 25519', curve25519_test)
 
 x11_client_test = executable('ut-x11-client-test',
                              'x11/ut-x11-client-test.c',

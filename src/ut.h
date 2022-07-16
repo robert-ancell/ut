@@ -21,6 +21,7 @@
 #include "ut-constant-uint8-array.h"
 #include "ut-constant-utf8-string.h"
 #include "ut-cstring.h"
+#include "ut-curve25519.h"
 #include "ut-error.h"
 #include "ut-event-loop.h"
 #include "ut-file-descriptor.h"
