@@ -65,17 +65,10 @@ void _ut_assert_equal(const char *file, int line, const char *a_name,
   ut_cstring_ref b_value_string =
       b_value != NULL ? ut_object_to_string(b_value) : strdup("NULL");
   fprintf(stderr,
-          "%s:%d Strings %s and %s are not equal:\n"
+          "%s:%d Objects %s and %s are not equal:\n"
           "  %s\n"
-          "  %s\n"
-          "  ",
+          "  %s\n",
           file, line, a_name, b_name, a_value_string, b_value_string);
-  for (size_t i = 0; a_value_string[i] != '\0' && b_value_string[i] != '\0' &&
-                     a_value_string[i] == b_value_string[i];
-       i++) {
-    fprintf(stderr, " ");
-  }
-  fprintf(stderr, "^\n");
 
   abort();
 }

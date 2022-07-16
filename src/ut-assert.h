@@ -4,7 +4,7 @@
 
 #include "ut-object.h"
 
-#define ut_assert_equal _ut_assert_equal(__FILE__, __LINE__, #a, a, #b, b)
+#define ut_assert_equal(a, b) _ut_assert_equal(__FILE__, __LINE__, #a, a, #b, b)
 void _ut_assert_equal(const char *file, int line, const char *a_name,
                       UtObject *a_value, const char *b_name, UtObject *b_value);
 
