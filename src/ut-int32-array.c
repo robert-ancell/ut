@@ -159,15 +159,15 @@ UtObject *ut_int32_array_new() {
   return ut_object_new(sizeof(UtInt32Array), &object_interface);
 }
 
-UtObject *ut_int32_array_new_with_data(size_t length, ...) {
+UtObject *ut_int32_array_new_with_elements(size_t length, ...) {
   va_list ap;
   va_start(ap, length);
-  UtObject *object = ut_int32_array_new_with_va_data(length, ap);
+  UtObject *object = ut_int32_array_new_with_va_elements(length, ap);
   va_end(ap);
   return object;
 }
 
-UtObject *ut_int32_array_new_with_va_data(size_t length, va_list ap) {
+UtObject *ut_int32_array_new_with_va_elements(size_t length, va_list ap) {
   UtObject *object = ut_int32_array_new();
   UtInt32Array *self = (UtInt32Array *)object;
 

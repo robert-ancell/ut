@@ -16,7 +16,7 @@ extern int ut_float64_list_id;
 
 UtObject *ut_float64_list_new();
 
-UtObject *ut_float64_list_new_with_data(size_t length, ...);
+UtObject *ut_float64_list_new_with_elements(size_t length, ...);
 
 double ut_float64_list_get_element(UtObject *object, size_t index);
 

@@ -9,9 +9,9 @@
 
 UtObject *ut_uint64_array_new();
 
-UtObject *ut_uint64_array_new_with_data(size_t length, ...);
+UtObject *ut_uint64_array_new_with_elements(size_t length, ...);
 
-UtObject *ut_uint64_array_new_with_va_data(size_t length, va_list ap);
+UtObject *ut_uint64_array_new_with_va_elements(size_t length, va_list ap);
 
 uint64_t *ut_uint64_array_get_data(UtObject *object);
 

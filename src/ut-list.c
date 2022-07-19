@@ -11,7 +11,7 @@ int ut_list_id = 0;
 
 UtObject *ut_list_new() { return ut_object_array_new(); }
 
-UtObject *ut_list_new_with_data(UtObject *item0, ...) {
+UtObject *ut_list_new_with_elements(UtObject *item0, ...) {
   UtObject *object = ut_list_new();
   if (item0 == NULL) {
     return object;
@@ -32,7 +32,7 @@ UtObject *ut_list_new_with_data(UtObject *item0, ...) {
   return object;
 }
 
-UtObject *ut_list_new_with_data_take(UtObject *item0, ...) {
+UtObject *ut_list_new_with_elements_take(UtObject *item0, ...) {
   UtObject *object = ut_list_new();
   if (item0 == NULL) {
     return object;

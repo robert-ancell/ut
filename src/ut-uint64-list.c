@@ -8,10 +8,10 @@ int ut_uint64_list_id = 0;
 
 UtObject *ut_uint64_list_new() { return ut_uint64_array_new(); }
 
-UtObject *ut_uint64_list_new_with_data(size_t length, ...) {
+UtObject *ut_uint64_list_new_with_elements(size_t length, ...) {
   va_list ap;
   va_start(ap, length);
-  return ut_uint64_array_new_with_va_data(length, ap);
+  return ut_uint64_array_new_with_va_elements(length, ap);
   va_end(ap);
 }
 

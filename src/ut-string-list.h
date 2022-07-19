@@ -15,7 +15,7 @@ extern int ut_string_list_id;
 
 UtObject *ut_string_list_new();
 
-UtObject *ut_string_list_new_with_data(const char *value, ...);
+UtObject *ut_string_list_new_with_elements(const char *value, ...);
 
 const char *ut_string_list_get_element(UtObject *object, size_t index);
 

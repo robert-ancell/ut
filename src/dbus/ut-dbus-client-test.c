@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
                              "org.freedesktop.Notifications", "GetCapabilities",
                              NULL, capabilities_cb, NULL, NULL);
 
-  UtObjectRef args = ut_list_new_with_data_take(
+  UtObjectRef args = ut_list_new_with_elements_take(
       ut_string_new(""), ut_uint32_new(0), ut_string_new(""),
       ut_string_new("Hello World!"), ut_string_new(""), ut_dbus_array_new("s"),
       ut_dbus_dict_new("s", "v"), ut_int32_new(-1), NULL);

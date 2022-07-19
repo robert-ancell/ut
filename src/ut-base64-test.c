@@ -10,15 +10,15 @@ static void test_encode() {
   ut_cstring_ref empty_text = ut_base64_encode(empty_list);
   ut_assert_cstring_equal(empty_text, "");
 
-  UtObjectRef short1_list = ut_uint8_list_new_with_data(1, 'M');
+  UtObjectRef short1_list = ut_uint8_list_new_with_elements(1, 'M');
   ut_cstring_ref short1_text = ut_base64_encode(short1_list);
   ut_assert_cstring_equal(short1_text, "TQ==");
 
-  UtObjectRef short2_list = ut_uint8_list_new_with_data(2, 'M', 'a');
+  UtObjectRef short2_list = ut_uint8_list_new_with_elements(2, 'M', 'a');
   ut_cstring_ref short2_text = ut_base64_encode(short2_list);
   ut_assert_cstring_equal(short2_text, "TWE=");
 
-  UtObjectRef short3_list = ut_uint8_list_new_with_data(3, 'M', 'a', 'n');
+  UtObjectRef short3_list = ut_uint8_list_new_with_elements(3, 'M', 'a', 'n');
   ut_cstring_ref short3_text = ut_base64_encode(short3_list);
   ut_assert_cstring_equal(short3_text, "TWFu");
 

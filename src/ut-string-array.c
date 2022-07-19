@@ -135,16 +135,16 @@ UtObject *ut_string_array_new() {
   return ut_object_new(sizeof(UtStringArray), &object_interface);
 }
 
-UtObject *ut_string_array_new_with_data(const char *value, ...) {
+UtObject *ut_string_array_new_with_elements(const char *value, ...) {
   va_list ap;
   va_start(ap, value);
-  UtObject *object = ut_string_array_new_with_va_data(value, ap);
+  UtObject *object = ut_string_array_new_with_va_elements(value, ap);
   va_end(ap);
 
   return object;
 }
 
-UtObject *ut_string_array_new_with_va_data(const char *value, va_list ap) {
+UtObject *ut_string_array_new_with_va_elements(const char *value, va_list ap) {
   UtObject *object = ut_string_array_new();
 
   ut_string_array_append(object, value);

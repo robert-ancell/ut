@@ -118,7 +118,7 @@ UtObject *ut_object_array_new() {
   return ut_object_new(sizeof(UtObjectArray), &object_interface);
 }
 
-UtObject *ut_object_array_new_with_data(UtObject *item0, ...) {
+UtObject *ut_object_array_new_with_elements(UtObject *item0, ...) {
   UtObject *object = ut_object_array_new();
   if (item0 == NULL) {
     return object;
@@ -148,7 +148,7 @@ UtObject *ut_object_array_new_with_data(UtObject *item0, ...) {
   return object;
 }
 
-UtObject *ut_object_array_new_with_data_take(UtObject *item0, ...) {
+UtObject *ut_object_array_new_with_elements_take(UtObject *item0, ...) {
   UtObject *object = ut_object_array_new();
   if (item0 == NULL) {
     return object;
