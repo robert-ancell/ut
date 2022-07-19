@@ -13,10 +13,10 @@ int ut_string_list_id = 0;
 
 UtObject *ut_string_list_new() { return ut_string_array_new(); }
 
-UtObject *ut_string_list_new_with_elements(const char *value, ...) {
+UtObject *ut_string_list_new_from_elements(const char *value, ...) {
   va_list ap;
   va_start(ap, value);
-  return ut_string_array_new_with_va_elements(value, ap);
+  return ut_string_array_new_from_va_elements(value, ap);
   va_end(ap);
 }
 

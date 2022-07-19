@@ -15,7 +15,7 @@ static size_t read_cb(void *user_data, UtObject *data, bool complete) {
 
 int main(int argc, char **argv) {
   UtObjectRef code_points =
-      ut_uint32_array_new_with_elements(3, 'H', 'i', 0x1f600);
+      ut_uint32_array_new_from_elements(3, 'H', 'i', 0x1f600);
   UtObjectRef code_points_stream = ut_list_input_stream_new(code_points);
   UtObjectRef utf16_encoder = ut_utf16_encoder_new(code_points_stream);
   ut_input_stream_read_all(utf16_encoder, read_cb, NULL, NULL);

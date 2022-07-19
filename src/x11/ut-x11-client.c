@@ -1139,7 +1139,7 @@ static size_t read_cb(void *user_data, UtObject *data, bool complete) {
 
   size_t offset = 0;
   if (!self->setup_complete) {
-    UtObjectRef buffer = ut_x11_buffer_new_with_data(data);
+    UtObjectRef buffer = ut_x11_buffer_new_from_data(data);
     offset = decode_setup_message(self, buffer);
     if (offset == 0) {
       return 0;
@@ -1150,7 +1150,7 @@ static size_t read_cb(void *user_data, UtObject *data, bool complete) {
   while (offset < data_length) {
     UtObjectRef message =
         ut_list_get_sublist(data, offset, data_length - offset);
-    UtObjectRef buffer = ut_x11_buffer_new_with_data(message);
+    UtObjectRef buffer = ut_x11_buffer_new_from_data(message);
     size_t n_used = decode_message(self, buffer);
     if (n_used == 0) {
       return offset;

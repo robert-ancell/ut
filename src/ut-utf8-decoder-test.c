@@ -12,7 +12,7 @@ static size_t read_cb(void *user_data, UtObject *data, bool complete) {
 
 int main(int argc, char **argv) {
   UtObjectRef sync_input =
-      ut_uint8_list_new_with_elements(4, 0xf0, 0x9f, 0x98, 0x80);
+      ut_uint8_list_new_from_elements(4, 0xf0, 0x9f, 0x98, 0x80);
   UtObjectRef sync_input_stream = ut_list_input_stream_new(sync_input);
   UtObjectRef sync_decoder = ut_utf8_decoder_new(sync_input_stream);
   UtObjectRef sync_result = ut_input_stream_read_sync(sync_decoder);
@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
   assert(ut_uint32_list_get_element(sync_result, 0) == 0x1f600);
 
   UtObjectRef async_input =
-      ut_uint8_list_new_with_elements(4, 0xf0, 0x9f, 0x98, 0x80);
+      ut_uint8_list_new_from_elements(4, 0xf0, 0x9f, 0x98, 0x80);
   UtObjectRef async_input_stream = ut_list_input_stream_new(async_input);
   UtObjectRef async_decoder = ut_utf8_decoder_new(async_input_stream);
   ut_input_stream_read_all(async_decoder, read_cb, NULL, NULL);

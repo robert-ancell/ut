@@ -13,7 +13,7 @@ UtObject *ut_x11_buffer_new() {
   return ut_uint8_array_with_fds_new(data, fds);
 }
 
-UtObject *ut_x11_buffer_new_with_data(UtObject *data) {
+UtObject *ut_x11_buffer_new_from_data(UtObject *data) {
   if (ut_object_is_uint8_array_with_fds(data)) {
     return ut_uint8_array_with_fds_new(ut_uint8_array_with_fds_get_data(data),
                                        ut_uint8_array_with_fds_get_fds(data));

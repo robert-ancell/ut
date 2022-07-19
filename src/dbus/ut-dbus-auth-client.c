@@ -224,7 +224,7 @@ void ut_dbus_auth_client_run(UtObject *object, UtAuthCompleteCallback callback,
 
   // Send empty byte, which was used for sending credentials (no longer
   // required).
-  UtObjectRef start = ut_uint8_list_new_with_elements(1, 0);
+  UtObjectRef start = ut_uint8_list_new_from_elements(1, 0);
   ut_output_stream_write(self->output_stream, start);
 
   send_auth_start(self);

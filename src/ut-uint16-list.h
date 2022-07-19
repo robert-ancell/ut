@@ -17,7 +17,7 @@ extern int ut_uint16_list_id;
 
 UtObject *ut_uint16_list_new();
 
-UtObject *ut_uint16_list_new_with_elements(size_t length, ...);
+UtObject *ut_uint16_list_new_from_elements(size_t length, ...);
 
 uint16_t ut_uint16_list_get_element(UtObject *object, size_t index);
 

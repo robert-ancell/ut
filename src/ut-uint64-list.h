@@ -17,7 +17,7 @@ extern int ut_uint64_list_id;
 
 UtObject *ut_uint64_list_new();
 
-UtObject *ut_uint64_list_new_with_elements(size_t length, ...);
+UtObject *ut_uint64_list_new_from_elements(size_t length, ...);
 
 uint64_t ut_uint64_list_get_element(UtObject *object, size_t index);
 

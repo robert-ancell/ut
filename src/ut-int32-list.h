@@ -17,7 +17,7 @@ extern int ut_int32_list_id;
 
 UtObject *ut_int32_list_new();
 
-UtObject *ut_int32_list_new_with_elements(size_t length, ...);
+UtObject *ut_int32_list_new_from_elements(size_t length, ...);
 
 int32_t ut_int32_list_get_element(UtObject *object, size_t index);
 

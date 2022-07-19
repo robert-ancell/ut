@@ -5,7 +5,7 @@
 
 UtObject *ut_x11_buffer_new();
 
-UtObject *ut_x11_buffer_new_with_data(UtObject *data);
+UtObject *ut_x11_buffer_new_from_data(UtObject *data);
 
 UtObject *ut_x11_buffer_get_data(UtObject *object);
 
