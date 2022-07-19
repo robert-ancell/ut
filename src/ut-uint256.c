@@ -108,6 +108,13 @@ UtObject *ut_uint256_new_from_data(
   return object;
 }
 
+UtObject *ut_uint256_copy(UtObject *object) {
+  assert(ut_object_is_uint256(object));
+  UtObject *copy = ut_object_new(sizeof(UtUint256), &object_interface);
+  ut_uint256_set(copy, object);
+  return copy;
+}
+
 // FIXME: Naming?
 bool ut_uint256_is_uint64(UtObject *object) {
   assert(ut_object_is_uint256(object));

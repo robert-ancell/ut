@@ -15,6 +15,8 @@ UtObject *ut_uint256_new_from_data(
     uint8_t v22, uint8_t v23, uint8_t v24, uint8_t v25, uint8_t v26,
     uint8_t v27, uint8_t v28, uint8_t v29, uint8_t v30, uint8_t v31);
 
+UtObject *ut_uint256_copy(UtObject *object);
+
 bool ut_uint256_is_uint64(UtObject *object);
 
 uint64_t ut_uint256_to_uint64(UtObject *object);

@@ -23,6 +23,9 @@ int main(int argc, char **argv) {
       0x78, 0x56, 0x34, 0x12, 0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
       0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12);
 
+  UtObjectRef big256copy = ut_uint256_copy(big256);
+  ut_assert_equal(big256copy, big256);
+
   assert(ut_uint256_is_uint64(n0));
   assert(ut_uint256_to_uint64(n0) == 0);
   ut_cstring_ref s0 = ut_object_to_string(n0);
