@@ -1,7 +1,9 @@
 #include <assert.h>
 
 #include "ut-cstring.h"
+#include "ut-list.h"
 #include "ut-uint256.h"
+#include "ut-uint8-list.h"
 
 typedef struct {
   UtObject object;
@@ -108,6 +110,22 @@ UtObject *ut_uint256_new_from_data(
   return object;
 }
 
+UtObject *ut_uint256_new_from_uint8_list(UtObject *list) {
+  assert(ut_object_implements_uint8_list(list));
+  assert(ut_list_get_length(list) == 32);
+
+  UtObject *object = ut_object_new(sizeof(UtUint256), &object_interface);
+  uint32_t *v = ((UtUint256 *)object)->value;
+  for (size_t i = 0; i < 8; i++) {
+    v[i] = ut_uint8_list_get_element(list, i * 4 + 0) << 0 |
+           ut_uint8_list_get_element(list, i * 4 + 1) << 8 |
+           ut_uint8_list_get_element(list, i * 4 + 2) << 16 |
+           ut_uint8_list_get_element(list, i * 4 + 3) << 24;
+  }
+
+  return object;
+}
+
 UtObject *ut_uint256_copy(UtObject *object) {
   assert(ut_object_is_uint256(object));
   UtObject *copy = ut_object_new(sizeof(UtUint256), &object_interface);
@@ -128,6 +146,20 @@ uint64_t ut_uint256_to_uint64(UtObject *object) {
   uint32_t *v = ((UtUint256 *)object)->value;
 
   return (uint64_t)v[1] << 32 | v[0];
+}
+
+UtObject *ut_uint256_to_uint8_list(UtObject *object) {
+  assert(ut_object_is_uint256(object));
+  uint32_t *v = ((UtUint256 *)object)->value;
+  return ut_uint8_list_new_from_elements(
+      32, v[0] & 0xff, (v[0] >> 8) & 0xff, (v[0] >> 16) & 0xff, v[0] >> 24,
+      v[1] & 0xff, (v[1] >> 8) & 0xff, (v[1] >> 16) & 0xff, v[1] >> 24,
+      v[2] & 0xff, (v[2] >> 8) & 0xff, (v[2] >> 16) & 0xff, v[2] >> 24,
+      v[3] & 0xff, (v[3] >> 8) & 0xff, (v[3] >> 16) & 0xff, v[3] >> 24,
+      v[4] & 0xff, (v[4] >> 8) & 0xff, (v[4] >> 16) & 0xff, v[4] >> 24,
+      v[5] & 0xff, (v[5] >> 8) & 0xff, (v[5] >> 16) & 0xff, v[5] >> 24,
+      v[6] & 0xff, (v[6] >> 8) & 0xff, (v[6] >> 16) & 0xff, v[6] >> 24,
+      v[7] & 0xff, (v[7] >> 8) & 0xff, (v[7] >> 16) & 0xff, v[7] >> 24);
 }
 
 void ut_uint256_set(UtObject *object, UtObject *value_) {
