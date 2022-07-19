@@ -174,6 +174,42 @@ void ut_uint256_set(UtObject *object, UtObject *value_) {
   }
 }
 
+void ut_uint256_and(UtObject *object, UtObject *value_) {
+  assert(ut_object_is_uint256(object));
+  assert(ut_object_is_uint256(value_));
+
+  uint32_t *v = ((UtUint256 *)object)->value;
+  uint32_t *value = ((UtUint256 *)value_)->value;
+
+  for (size_t i = 0; i < 8; i++) {
+    v[i] &= value[i];
+  }
+}
+
+void ut_uint256_or(UtObject *object, UtObject *value_) {
+  assert(ut_object_is_uint256(object));
+  assert(ut_object_is_uint256(value_));
+
+  uint32_t *v = ((UtUint256 *)object)->value;
+  uint32_t *value = ((UtUint256 *)value_)->value;
+
+  for (size_t i = 0; i < 8; i++) {
+    v[i] |= value[i];
+  }
+}
+
+void ut_uint256_xor(UtObject *object, UtObject *value_) {
+  assert(ut_object_is_uint256(object));
+  assert(ut_object_is_uint256(value_));
+
+  uint32_t *v = ((UtUint256 *)object)->value;
+  uint32_t *value = ((UtUint256 *)value_)->value;
+
+  for (size_t i = 0; i < 8; i++) {
+    v[i] ^= value[i];
+  }
+}
+
 void ut_uint256_add(UtObject *object, UtObject *a_, UtObject *b_) {
   assert(ut_object_is_uint256(object));
   assert(ut_object_is_uint256(a_));

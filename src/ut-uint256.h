@@ -27,6 +27,12 @@ UtObject *ut_uint256_to_uint8_list(UtObject *object);
 
 void ut_uint256_set(UtObject *object, UtObject *value);
 
+void ut_uint256_and(UtObject *object, UtObject *value);
+
+void ut_uint256_or(UtObject *object, UtObject *value);
+
+void ut_uint256_xor(UtObject *object, UtObject *value);
+
 void ut_uint256_add(UtObject *object, UtObject *a, UtObject *b);
 
 void ut_uint256_sub(UtObject *object, UtObject *a, UtObject *b);
